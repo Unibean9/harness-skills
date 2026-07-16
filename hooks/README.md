@@ -1,6 +1,6 @@
 # Hooks — the enforced layer
 
-Every skill in `.agents/skills/` tells the agent what to do and gives it a
+Every skill in `skills/` tells the agent what to do and gives it a
 script to check its own work. That's *guidance* — the agent can still, in
 principle, ignore the script or misreport its result. A hook removes that
 possibility for the specific case it covers: it's a check the harness runs
@@ -26,7 +26,7 @@ own top-level key out of `hs.settings.json`:
 | Script | Event | `hs.settings.json` key | Does |
 |---|---|---|---|
 | `privacy-block.mjs` | `PreToolUse` | `privacyBlock` | Blocks reading/referencing a path matching `denyList` unless it's also in `allowList` (e.g. blocks `.env`, allows `.env.example`). |
-| `ship-gate.mjs` | `PreToolUse` | `shipGate` | Blocks `git commit`/`git push`/`gh pr create`-style commands (from `blockCommands`) unless `.harness/state/verify-all.status` already says `PASS`. |
+| `ship-gate.mjs` | `PreToolUse` | `shipGate` | Blocks `git commit`/`git push`/`gh pr create`-style commands (from `blockCommands`) unless a valid, spec-and-worktree-bound attestation exists (see `scripts/attestation.mjs`) — a hand-edited `.harness/state/verify-all.status` string alone is not enough. |
 | `session-state.mjs` | `SessionStart` | `sessionState` | Reads `.harness/state/current-spec` to find the active spec, digests its `spec.md`/`plan.md`/`progress.md`/`implement-notes.md`, and writes/injects that digest — so a fresh session doesn't miss what a prior one already established. |
 | `monitoring.mjs` | `PreToolUse` / `PostToolUse` | `monitoring` | Appends one line per tool call to `.harness/state/audit.log` — an audit trail independent of what any transcript claims happened. |
 
@@ -44,9 +44,10 @@ snippet without assuming coverage beyond the listed matcher.
 
 | Agent | Destination | Events and matched tools | Coverage limitation |
 |---|---|---|---|
-| Claude Code | `.claude/settings.json` | `SessionStart`; `PreToolUse` for `Read|Write|Edit|Bash`; `PostToolUse` for `.*` | Ship gate only sees `Bash`; privacy is limited to those four tools. |
+| Claude Code | root `hooks/hooks.json`, auto-wired when installed via `.claude-plugin/plugin.json` (not installed as a plugin? copy `hooks/hooks.json`'s `hooks` key into `.claude/settings.json` and replace `${CLAUDE_PLUGIN_ROOT}` with `${CLAUDE_PROJECT_DIR}`) | `SessionStart`; `PreToolUse` for `Read\|Write\|Edit\|Bash`; `PostToolUse` for `.*` | Ship gate only sees `Bash`; privacy is limited to those four tools. |
 | Codex CLI | `.codex/hooks.json` or `~/.codex/hooks.json` | `SessionStart`; `PreToolUse`/`PostToolUse` for `Bash|apply_patch` | Project hooks require trusted project configuration and reviewed hooks. Unmatched paths are not intercepted. |
 | Gemini CLI | `.gemini/settings.json` or `~/.gemini/settings.json` | `SessionStart`; `BeforeTool` for `read_file|write_file|replace|run_shell_command`; `AfterTool` for `.*` | Matchers depend on current Gemini tool names; ship gate only sees `run_shell_command`. |
+| Cursor | not wired | — | `.cursor-plugin/plugin.json` declares skill discovery only. `session-state.mjs` hardcodes Claude Code's `hookSpecificOutput.additionalContext` JSON shape — pointing Cursor at it unmodified would inject nothing (Cursor expects a top-level `additional_context` field per third-party reference implementations). Needs a per-harness branch before it's safe to wire, the same way `privacy-block.mjs`/`ship-gate.mjs`/`monitoring.mjs` would need Cursor's actual `PreToolUse`/`PostToolUse`-equivalent event names confirmed first. |
 
 Ship gate recognizes only simple `git commit`, `git push`, and `gh pr create`
 invocations (including documented global options). Shell chaining, aliases, and

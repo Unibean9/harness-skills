@@ -81,6 +81,11 @@ export function isShipCommand(command) {
   return first === "gh" && tokens.slice(1).filter((token) => !token.startsWith("-")).slice(0, 2).join(" ") === "pr create";
 }
 
+export function extractCommand(call) {
+  const ti = call.tool_input || {};
+  return ti.command || ti.cmd || "";
+}
+
 export function appendAuditLine(logFile, line) {
   mkdirSync(dirname(logFile), { recursive: true });
   appendFileSync(logFile, line + "\n");

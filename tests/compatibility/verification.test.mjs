@@ -4,7 +4,7 @@ import { execFileSync } from "node:child_process";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import test from "node:test";
-import { createAttestation, validateAttestation } from "../../.agents/scripts/attestation.mjs";
+import { createAttestation, validateAttestation } from "../../scripts/attestation.mjs";
 
 test("attestation binds verification to the selected spec and worktree", () => {
   const root = mkdtempSync(join(tmpdir(), "harness-attest-"));

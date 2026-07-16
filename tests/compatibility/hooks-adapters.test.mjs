@@ -15,7 +15,7 @@ test("Codex hooks use current tool matchers and stable commands", () => {
 });
 
 test("Claude and Gemini adapters cover their documented file and audit tools", () => {
-  const claude = JSON.parse(read("hooks/claude-code/settings.snippet.json"));
+  const claude = JSON.parse(read("hooks/hooks.json"));
   const gemini = JSON.parse(read("hooks/gemini/settings.snippet.json"));
   assert.match(claude.hooks.PreToolUse[0].matcher, /Read\|Write\|Edit\|Bash/);
   assert.equal(claude.hooks.PostToolUse[0].matcher, ".*");

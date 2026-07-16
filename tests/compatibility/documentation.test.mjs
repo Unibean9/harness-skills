@@ -7,12 +7,12 @@ import test from "node:test";
 const repo = join(dirname(fileURLToPath(import.meta.url)), "..", "..");
 const read = (path) => readFileSync(join(repo, path), "utf8");
 
-test("README publishes the three-agent compatibility contract and portable commands", () => {
+test("README publishes the four-agent compatibility contract and portable commands", () => {
   const readme = read("README.md");
-  for (const agent of ["Claude Code", "Codex CLI", "Gemini CLI"]) assert.match(readme, new RegExp(`\\| ${agent} \\|`));
-  assert.match(readme, /\.agents\/scripts\/next-spec-id\.mjs/);
+  for (const agent of ["Claude Code", "Codex CLI", "Gemini CLI", "Cursor"]) assert.match(readme, new RegExp(`\\| ${agent} \\|`));
+  assert.match(readme, /scripts\/next-spec-id\.mjs/);
   assert.match(readme, /Node-native/);
-  assert.match(readme, /-Force.*--force/s);
+  assert.match(readme, /plugin marketplace add/);
   assert.match(readme, /privacy is a guardrail, not a complete privacy boundary/);
 });
 
@@ -31,5 +31,5 @@ test("hook documentation agrees with shipped adapter event and matcher names", (
 test("all agent entry points delegate to the canonical project instructions", () => {
   assert.match(read("CLAUDE.md"), /AGENTS\.md/);
   assert.match(read("GEMINI.md"), /AGENTS\.md/);
-  assert.match(read("AGENTS.md"), /unmatched tools and unconfigured hooks remain\s+outside their coverage/);
+  assert.match(read("AGENTS.md"), /Skills work fully\s+without hooks/);
 });

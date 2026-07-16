@@ -16,8 +16,21 @@ test("privacy hook blocks denied patch paths and malformed payloads", () => {
   mkdirSync(join(root, ".harness", "state"), { recursive: true });
   writeFileSync(join(root, "hs.settings.json"), JSON.stringify({ privacyBlock: { enabled: true, denyList: [".env"], allowList: [] } }));
   const hook = new URL("../../hooks/privacy-block.mjs", import.meta.url).pathname.slice(1);
-  const denied = spawnSync(process.execPath, [hook], { cwd: root, input: JSON.stringify({ tool_input: { patch: "*** Update File: .env\n" } }), encoding: "utf8" });
+  const run = (command) => spawnSync(process.execPath, [hook], { cwd: root, input: JSON.stringify({ tool_input: { command } }), encoding: "utf8" });
+
+  // Codex's real apply_patch payload puts the envelope in tool_input.command.
+  const denied = run("*** Begin Patch\n*** Update File: .env\n@@\n-old\n+new\n*** End Patch\n");
   assert.equal(denied.status, 2);
+
+  // Renaming a file onto a denied path must be caught via "*** Move to:".
+  const renamedIntoDenied = run("*** Begin Patch\n*** Update File: config.txt\n*** Move to: .env\n@@\n-old\n+new\n*** End Patch\n");
+  assert.equal(renamedIntoDenied.status, 2);
+
+  // A word matching the deny pattern inside the diff BODY (not a file header)
+  // must not false-positive -- only envelope path headers count.
+  const bodyMentionOnly = run('*** Begin Patch\n*** Update File: notes.txt\n@@\n-old\n+"see .env for setup"\n*** End Patch\n');
+  assert.equal(bodyMentionOnly.status, 0);
+
   const malformed = spawnSync(process.execPath, [hook], { cwd: root, input: "{", encoding: "utf8" });
   assert.equal(malformed.status, 2);
 });

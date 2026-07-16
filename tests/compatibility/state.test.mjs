@@ -5,10 +5,10 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import test from "node:test";
 import { mkdtempSync } from "node:fs";
-import { selectActiveSpec } from "../../.agents/scripts/state.mjs";
+import { selectActiveSpec } from "../../scripts/state.mjs";
 
 const repo = new URL("../..", import.meta.url).pathname.slice(1);
-const reserve = join(repo, ".agents/scripts/next-spec-id.mjs");
+const reserve = join(repo, "scripts/next-spec-id.mjs");
 
 test("concurrent reservations receive distinct identities without changing active selection", () => {
   const root = mkdtempSync(join(tmpdir(), "harness-state-"));

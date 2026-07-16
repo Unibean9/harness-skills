@@ -1,0 +1,17 @@
+{
+  "name": "harness-skills",
+  "description": "A five-phase spec-driven development harness (brainstorm -> plan -> build -> verify -> ship) for coding agents, with real evidence gates instead of self-reported \"done\"",
+  "version": "1.0.0",
+  "author": {
+    "name": "danielleit241"
+  },
+  "homepage": "https://github.com/Unibean9/harness-skills",
+  "repository": "https://github.com/Unibean9/harness-skills",
+  "keywords": [
+    "skills",
+    "spec-driven",
+    "workflow",
+    "verification",
+    "harness"
+  ]
+}

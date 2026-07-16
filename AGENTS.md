@@ -1,100 +1,116 @@
 # Harness Skills
 
-This repo wires a small, opinionated software-development harness into whatever
-coding agent you're running (Claude Code, Codex CLI, Gemini CLI, ...). The harness
-is expressed as five frames:
+A small, opinionated development harness for coding agents: spec first, small
+verifiable steps, real evidence before "done," a human in the loop where it
+matters.
 
-| Frame | Where it lives here |
+| Frame | Where it lives |
 |---|---|
-| Instruction | this file + `.agents/skills/*/SKILL.md` + `.agents/agents/hs-scout.md` |
-| Tools | your agent's built-in tools + each skill's bundled `scripts/` + `hooks/` |
-| State | `.harness/specs/<id>-<slug>/{spec.md,plan.md,progress.md,implement-notes.md}`, `.harness/specs/INDEX.md`, `.harness/state/` |
-| Feedback | the scripts' pass/fail verdicts, written to disk as facts, not self-reported |
+| Instruction | this file + `skills/*/SKILL.md` |
+| Tools | your agent's built-in tools + `scripts/` + `hooks/` |
+| State | `.harness/specs/<id>-<slug>/{spec,plan,progress,implement-notes}.md`, `.harness/specs/INDEX.md`, `.harness/state/` |
+| Feedback | scripts write pass/fail verdicts to disk as facts, not self-reports |
 | Env | the project you're actually working in |
 
-## Required flow
-
-Non-trivial changes go through five phases, in order, each one a skill:
+## The phases
 
 ```
-hs-brainstorm -> hs-plan -> hs-build -> hs-verify -> hs-ship
+hs-brainstorm -> hs-plan -> hs-build -> hs-verify -> hs-review -> hs-ship
+                                                       (advisory)
 ```
 
-Each phase has an exit condition described in its own SKILL.md. Don't skip ahead —
-the whole point of the harness is that "looks done" and "is done" are different
-claims, and each phase exists to close a specific gap between them. Trivial
-one-line changes (typo fixes, a config value) are exempt, but still get a
-`hs-verify` pass before anything ships.
+- `hs-brainstorm` turns a vague ask into an approved spec.
+- `hs-plan` breaks the spec into small tasks, each with its own verify command, plus a baseline.
+- `hs-build` implements one task at a time, verifying each before moving on.
+- `hs-verify` is the whole-suite sensor — the one place "done" becomes a fact, not an opinion.
+- `hs-review` gets an independent, structured second opinion on the verified diff — correctness, security, performance, quality, test coverage. Advisory: recommended before shipping, but `hs-ship` does not require it to have run.
+- `hs-ship` is the last gate: nothing commits or pushes without an explicit human yes.
 
-## Why these phases, and not others
+Each phase's exit condition is in its own `SKILL.md`. Don't skip ahead — a
+trivial one-line change (typo, config value) is exempt from the full flow but
+still gets an `hs-verify` pass before it ships.
 
-Every phase either produces a fact or checks one:
+Route from state, not memory:
 
-- `hs-brainstorm` turns a vague ask into a spec the agent can be held to.
-- `hs-plan` turns the spec into small, individually-verifiable steps, and captures
-  a baseline so you know what "was already broken" before you touch anything.
-- `hs-build` executes the plan and only advances on evidence, not vibes.
-- `hs-verify` is the whole-suite sensor — the one place that decides "done" for
-  real, independent of what any single task claimed along the way.
-- `hs-ship` is the last gate: nothing gets committed or pushed without a human
-  looking at it, no matter how green the checks are.
+```
+Task arrives
+    |
+    +-- .harness/ missing or current-spec empty? ----------> hs-brainstorm
+    +-- spec.md not "approved" yet? -----------------------> hs-brainstorm
+    +-- spec approved, plan.md missing or not approved? ---> hs-plan
+    +-- plan approved, unchecked tasks in progress.md? ----> hs-build
+    +-- all tasks [x], no valid verify attestation? -------> hs-verify
+    +-- attestation valid, no "## Review" in progress.md? -> hs-review (recommended, not required)
+    +-- attestation valid, user wants to commit/PR? -------> hs-ship
+```
 
 ## State conventions
 
-`.harness/` is memory that survives context compaction and session restarts —
-read it before doing anything, in a fresh session or otherwise. This process
-runs repeatedly and overlappingly on a real project — a second feature starts
-while the first is still shipping, a third revisits something already done —
-so specs live one-per-feature under `.harness/specs/<id>-<slug>/`, never as a
-single flat file a later feature would silently overwrite:
+Specs live one-per-feature under `.harness/specs/<id>-<slug>/`, never as a
+single flat file — a second feature would silently overwrite the first's
+history otherwise.
 
-- `.harness/specs/INDEX.md` — one row per spec: ID, slug, phase
-  (`brainstorming`/`planning`/`building`/`verifying`/`shipped`), last updated.
-  Glance here to see everything this project has ever gone through the
-  harness for.
-- `.harness/state/current-spec` — one line, the `<id>-<slug>` of whichever
-  spec is currently active. Every skill reads this first to know which spec
-  directory to work in.
-- Inside each spec's directory: `spec.md` and `plan.md` carry a
-  `**Status:**` line (`draft` or `approved`) that only a human approval can
-  flip to `approved` — an agent should never set that itself. `progress.md`
-  is an append-only log: one line per completed task, with the verification
-  evidence attached. `implement-notes.md` (written during `hs-build`) records
-  judgment calls the agent made that the plan didn't spell out — so "followed
-  the plan exactly" and "used judgment here" stay distinguishable in review.
+- `.harness/specs/INDEX.md` — one row per spec: ID, slug, phase, last updated.
+- `.harness/state/current-spec` — one line, which spec directory is active.
+- `spec.md`/`plan.md` carry a `**Status:** draft|approved` line only a human
+  can flip to `approved`. `progress.md` is an append-only log of completed
+  tasks with their verify evidence. `implement-notes.md` records judgment
+  calls the plan didn't spell out.
 
-Where the `sessionState` hook is wired (see below), a digest of the active
-spec's files gets rebuilt into `.harness/state/session-summary.md` at the
-start of every session — read that first if it exists; it's faster than
-reading every file from scratch, though it's a convenience, not a
-replacement for reading `.harness/specs/` itself when in doubt.
+Where the `sessionState` hook is wired, a digest rebuilds into
+`.harness/state/session-summary.md` at session start — read it if present;
+it's a shortcut, not a replacement for `.harness/specs/` itself.
 
-## Scouting before each phase
+## Subagents: scouting and review
 
-Reading broadly — surveying code, docs, or an external API — doesn't need the
-same model doing the planning or building work. `.agents/agents/hs-scout.md`
-describes a narrow, cheap subagent (small/fast model — e.g. Haiku) that
-answers one specific question and hands back a condensed briefing, nothing
-more. Each skill below names the question it delegates to hs-scout before
-starting its own work; use it, or do the same lightweight look inline if no
-subagent mechanism is available — don't skip the step either way.
+Two narrow jobs are worth delegating to a separate subagent rather than doing
+inline with the main model:
+
+- **Scouting** (before each phase): delegate broad reading — existing code,
+  docs, an external API — to a cheap/fast subagent.
+- **Review** (`hs-review`, before shipping): delegate the diff review to a
+  context-independent subagent so it isn't reviewed by the same context that
+  wrote it.
+
+See `docs/agents.md` for both roles, their per-agent wiring, and when to use
+each. No subagent mechanism available for either? Do the same work inline
+instead — scouting is still worth doing cheaply; review is still worth doing
+with a fresh, deliberate re-read rather than skipping it. Don't skip either
+step.
 
 ## Human in the loop
 
-Some decisions aren't the agent's to make. Spec approval, plan approval, and
-anything that ships (commit/push/PR) always stop and wait for an explicit human
-answer — never assume silence means yes. Mid-build, only escalate for things a
-sensor genuinely can't decide: destructive actions, or a requirement that turns
-out to be ambiguous once you're actually implementing it.
+Spec approval, plan approval, and anything that ships (commit/push/PR) always
+stop and wait for an explicit human answer — never assume silence means yes.
+Mid-build, only escalate for destructive actions or a requirement that turns
+out ambiguous once you're implementing it.
 
-## Hooks, guardrails, and monitoring
+## Hooks
 
-Claude Code, Codex CLI, and Gemini CLI can run hooks before/after selected tool
-calls or at session start. When installed, trusted, and matched, hooks execute
-outside the model's discretion; unmatched tools and unconfigured hooks remain
-outside their coverage. `hs.settings.json` at the repo root is the real config four hooks read:
-`privacyBlock` (never expose `.env`-style secrets), `shipGate` (never ship
-without a green verify), `sessionState` (rebuild the session digest above),
-and `monitoring` (append matched tool calls to `.harness/state/audit.log`).
-`hooks/` has the per-agent wiring and coverage limits — see `hooks/README.md`.
-Skills work fully without hooks; hooks provide additional scoped enforcement.
+`hs.settings.json` at the repo root configures four optional hooks:
+`privacyBlock` (block reading/exposing secrets), `shipGate` (block
+commit/push without a valid verify attestation), `sessionState` (rebuild the
+session digest), `monitoring` (audit log of matched tool calls). See
+`hooks/README.md` for per-agent wiring and coverage limits. Skills work fully
+without hooks; hooks add scoped enforcement on top.
+
+## Customizing this for your project
+
+This file and `skills/*/SKILL.md` are templates, not fixed law — adjust them
+to fit the project you're installing the harness into:
+
+- **Test/lint/build commands**: `hs-plan` and `hs-verify` ask for these at
+  runtime rather than hardcoding them, so nothing here usually needs editing
+  for a new stack. If your project's commands are non-obvious, note them
+  directly in this file so every skill finds them without asking.
+- **`hs.settings.json`**: turn hooks on/off, tune `privacyBlock`'s
+  allow/deny lists, adjust `shipGate.blockCommands`.
+- **Phase count**: five phases is the default, not a minimum. A project doing
+  only quick fixes might collapse `hs-brainstorm`/`hs-plan` into one pass —
+  edit the SKILL.md files to match, but keep an exit condition on whatever you
+  keep, or "looks done" quietly becomes "is done" again.
+- **Skill wording**: `skills/*/SKILL.md` are plain markdown — reword,
+  retitle, or add project-specific rationalizations/failure modes as you find
+  them. Keep each skill's frontmatter `name` matching its directory and its
+  `description` stating both what it does and when to use it — that's what
+  the agent uses to trigger it.

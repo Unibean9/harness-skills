@@ -6,16 +6,10 @@
 // file path and required value are a fixed harness convention, not a
 // setting -- only *which commands trigger the check* is worth exposing
 // in hs.settings.json.
-import { loadSettings, projectPath, readStdinJson, block, allow, isShipCommand } from "./lib/common.mjs";
-import { validateAttestation } from "../.agents/scripts/attestation.mjs";
+import { loadSettings, projectPath, readStdinJson, block, allow, isShipCommand, extractCommand } from "./lib/common.mjs";
+import { validateAttestation } from "../scripts/attestation.mjs";
 
 const STATUS_FILE = ".harness/state/verify-all.status";
-const REQUIRED = "PASS";
-
-function extractCommand(call) {
-  const ti = call.tool_input || {};
-  return ti.command || ti.cmd || "";
-}
 
 const call = await readStdinJson();
 if (call.__malformedPayload) block("Blocked by shipGate: malformed hook payload.");

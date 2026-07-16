@@ -3,23 +3,23 @@
 // Blocks a tool call that reads or references a path matching denyList,
 // unless that path also matches allowList. Config-driven -- change what's
 // blocked by editing hs.settings.json, not this file.
-import { loadSettings, readStdinJson, matchesAny, block, allow } from "./lib/common.mjs";
-
-function extractCommand(call) {
-  const ti = call.tool_input || {};
-  return ti.command || ti.cmd || "";
-}
+import { loadSettings, readStdinJson, matchesAny, block, allow, extractCommand } from "./lib/common.mjs";
 
 function extractPaths(call) {
   const ti = call.tool_input || {};
   const paths = [];
-  for (const key of ["file_path", "path", "target_file", "notebook_path"]) {
+  for (const key of ["file_path", "path", "target_file", "notebook_path", "absolute_path"]) {
     if (ti[key]) paths.push(ti[key]);
   }
   const command = extractCommand(call);
-  const patch = ti.patch || "";
-  for (const match of patch.matchAll(/^\*\*\* (?:Update|Add|Delete) File: (.+)$/gm)) paths.push(match[1].trim());
-  if (command) {
+  // Codex's apply_patch sends the patch envelope in tool_input.command (same
+  // field as Bash), not a separate "patch" field -- parse the envelope's own
+  // file-operation headers rather than tokenizing the whole diff body, which
+  // would treat every word of added/removed code as a candidate path.
+  if (/^\*\*\* Begin Patch/m.test(command)) {
+    for (const match of command.matchAll(/^\*\*\* (?:Add|Update|Delete) File: (.+)$/gm)) paths.push(match[1].trim());
+    for (const match of command.matchAll(/^\*\*\* Move to: (.+)$/gm)) paths.push(match[1].trim());
+  } else if (command) {
     for (const token of command.split(/\s+/)) {
       if (token && !token.startsWith("-")) {
         paths.push(token.replace(/^["']|["']$/g, ""));
