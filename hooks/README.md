@@ -48,7 +48,13 @@ snippet without assuming coverage beyond the listed matcher.
 | Codex CLI | `.codex/hooks.json` or `~/.codex/hooks.json` | `SessionStart`; `PreToolUse`/`PostToolUse` for `Bash|apply_patch` | Project hooks require trusted project configuration and reviewed hooks. Unmatched paths are not intercepted. |
 | Gemini CLI | `.gemini/settings.json` or `~/.gemini/settings.json` | `SessionStart`; `BeforeTool` for `read_file|write_file|replace|run_shell_command`; `AfterTool` for `.*` | Matchers depend on current Gemini tool names; ship gate only sees `run_shell_command`. |
 
-All hook commands require **Node.js on `PATH`**. The current Codex and Gemini
+Ship gate recognizes only simple `git commit`, `git push`, and `gh pr create`
+invocations (including documented global options). Shell chaining, aliases, and
+obfuscated commands are outside this guardrail boundary. A valid structured
+verification attestation for the selected spec and worktree is required.
+
+All hook commands require **Node.js on `PATH`**. The audit log is a mutable,
+redacted operational record, not tamper-proof forensic evidence. The current Codex and Gemini
 snippets also resolve from `git rev-parse --show-toplevel`, so they require
 **Git on `PATH`**. Review the per-agent README and official vendor hook
 reference after upgrading a CLI; a configured hook is a scoped guardrail, not

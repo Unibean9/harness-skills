@@ -17,7 +17,7 @@ phase for it instead of folding it into `hs-build`.
 
 ## Process
 
-1. Read `.harness/state/current-spec` to get `<active>`.
+1. Read `.harness/state/current-spec` to get the selected `<active>`.
 
 2. **Delegate a scouting pass** (see `.agents/agents/hs-scout.md`) if it's not
    already obvious: "what are this project's actual test/lint/build commands

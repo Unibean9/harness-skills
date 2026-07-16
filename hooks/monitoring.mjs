@@ -17,7 +17,8 @@ if (!cfg.enabled) process.exit(0);
 const event = call.hook_event_name || "unknown";
 const tool = call.tool_name || "unknown";
 const ti = call.tool_input || {};
-const detail = ti.command || ti.file_path || ti.path || "";
+const rawDetail = ti.command || ti.file_path || ti.path || "";
+const detail = String(rawDetail).replace(/(token|password|secret|api[_-]?key)=?[^\s]+/gi, "$1=[REDACTED]");
 
-appendAuditLine(projectPath(call, LOG_FILE), `${nowIso()} ${event} ${tool} ${detail}`.trim());
+appendAuditLine(projectPath(call, LOG_FILE), JSON.stringify({ timestamp: nowIso(), event, tool, detail }));
 process.exit(0);

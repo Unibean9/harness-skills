@@ -17,7 +17,7 @@ you need to know that now, not discover it mid-build and wonder if you caused it
 
 ## Process
 
-1. Read `.harness/state/current-spec` to find which spec is active, then read
+1. Read `.harness/state/current-spec` to find the selected spec, then read
    `.harness/specs/<active>/spec.md`. If there's no active spec, or its
    `**Status:**` isn't `approved`, stop — go back to `hs-brainstorm` first.
    Don't plan against an unapproved spec; it may still change.

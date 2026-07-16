@@ -16,7 +16,7 @@ never have to re-diagnose from scratch.
 
 ## Process
 
-Read `.harness/state/current-spec` once at the start to get `<active>`. If
+Read `.harness/state/current-spec` once at the start to get the selected `<active>`. If
 it's missing, or `.harness/specs/<active>/plan.md` isn't `**Status:**
 approved`, stop — go get a plan first.
 

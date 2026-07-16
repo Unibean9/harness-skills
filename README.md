@@ -19,14 +19,14 @@ which model or which agent is doing the work.
 ## Specs, plural — not one flat file
 
 `hs-brainstorm` -> `hs-plan` -> ... -> `hs-ship` doesn't run once per project;
-it runs once per feature, repeatedly and often overlappingly. A single
+it runs once per feature, repeatedly. A single
 `.harness/spec.md` would mean the second feature silently overwrites the
 first's history. Instead every feature gets its own directory —
 `.harness/specs/<id>-<slug>/` — and `.harness/specs/INDEX.md` is a one-glance
 table of every spec this project has had, with its current phase. A single
 `.harness/state/current-spec` file (just the id-slug, one line) tells every
-skill which directory is active right now, so nothing has to be repeated to
-the agent by hand each session.
+skill which directory is selected right now. Identities can be reserved
+concurrently, but active selection is deliberately serialized.
 
 ## Scouting before each phase
 
@@ -87,6 +87,10 @@ The portable state and verification commands are Node-native:
 Windows requirement. Claude's `hs-scout` adapter is generated from the
 canonical `.agents/agents/hs-scout.md`; Codex and Gemini require their own
 manual lightweight-scout setup as described there.
+
+Run `npm test` for the supported Node 22+ compatibility suite; CI runs the
+same command. Hook parsing is intentionally limited to structured tool input
+and simple supported command forms, not shell obfuscation.
 
 ## Hotswap, two senses
 

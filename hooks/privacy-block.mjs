@@ -17,6 +17,8 @@ function extractPaths(call) {
     if (ti[key]) paths.push(ti[key]);
   }
   const command = extractCommand(call);
+  const patch = ti.patch || "";
+  for (const match of patch.matchAll(/^\*\*\* (?:Update|Add|Delete) File: (.+)$/gm)) paths.push(match[1].trim());
   if (command) {
     for (const token of command.split(/\s+/)) {
       if (token && !token.startsWith("-")) {
@@ -28,7 +30,9 @@ function extractPaths(call) {
 }
 
 const call = await readStdinJson();
+if (call.__malformedPayload) block("Blocked by privacyBlock: malformed hook payload.");
 const settings = loadSettings(call);
+if (settings.__settingsError) block("Blocked by privacyBlock: malformed hs.settings.json.");
 const cfg = settings.privacyBlock || {};
 if (!cfg.enabled) allow();
 const deny = cfg.denyList || [];

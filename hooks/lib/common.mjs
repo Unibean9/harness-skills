@@ -29,7 +29,7 @@ export function findSettingsPath(call = {}) {
 export function loadSettings(call = {}) {
   const path = findSettingsPath(call);
   if (!existsSync(path)) return {};
-  return JSON.parse(readFileSync(path, "utf8"));
+  try { return JSON.parse(readFileSync(path, "utf8")); } catch { return { __settingsError: true }; }
 }
 
 export function projectPath(call, ...segments) {
@@ -48,7 +48,7 @@ export function readStdinJson() {
       try {
         resolve(JSON.parse(data));
       } catch {
-        resolve({});
+        resolve({ __malformedPayload: true });
       }
     });
   });
@@ -65,6 +65,20 @@ export function matchesAny(value, patterns) {
     const re = globToRegExp(p);
     return re.test(value) || re.test(base) || value.includes(p);
   });
+}
+
+export function isShipCommand(command) {
+  const tokens = String(command || "").trim().split(/\s+/);
+  const first = tokens[0];
+  if (first === "git") {
+    let action;
+    for (let i = 1; i < tokens.length; i += 1) {
+      if (["-C", "-c", "--git-dir", "--work-tree"].includes(tokens[i])) { i += 1; continue; }
+      if (!tokens[i].startsWith("-")) { action = tokens[i]; break; }
+    }
+    return action === "commit" || action === "push";
+  }
+  return first === "gh" && tokens.slice(1).filter((token) => !token.startsWith("-")).slice(0, 2).join(" ") === "pr create";
 }
 
 export function appendAuditLine(logFile, line) {
