@@ -27,11 +27,10 @@ function extractPaths(call) {
   return paths;
 }
 
-const settings = loadSettings();
+const call = await readStdinJson();
+const settings = loadSettings(call);
 const cfg = settings.privacyBlock || {};
 if (!cfg.enabled) allow();
-
-const call = await readStdinJson();
 const deny = cfg.denyList || [];
 const allowList = cfg.allowList || [];
 

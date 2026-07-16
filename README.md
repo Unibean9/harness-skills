@@ -54,13 +54,15 @@ README stays a map, not a copy.
 1. Copy (or `git clone`) this repo's contents into the project you want the
    harness in — or point your agent at it directly if it already reads
    `AGENTS.md` from a parent/shared location.
-2. Run the installer once per project:
+2. Run the installer once per project (it preserves existing non-harness
+   Claude skills; use `-Force` or `--force` only when intentionally replacing
+   one):
    - `bash install.sh` (macOS/Linux/Git Bash)
    - `./install.ps1` (Windows PowerShell)
 
    This links `.agents/skills/*` into `.claude/skills/` for Claude Code. Codex
-   CLI and Gemini CLI already read `.agents/skills/` directly — nothing else to
-   do for them.
+   CLI and Gemini CLI consume `.agents/skills/` directly in the supported
+   configurations below. Hook wiring remains an optional, manual setup.
 3. Optionally wire the four hooks configured in `hs.settings.json`
    (`privacyBlock`, `shipGate`, `sessionState`, `monitoring`): merge the
    matching snippet into your agent's settings —
@@ -70,6 +72,21 @@ README stays a map, not a copy.
 4. Start the agent and ask for something. It should reach for `hs-brainstorm`
    on its own; if it doesn't, invoke it explicitly the first few times until
    the description's triggering is proven out.
+
+## Supported compatibility contract
+
+| Agent | Instruction / skills | Hook configuration and events | Prerequisites | Known limits |
+|---|---|---|---|---|
+| Claude Code | `AGENTS.md`; installer links `.agents/skills/*` to `.claude/skills/*` | Merge `hooks/claude-code/settings.snippet.json` into `.claude/settings.json`: `SessionStart`, `PreToolUse`, `PostToolUse` | Node.js on `PATH`; Git Bash or WSL for Claude Code on Windows | Privacy is matched only for `Read`, `Write`, `Edit`, and `Bash`; ship gate only covers `Bash`. |
+| Codex CLI | `AGENTS.md` and `.agents/skills/` | Merge `hooks/codex/hooks.json.snippet` into `.codex/hooks.json` (project) or `~/.codex/hooks.json` (user): `SessionStart`, `PreToolUse`, `PostToolUse` | Node.js and Git on `PATH`; trust the project `.codex/` layer and trust changed hooks | Matchers cover `Bash` and `apply_patch`; privacy is a guardrail, not a complete privacy boundary. |
+| Gemini CLI | `GEMINI.md` -> `AGENTS.md`, and `.agents/skills/` | Merge `hooks/gemini/settings.snippet.json` into `.gemini/settings.json` (project) or `~/.gemini/settings.json` (user): `SessionStart`, `BeforeTool`, `AfterTool` | Node.js and Git on `PATH` | Privacy covers the listed built-in read/write/replace/shell tools; tool names and hook semantics can change with CLI releases. |
+
+The portable state and verification commands are Node-native:
+`node .agents/scripts/next-spec-id.mjs`, `run-check.mjs`, and
+`check-ship-ready.mjs`. The legacy `.sh` files are optional wrappers, not a
+Windows requirement. Claude's `hs-scout` adapter is generated from the
+canonical `.agents/agents/hs-scout.md`; Codex and Gemini require their own
+manual lightweight-scout setup as described there.
 
 ## Hotswap, two senses
 
@@ -83,17 +100,15 @@ README stays a map, not a copy.
 
 ## What's deliberately not here yet
 
-- **No MCP server.** Custom tools are bundled shell scripts inside each skill
-  (`scripts/run-check.sh`, `scripts/check-ship-ready.sh`) — zero install,
-  works identically on every agent with shell access. An MCP-based
+- **No MCP server.** Custom tools are bundled Node utilities inside
+  `.agents/scripts/` — zero dependency installation beyond Node.js. An MCP-based
   `harness-state` server (typed `get_progress`/`mark_task_done` calls instead
   of parsing markdown) is a reasonable next step, not a first one.
 - **Four hooks wired so far** (`privacyBlock`, `shipGate`, `sessionState`,
   `monitoring` — see `hs.settings.json` and `hooks/README.md`), each a
-  separate `.mjs` script reading its own config key. The scripts +
-  `.harness/state/*.status` files are what make the harness work identically
-  on every agent regardless of hook support; hooks are an additional enforced
-  layer on top.
+  separate `.mjs` script reading its own config key. They enforce only the
+  configured events and matched tools; see the matrix for coverage and trust
+  limitations.
 - **No `hs-debug` skill.** Error-driven retry-then-escalate lives inside
   `hs-build` and `hs-verify` directly, rather than as a separate phase.
 - **`hs-scout` is fully wired for Claude Code only** — `.claude/agents/hs-scout.md`

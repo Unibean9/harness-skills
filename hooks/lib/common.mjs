@@ -4,24 +4,36 @@
 // monitoring.mjs) import so each of them stays a few lines of concern-specific
 // logic instead of re-implementing stdin/JSON/glob handling four times.
 import { existsSync, readFileSync, appendFileSync, mkdirSync } from "node:fs";
-import { dirname, basename, join } from "node:path";
+import { dirname, basename, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const REPO_ROOT = join(__dirname, "..", ".."); // hooks/lib -> hooks -> repo root
 
-export function findSettingsPath() {
-  const cwdCandidate = join(process.cwd(), "hs.settings.json");
-  if (existsSync(cwdCandidate)) return cwdCandidate;
-  // Fallback for testing this hook straight from the harness repo, outside
-  // any installed project -- real installs run with cwd at the project root.
-  return join(REPO_ROOT, "hs.settings.json");
+export function findProjectRoot(cwd = process.cwd()) {
+  let candidate = resolve(cwd);
+  while (true) {
+    if (existsSync(join(candidate, "hs.settings.json")) || existsSync(join(candidate, ".git"))) {
+      return candidate;
+    }
+    const parent = dirname(candidate);
+    if (parent === candidate) return REPO_ROOT;
+    candidate = parent;
+  }
 }
 
-export function loadSettings() {
-  const path = findSettingsPath();
+export function findSettingsPath(call = {}) {
+  return join(findProjectRoot(call.cwd || process.cwd()), "hs.settings.json");
+}
+
+export function loadSettings(call = {}) {
+  const path = findSettingsPath(call);
   if (!existsSync(path)) return {};
   return JSON.parse(readFileSync(path, "utf8"));
+}
+
+export function projectPath(call, ...segments) {
+  return join(findProjectRoot(call?.cwd || process.cwd()), ...segments);
 }
 
 export function readStdinJson() {

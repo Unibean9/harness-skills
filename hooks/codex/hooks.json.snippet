@@ -1,25 +1,47 @@
 {
   "SessionStart": [
     {
+      "matcher": "startup|resume|clear|compact",
       "hooks": [
-        { "type": "command", "command": "node hooks/session-state.mjs" }
+        {
+          "type": "command",
+          "command": "node \"$(git rev-parse --show-toplevel)/hooks/session-state.mjs\"",
+          "commandWindows": "node \"$((git rev-parse --show-toplevel).Trim())\\hooks\\session-state.mjs\""
+        }
       ]
     }
   ],
   "PreToolUse": [
     {
-      "matcher": "shell",
+      "matcher": "Bash|apply_patch",
       "hooks": [
-        { "type": "command", "command": "node hooks/privacy-block.mjs" },
-        { "type": "command", "command": "node hooks/ship-gate.mjs" }
+        {
+          "type": "command",
+          "command": "node \"$(git rev-parse --show-toplevel)/hooks/privacy-block.mjs\"",
+          "commandWindows": "node \"$((git rev-parse --show-toplevel).Trim())\\hooks\\privacy-block.mjs\""
+        }
+      ]
+    },
+    {
+      "matcher": "Bash",
+      "hooks": [
+        {
+          "type": "command",
+          "command": "node \"$(git rev-parse --show-toplevel)/hooks/ship-gate.mjs\"",
+          "commandWindows": "node \"$((git rev-parse --show-toplevel).Trim())\\hooks\\ship-gate.mjs\""
+        }
       ]
     }
   ],
   "PostToolUse": [
     {
-      "matcher": "shell",
+      "matcher": "Bash|apply_patch",
       "hooks": [
-        { "type": "command", "command": "node hooks/monitoring.mjs" }
+        {
+          "type": "command",
+          "command": "node \"$(git rev-parse --show-toplevel)/hooks/monitoring.mjs\"",
+          "commandWindows": "node \"$((git rev-parse --show-toplevel).Trim())\\hooks\\monitoring.mjs\""
+        }
       ]
     }
   ]

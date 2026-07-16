@@ -6,19 +6,18 @@
 // Appends one line per tool call to .harness/state/audit.log, so there's a
 // record of what actually happened, independent of what any agent transcript
 // claims.
-import { loadSettings, readStdinJson, appendAuditLine, nowIso } from "./lib/common.mjs";
+import { loadSettings, projectPath, readStdinJson, appendAuditLine, nowIso } from "./lib/common.mjs";
 
 const LOG_FILE = ".harness/state/audit.log";
 
-const settings = loadSettings();
+const call = await readStdinJson();
+const settings = loadSettings(call);
 const cfg = settings.monitoring || {};
 if (!cfg.enabled) process.exit(0);
-
-const call = await readStdinJson();
 const event = call.hook_event_name || "unknown";
 const tool = call.tool_name || "unknown";
 const ti = call.tool_input || {};
 const detail = ti.command || ti.file_path || ti.path || "";
 
-appendAuditLine(LOG_FILE, `${nowIso()} ${event} ${tool} ${detail}`.trim());
+appendAuditLine(projectPath(call, LOG_FILE), `${nowIso()} ${event} ${tool} ${detail}`.trim());
 process.exit(0);

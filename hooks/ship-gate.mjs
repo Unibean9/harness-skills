@@ -7,7 +7,7 @@
 // setting -- only *which commands trigger the check* is worth exposing
 // in hs.settings.json.
 import { existsSync, readFileSync } from "node:fs";
-import { loadSettings, readStdinJson, block, allow } from "./lib/common.mjs";
+import { loadSettings, projectPath, readStdinJson, block, allow } from "./lib/common.mjs";
 
 const STATUS_FILE = ".harness/state/verify-all.status";
 const REQUIRED = "PASS";
@@ -17,18 +17,18 @@ function extractCommand(call) {
   return ti.command || ti.cmd || "";
 }
 
-const settings = loadSettings();
+const call = await readStdinJson();
+const settings = loadSettings(call);
 const cfg = settings.shipGate || {};
 if (!cfg.enabled) allow();
-
-const call = await readStdinJson();
 const command = extractCommand(call);
 if (!command) allow();
 
 const triggers = cfg.blockCommands || [];
 if (!triggers.some((t) => command.includes(t))) allow();
 
-const actual = existsSync(STATUS_FILE) ? readFileSync(STATUS_FILE, "utf8").trim() : null;
+const statusPath = projectPath(call, STATUS_FILE);
+const actual = existsSync(statusPath) ? readFileSync(statusPath, "utf8").trim() : null;
 
 if (actual !== REQUIRED) {
   block(

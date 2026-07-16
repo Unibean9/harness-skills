@@ -52,7 +52,7 @@ history living only in scattered, overwritten files.
 4. **Create the spec directory.** Get the next ID:
 
    ```bash
-   bash .agents/skills/hs-brainstorm/scripts/next-spec-id.sh
+   node .agents/scripts/next-spec-id.mjs
    ```
 
    Pick a short kebab-case slug for the feature (e.g. `user-auth`), then:

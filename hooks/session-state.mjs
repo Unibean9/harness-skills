@@ -13,7 +13,7 @@
 // before doing anything.
 import { existsSync, readFileSync, writeFileSync, mkdirSync } from "node:fs";
 import { dirname } from "node:path";
-import { loadSettings, readStdinJson } from "./lib/common.mjs";
+import { loadSettings, projectPath, readStdinJson } from "./lib/common.mjs";
 
 const CURRENT_SPEC_FILE = ".harness/state/current-spec";
 const SUMMARY_FILE = ".harness/state/session-summary.md";
@@ -28,14 +28,16 @@ function describeFile(file) {
   return [`- ${file}: last entries`, ...tail.map((l) => `    ${l}`)].join("\n");
 }
 
-const settings = loadSettings();
+const call = await readStdinJson();
+const settings = loadSettings(call);
 const cfg = settings.sessionState || {};
 if (!cfg.enabled) process.exit(0);
 
-await readStdinJson(); // drain stdin; SessionStart payload isn't needed here
+const currentSpecFile = projectPath(call, CURRENT_SPEC_FILE);
+const summaryFile = projectPath(call, SUMMARY_FILE);
 
 let digest;
-if (!existsSync(CURRENT_SPEC_FILE)) {
+if (!existsSync(currentSpecFile)) {
   digest = [
     "# Harness session summary (auto-generated)",
     "",
@@ -43,8 +45,8 @@ if (!existsSync(CURRENT_SPEC_FILE)) {
     "Run hs-brainstorm to start one, or check .harness/specs/INDEX.md for prior specs.",
   ].join("\n");
 } else {
-  const activeSpec = readFileSync(CURRENT_SPEC_FILE, "utf8").trim();
-  const specDir = `.harness/specs/${activeSpec}`;
+  const activeSpec = readFileSync(currentSpecFile, "utf8").trim();
+  const specDir = projectPath(call, ".harness", "specs", activeSpec);
   const sections = [
     `- active spec: ${activeSpec}`,
     describeFile(`${specDir}/spec.md`),
@@ -55,8 +57,8 @@ if (!existsSync(CURRENT_SPEC_FILE)) {
   digest = ["# Harness session summary (auto-generated)", "", ...sections].join("\n");
 }
 
-mkdirSync(dirname(SUMMARY_FILE), { recursive: true });
-writeFileSync(SUMMARY_FILE, digest + "\n");
+mkdirSync(dirname(summaryFile), { recursive: true });
+writeFileSync(summaryFile, digest + "\n");
 
 process.stdout.write(
   JSON.stringify({

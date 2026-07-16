@@ -89,13 +89,12 @@ out to be ambiguous once you're actually implementing it.
 
 ## Hooks, guardrails, and monitoring
 
-Claude Code, Codex CLI, and Gemini CLI all support hooks — a script the harness
-runs automatically before/after a tool call or at session start, not something
-the model has to remember to invoke itself. That's the one truly enforced
-layer. `hs.settings.json` at the repo root is the real config four hooks read:
+Claude Code, Codex CLI, and Gemini CLI can run hooks before/after selected tool
+calls or at session start. When installed, trusted, and matched, hooks execute
+outside the model's discretion; unmatched tools and unconfigured hooks remain
+outside their coverage. `hs.settings.json` at the repo root is the real config four hooks read:
 `privacyBlock` (never expose `.env`-style secrets), `shipGate` (never ship
 without a green verify), `sessionState` (rebuild the session digest above),
-and `monitoring` (append every tool call to `.harness/state/audit.log` as an
-independent record of what actually happened). `hooks/` has the per-agent
-wiring — see `hooks/README.md`. Skills work fully without hooks; hooks just
-remove the chance that a claimed result and an actual result drift apart.
+and `monitoring` (append matched tool calls to `.harness/state/audit.log`).
+`hooks/` has the per-agent wiring and coverage limits — see `hooks/README.md`.
+Skills work fully without hooks; hooks provide additional scoped enforcement.

@@ -33,7 +33,7 @@ you need to know that now, not discover it mid-build and wonder if you caused it
    run it through the bundled script:
 
    ```bash
-   bash .agents/skills/hs-plan/scripts/run-check.sh baseline -- <test-or-build-command>
+   node .agents/scripts/run-check.mjs baseline -- <test-or-build-command>
    ```
 
    This writes `.harness/state/baseline.status` (`PASS`/`FAIL`) and

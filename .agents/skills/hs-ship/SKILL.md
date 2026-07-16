@@ -27,7 +27,7 @@ exceptions for "but the tests are green."
 3. Run the readiness check:
 
    ```bash
-   bash .agents/skills/hs-ship/scripts/check-ship-ready.sh
+   node .agents/scripts/check-ship-ready.mjs
    ```
 
    This fails closed — it checks that `.harness/specs/<active>/progress.md`

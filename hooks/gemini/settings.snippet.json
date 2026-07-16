@@ -3,24 +3,29 @@
     "SessionStart": [
       {
         "hooks": [
-          { "type": "command", "command": "node hooks/session-state.mjs" }
+          { "type": "command", "command": "node \"$(git rev-parse --show-toplevel)/hooks/session-state.mjs\"" }
         ]
       }
     ],
     "BeforeTool": [
       {
+        "matcher": "read_file|write_file|replace|run_shell_command",
+        "hooks": [
+          { "type": "command", "command": "node \"$(git rev-parse --show-toplevel)/hooks/privacy-block.mjs\"" }
+        ]
+      },
+      {
         "matcher": "run_shell_command",
         "hooks": [
-          { "type": "command", "command": "node hooks/privacy-block.mjs" },
-          { "type": "command", "command": "node hooks/ship-gate.mjs" }
+          { "type": "command", "command": "node \"$(git rev-parse --show-toplevel)/hooks/ship-gate.mjs\"" }
         ]
       }
     ],
     "AfterTool": [
       {
-        "matcher": "run_shell_command",
+        "matcher": ".*",
         "hooks": [
-          { "type": "command", "command": "node hooks/monitoring.mjs" }
+          { "type": "command", "command": "node \"$(git rev-parse --show-toplevel)/hooks/monitoring.mjs\"" }
         ]
       }
     ]

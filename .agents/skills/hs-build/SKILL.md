@@ -60,7 +60,7 @@ Then repeat for each task in `.harness/specs/<active>/plan.md`, in order:
 5. **Run this task's verify command** using the bundled script:
 
    ```bash
-   bash .agents/skills/hs-build/scripts/run-check.sh task-<N> -- <verify command from the plan>
+   node .agents/scripts/run-check.mjs task-<N> -- <verify command from the plan>
    ```
 
    If it fails, treat the error output as information, not a verdict on you:

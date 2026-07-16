@@ -39,25 +39,20 @@ one's a library, not a hook, and isn't wired to any event itself.
 
 ## Cross-agent support
 
-Claude Code, Codex CLI, and Gemini CLI have all converged on essentially the
-same hook contract: a lifecycle event fires before/after a tool call (or at
-session start), the payload arrives as JSON on stdin, and the hook allows
-(exit 0) or blocks (exit 2, or an explicit `deny`/`block` decision in JSON)
-with a reason relayed back to the model. Only the wiring differs:
+The hook payload and decision semantics are agent-specific. Merge the matching
+snippet without assuming coverage beyond the listed matcher.
 
-- `claude-code/settings.snippet.json` — merge into `.claude/settings.json`
-- `codex/hooks.json.snippet` — merge into `.codex/hooks.json`
-- `gemini/settings.snippet.json` — merge into `.gemini/settings.json`
+| Agent | Destination | Events and matched tools | Coverage limitation |
+|---|---|---|---|
+| Claude Code | `.claude/settings.json` | `SessionStart`; `PreToolUse` for `Read|Write|Edit|Bash`; `PostToolUse` for `.*` | Ship gate only sees `Bash`; privacy is limited to those four tools. |
+| Codex CLI | `.codex/hooks.json` or `~/.codex/hooks.json` | `SessionStart`; `PreToolUse`/`PostToolUse` for `Bash|apply_patch` | Project hooks require trusted project configuration and reviewed hooks. Unmatched paths are not intercepted. |
+| Gemini CLI | `.gemini/settings.json` or `~/.gemini/settings.json` | `SessionStart`; `BeforeTool` for `read_file|write_file|replace|run_shell_command`; `AfterTool` for `.*` | Matchers depend on current Gemini tool names; ship gate only sees `run_shell_command`. |
 
-Each per-agent folder has a short README noting the detail most likely to
-drift with CLI updates: the exact tool name each agent uses in `matcher`
-(Claude Code: `Bash`/`Read`; Codex: `shell`; Gemini: `run_shell_command`) and
-the exact event names for session-start/after-tool. If a snippet stops firing
-after an agent update, check that first against current docs — the overall
-shape (event -> stdin JSON -> exit code) is the stable part.
-
-**Requires Node.js** on PATH — already true of any machine running Claude
-Code, Codex CLI, or Gemini CLI, so this adds no new dependency.
+All hook commands require **Node.js on `PATH`**. The current Codex and Gemini
+snippets also resolve from `git rev-parse --show-toplevel`, so they require
+**Git on `PATH`**. Review the per-agent README and official vendor hook
+reference after upgrading a CLI; a configured hook is a scoped guardrail, not
+a universal privacy or audit boundary.
 
 ## What's not wired yet
 

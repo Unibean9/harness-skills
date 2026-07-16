@@ -27,9 +27,9 @@ phase for it instead of folding it into `hs-build`.
 3. Run each check through the bundled script, one label per check:
 
    ```bash
-   bash .agents/skills/hs-verify/scripts/run-check.sh verify-tests -- <test command>
-   bash .agents/skills/hs-verify/scripts/run-check.sh verify-lint -- <lint command>
-   bash .agents/skills/hs-verify/scripts/run-check.sh verify-build -- <build command>
+   node .agents/scripts/run-check.mjs verify-tests -- <test command>
+   node .agents/scripts/run-check.mjs verify-lint -- <lint command>
+   node .agents/scripts/run-check.mjs verify-build -- <build command>
    ```
 
    Adjust labels/commands to whatever the project actually has — not every
