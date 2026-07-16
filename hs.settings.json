@@ -1,0 +1,30 @@
+{
+  "privacyBlock": {
+    "enabled": true,
+    "denyList": [
+      ".env",
+      "*.pem",
+      "*.key",
+      "*secret*",
+      "**/credentials.json"
+    ],
+    "allowList": [
+      ".env.example",
+      "docker/.env.example"
+    ]
+  },
+  "shipGate": {
+    "enabled": true,
+    "blockCommands": [
+      "git push",
+      "git commit",
+      "gh pr create"
+    ]
+  },
+  "sessionState": {
+    "enabled": true
+  },
+  "monitoring": {
+    "enabled": true
+  }
+}

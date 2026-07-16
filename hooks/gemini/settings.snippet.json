@@ -1,0 +1,28 @@
+{
+  "hooks": {
+    "SessionStart": [
+      {
+        "hooks": [
+          { "type": "command", "command": "node hooks/session-state.mjs" }
+        ]
+      }
+    ],
+    "BeforeTool": [
+      {
+        "matcher": "run_shell_command",
+        "hooks": [
+          { "type": "command", "command": "node hooks/privacy-block.mjs" },
+          { "type": "command", "command": "node hooks/ship-gate.mjs" }
+        ]
+      }
+    ],
+    "AfterTool": [
+      {
+        "matcher": "run_shell_command",
+        "hooks": [
+          { "type": "command", "command": "node hooks/monitoring.mjs" }
+        ]
+      }
+    ]
+  }
+}

@@ -1,0 +1,26 @@
+{
+  "SessionStart": [
+    {
+      "hooks": [
+        { "type": "command", "command": "node hooks/session-state.mjs" }
+      ]
+    }
+  ],
+  "PreToolUse": [
+    {
+      "matcher": "shell",
+      "hooks": [
+        { "type": "command", "command": "node hooks/privacy-block.mjs" },
+        { "type": "command", "command": "node hooks/ship-gate.mjs" }
+      ]
+    }
+  ],
+  "PostToolUse": [
+    {
+      "matcher": "shell",
+      "hooks": [
+        { "type": "command", "command": "node hooks/monitoring.mjs" }
+      ]
+    }
+  ]
+}
