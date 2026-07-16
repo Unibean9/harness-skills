@@ -3,11 +3,12 @@ import { existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import { spawnSync } from "node:child_process";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
+import { fileURLToPath } from "node:url";
 import test from "node:test";
 import { mkdtempSync } from "node:fs";
 import { selectActiveSpec } from "../../scripts/state.mjs";
 
-const repo = new URL("../..", import.meta.url).pathname.slice(1);
+const repo = fileURLToPath(new URL("../..", import.meta.url));
 const reserve = join(repo, "scripts/next-spec-id.mjs");
 
 test("concurrent reservations receive distinct identities without changing active selection", () => {

@@ -3,8 +3,9 @@ import { mkdtempSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import { spawnSync } from "node:child_process";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
+import { fileURLToPath } from "node:url";
 import test from "node:test";
-const repo = new URL("../..", import.meta.url).pathname.slice(1);
+const repo = fileURLToPath(new URL("../..", import.meta.url));
 test("Node utilities allocate IDs and record check failures without Bash", () => {
   const cwd = mkdtempSync(join(tmpdir(), "harness-portable-")); mkdirSync(join(cwd, ".harness", "specs", "007-test"), { recursive: true });
   const id = spawnSync(process.execPath, [join(repo, "scripts/next-spec-id.mjs"), "test"], { cwd, encoding: "utf8" }); assert.equal(id.stdout.trim(), "008-test");

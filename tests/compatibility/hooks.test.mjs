@@ -4,6 +4,7 @@ import { mkdtempSync, mkdirSync, writeFileSync, readFileSync } from "node:fs";
 import { spawnSync } from "node:child_process";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
+import { fileURLToPath } from "node:url";
 import { isShipCommand } from "../../hooks/lib/common.mjs";
 
 test("ship command classifier handles supported git options and gh PR creation", () => {
@@ -15,7 +16,7 @@ test("privacy hook blocks denied patch paths and malformed payloads", () => {
   const root = mkdtempSync(join(tmpdir(), "harness-hook-"));
   mkdirSync(join(root, ".harness", "state"), { recursive: true });
   writeFileSync(join(root, "hs.settings.json"), JSON.stringify({ privacyBlock: { enabled: true, denyList: [".env"], allowList: [] } }));
-  const hook = new URL("../../hooks/privacy-block.mjs", import.meta.url).pathname.slice(1);
+  const hook = fileURLToPath(new URL("../../hooks/privacy-block.mjs", import.meta.url));
   const run = (command) => spawnSync(process.execPath, [hook], { cwd: root, input: JSON.stringify({ tool_input: { command } }), encoding: "utf8" });
 
   // Codex's real apply_patch payload puts the envelope in tool_input.command.
@@ -38,7 +39,7 @@ test("privacy hook blocks denied patch paths and malformed payloads", () => {
 test("monitoring emits redacted JSON lines", () => {
   const root = mkdtempSync(join(tmpdir(), "harness-audit-"));
   writeFileSync(join(root, "hs.settings.json"), JSON.stringify({ monitoring: { enabled: true } }));
-  const hook = new URL("../../hooks/monitoring.mjs", import.meta.url).pathname.slice(1);
+  const hook = fileURLToPath(new URL("../../hooks/monitoring.mjs", import.meta.url));
   const result = spawnSync(process.execPath, [hook], { cwd: root, input: JSON.stringify({ hook_event_name: "PostToolUse", tool_name: "Bash", tool_input: { command: "curl token=supersecret" } }), encoding: "utf8" });
   assert.equal(result.status, 0);
   const line = JSON.parse(readFileSync(join(root, ".harness", "state", "audit.log"), "utf8"));

@@ -9,7 +9,7 @@ const read = (path) => readFileSync(join(repo, path), "utf8");
 
 test("README publishes the four-agent compatibility contract and portable commands", () => {
   const readme = read("README.md");
-  for (const agent of ["Claude Code", "Codex CLI", "Gemini CLI", "Cursor"]) assert.match(readme, new RegExp(`\\| ${agent} \\|`));
+  for (const agent of ["Claude Code", "Codex CLI", "Gemini CLI", "Cursor"]) assert.match(readme, new RegExp(`\\|\\s*${agent}\\s*\\|`));
   assert.match(readme, /scripts\/next-spec-id\.mjs/);
   assert.match(readme, /Node-native/);
   assert.match(readme, /plugin marketplace add/);
