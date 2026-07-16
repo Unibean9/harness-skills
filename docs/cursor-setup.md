@@ -1,15 +1,43 @@
 # Using harness-skills with Cursor
 
 `.cursor-plugin/plugin.json` at the repo root declares `"skills":
-"./skills/"` for skill discovery. This is the current, honest state of
-Cursor support in this repo — skill discovery only, no guardrail hooks yet.
+"./skills/"` for skill discovery. Cursor has since added its own native
+hooks and subagents system (separate from this repo's `.cursor-plugin/`
+manifest) — this repo's guardrail hooks and `hs-scout`/`hs-reviewer`
+subagents aren't wired for Cursor's version of either yet, but the
+mechanism to do so now exists on Cursor's side. This file reflects that:
+skills ship today, hooks/subagents are documented as a manual next step
+rather than "not available."
 
 ## Install
 
-Point Cursor at this repo using its plugin-install mechanism, referencing
-`.cursor-plugin/plugin.json`. If Cursor's build doesn't auto-discover a
-`skills` manifest field, fall back to reading `skills/*/SKILL.md` directly —
-each skill's frontmatter is plain YAML with no Cursor-specific requirements.
+Cursor has no plugin-marketplace command for installing this repo directly
+today, so sync the skill files by hand:
+
+```bash
+mkdir -p .cursor/skills
+cp -r /path/to/harness-skills/skills/hs-* .cursor/skills/
+```
+
+Then add a short pointer rule so Cursor loads the harness's flow as context
+— don't paste full skill contents into a rule, `.cursor/skills/` already has
+them:
+
+```bash
+mkdir -p .cursor/rules
+cat > .cursor/rules/harness-skills.mdc <<'EOF'
+---
+description: Harness Skills — spec-driven dev flow (hs-brainstorm -> hs-plan -> hs-build -> hs-verify -> hs-review -> hs-ship)
+alwaysApply: true
+---
+Follow AGENTS.md and skills/hs-*/SKILL.md in this repo for any nontrivial
+change: spec first, small verifiable tasks, real verify evidence before
+"done", human approval before shipping.
+EOF
+```
+
+Re-run the `cp` step whenever `skills/hs-*` changes upstream — nothing here
+auto-syncs.
 
 ## Usage
 
@@ -18,31 +46,50 @@ Describe the task; Cursor should match against `skills/*/SKILL.md`'s
 it doesn't trigger on its own, invoke the relevant skill by name the first
 few times.
 
-## Hooks: not wired yet
+## Hooks (native to Cursor, not wired by this repo yet)
 
-The four guardrail hooks (`privacyBlock`, `shipGate`, `sessionState`,
-`monitoring`) are **not available for Cursor in this repo**. The specific
-blocker: `hooks/session-state.mjs` hardcodes Claude Code's JSON output shape
-(`hookSpecificOutput.additionalContext`); pointing Cursor's hook config at it
-unmodified would silently inject nothing rather than fail loudly, which is
-worse than not wiring it at all. Adapting the script to detect Cursor and
-emit its actual expected shape is a reasonable next step, not done here
-without a way to verify the shape against a real Cursor session.
+Cursor has its own first-class hooks system, shared with Cursor CLI:
+`.cursor/hooks.json` (project) or `~/.cursor/hooks.json` (user), with events
+including `sessionStart`/`sessionEnd`, `preToolUse`/`postToolUse`/
+`postToolUseFailure`, `beforeShellExecution`/`afterShellExecution`,
+`beforeReadFile`/`afterFileEdit`, `subagentStart`/`subagentStop`, and `stop`.
+This is a different schema from Claude Code's `hookSpecificOutput` shape, so
+this repo's `hooks/*.mjs` scripts can't be pointed at Cursor's `hooks.json`
+unmodified — `session-state.mjs` in particular hardcodes Claude Code's
+`hookSpecificOutput.additionalContext` output field, which Cursor doesn't
+read. Adapting each script to detect Cursor and emit its expected shape is
+the remaining work, not a missing feature on Cursor's end.
 
-Skills work fully without hooks — this is a missing enforcement layer, not a
-missing workflow.
+Skills work fully without hooks — this is a missing *harness-side*
+enforcement layer, not a missing Cursor capability.
+
+## Subagents (native to Cursor, not wired by this repo yet)
+
+Cursor also has native subagents: Markdown files with YAML frontmatter
+(`name`, `description`, `model`, `readonly`, `is_background`) at
+`.cursor/agents/` (project) or `~/.cursor/agents/` (user), plus three
+built-in agents (`explore`, `bash`, `browser`). Notably, Cursor also reads
+`.claude/agents/` directly — if this repo is installed as a Claude Code
+plugin in the same project, Cursor picks up `agents/hs-scout.md` and
+`agents/hs-reviewer.md` from there without any Cursor-specific file needed.
+Otherwise, create `.cursor/agents/hs-scout.md` and
+`.cursor/agents/hs-reviewer.md` by hand — see `docs/agents.md`'s "Per-agent
+wiring" for each role's responsibilities.
 
 ## How it works
 
 - `.cursor-plugin/plugin.json` — manifest with `skills: "./skills/"`, no
-  `hooks` field (deliberately omitted rather than pointing at something
-  unverified).
+  `hooks` field (this repo doesn't ship a Cursor hooks snippet yet).
 - `skills/<name>/SKILL.md` — same files every other agent reads.
+- `.cursor/agents/*.md` (not shipped by this repo) — where a
+  Cursor-specific `hs-scout`/`hs-reviewer` would live, if `.claude/agents/`
+  isn't already present in the project.
 
 ## Troubleshooting
 
 | Symptom | Check |
 |---|---|
 | Skills not found | Confirm Cursor is reading `.cursor-plugin/plugin.json`'s `skills` field, or fall back to pointing it at `skills/*/SKILL.md` directly. |
-| Expecting hook-based guardrails (privacy block, ship gate) | Not implemented for Cursor yet — see "Hooks: not wired yet" above. The workflow (skills) works; the enforcement layer (hooks) doesn't, for this agent, today. |
+| Expecting hook-based guardrails (privacy block, ship gate) | This repo doesn't ship a Cursor `hooks.json` snippet yet — Cursor's hook mechanism itself works, see "Hooks" above. |
+| Expecting `hs-scout`/`hs-reviewer` to just work | Check whether `.claude/agents/` is present in the project (Cursor reads it directly); otherwise create `.cursor/agents/*.md` by hand per "Subagents" above. |
 | A skill's behavior differs from Claude Code's | It shouldn't — `skills/*/SKILL.md` is the one canonical source every agent reads unmodified. If it does differ, that's a bug worth reporting, not an intentional per-agent variation. |

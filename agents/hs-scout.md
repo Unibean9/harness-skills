@@ -55,22 +55,38 @@ specific question it hands to hs-scout.
 
 ### Per-agent wiring
 
+All four agents below now have a native subagent mechanism — none of them
+require approximating this inline anymore. This repo auto-generates the
+Claude Code definition only; the other three need the equivalent file
+created by hand once, following each agent's own format.
+
 - **Claude Code**: `agents/hs-scout.md` at the repo root (auto-discovered once
   installed as a plugin; regenerate with
   `node scripts/generate-claude-scout.mjs` after editing this section)
   defines this as a real subagent with `model: haiku` and read-only tools.
   Invoke it as you would any subagent.
-- **Codex CLI**: define an equivalent role under `.codex/agents/hs-scout.toml`
-  with a lightweight model set — Codex's subagent config isn't wired
-  automatically by this repo yet; copy the responsibilities above into that
-  file by hand.
-- **Gemini CLI**: no dedicated subagent-definition mechanism as portable as
-  Claude Code's at the time of writing. Approximate this by explicitly asking
-  the agent, inline, to do a quick lightweight research pass before the main
-  work — same responsibilities, without a separate model tier.
-- **Cursor**: same situation as Codex/Gemini — no portable subagent-definition
-  mechanism wired here yet; do the scouting pass inline with the main model.
+- **Codex CLI**: native subagents since Codex CLI ~v0.115.0 — one TOML file
+  per agent at `.codex/agents/hs-scout.toml` (project) or
+  `~/.codex/agents/hs-scout.toml` (personal), with `name`, `description`,
+  `developer_instructions` (the role/responsibilities above), and a
+  lightweight `model` set explicitly since Codex's built-in agent tiers
+  (`default`/`worker`/`explorer`) don't guarantee a cheap model on their own.
+  Codex routes to it from `AGENTS.md`/skill context or direct request; no
+  auto-wiring from this repo yet, so create the file once per project.
+- **Gemini CLI**: native subagents (Markdown + YAML frontmatter, same shape
+  as Claude Code's) at `.gemini/agents/hs-scout.md` (project) or
+  `~/.gemini/agents/hs-scout.md` (user) — frontmatter needs `name`,
+  `description`; the file body is the system prompt (the role above). The
+  main agent routes to it automatically by matching `description`, or invoke
+  explicitly with `@hs-scout`.
+- **Cursor**: native subagents at `.cursor/agents/hs-scout.md` (project) or
+  `~/.cursor/agents/hs-scout.md` (user), same Markdown + YAML frontmatter
+  shape (`name`, `description`, `model`, `readonly: true` fits this role).
+  Cursor also reads `.claude/agents/` directly — if Claude Code's
+  `agents/hs-scout.md` is already present in the repo, Cursor picks it up
+  without a separate copy; only add a `.cursor/agents/` file if you need
+  Cursor-specific overrides.
 
-If no subagent mechanism is available at all, doing the scouting step inline
-with the main model is still strictly better than skipping it — the point is
-the step happening before the phase starts, not which model runs it.
+If a project genuinely can't use any of the above, doing the scouting step
+inline with the main model is still strictly better than skipping it — the
+point is the step happening before the phase starts, not which model runs it.

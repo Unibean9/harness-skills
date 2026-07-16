@@ -6,6 +6,18 @@ root. No files get copied into your project; the plugin loads `skills/`,
 
 ## Install
 
+**Fast path (skills only, no guardrails):**
+
+```
+npx skills add Unibean9/harness-skills -a claude-code
+```
+
+Places the six `hs-*` skills into `.claude/skills/`. It does not wire
+`hooks/hooks.json` or the `hs-scout`/`hs-reviewer` subagents — for those you
+need the plugin install below. Fine for a quick trial of the workflow itself.
+
+**Plugin install (skills + hooks + subagents):**
+
 ```
 /plugin marketplace add Unibean9/harness-skills
 /plugin install harness-skills
