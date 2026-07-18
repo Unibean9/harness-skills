@@ -7,7 +7,7 @@ real evidence before "done," and human control where it matters—without
 forcing every change through the same sequence or runtime.
 
 ```
- BRAINSTORM        PLAN            BUILD          VERIFY          REVIEW          SHIP
+ BRAINSTORM        PLAN          BUILD          VERIFY         REVIEW          SHIP
 ┌──────────┐   ┌──────────┐   ┌──────────┐   ┌──────────┐   ┌──────────┐   ┌──────────┐
 │  Clarify │   │  Approach│   │  Change  │   │ Evidence │   │  Fresh   │   │  Human   │
 │  intent  │   │ + checks │   │ + checks │   │ + limits │   │  review  │   │ control  │
@@ -26,14 +26,14 @@ and explicit user intent. Their exit conditions are handoff criteria, not
 automatic phase transitions. Only external actions such as commit, push, or
 release require explicit human authorization.
 
-| Phase                                          | What it does                                                                         | Use when                                                |
-| ---------------------------------------------- | ------------------------------------------------------------------------------------ | ------------------------------------------------------- |
-| [hs-brainstorm](skills/hs-brainstorm/SKILL.md) | Clarifies a vague ask into proportionate acceptance criteria                         | Outcome or scope is not clear                            |
-| [hs-plan](skills/hs-plan/SKILL.md)             | Chooses a focused approach and useful checks                                         | Work is nontrivial, risky, or needs a plan               |
-| [hs-build](skills/hs-build/SKILL.md)           | Implements a change with incremental feedback                                        | Intent is clear enough to act                            |
-| [hs-verify](skills/hs-verify/SKILL.md)         | Reports relevant automated/manual evidence and limitations                           | Before handoff, review, or external action               |
-| [hs-review](skills/hs-review/SKILL.md)         | Independent, structured review of a change and available evidence                    | When a fresh perspective adds value, especially before high-risk shipping |
-| [hs-ship](skills/hs-ship/SKILL.md)             | Prepares a handoff or external action with human authorization                       | User wants to commit, PR, push, or release               |
+| Phase                                          | What it does                                                      | Use when                                                                  |
+| ---------------------------------------------- | ----------------------------------------------------------------- | ------------------------------------------------------------------------- |
+| [hs-brainstorm](skills/hs-brainstorm/SKILL.md) | Clarifies a vague ask into proportionate acceptance criteria      | Outcome or scope is not clear                                             |
+| [hs-plan](skills/hs-plan/SKILL.md)             | Chooses a focused approach and useful checks                      | Work is nontrivial, risky, or needs a plan                                |
+| [hs-build](skills/hs-build/SKILL.md)           | Implements a change with incremental feedback                     | Intent is clear enough to act                                             |
+| [hs-verify](skills/hs-verify/SKILL.md)         | Reports relevant automated/manual evidence and limitations        | Before handoff, review, or external action                                |
+| [hs-review](skills/hs-review/SKILL.md)         | Independent, structured review of a change and available evidence | When a fresh perspective adds value, especially before high-risk shipping |
+| [hs-ship](skills/hs-ship/SKILL.md)             | Prepares a handoff or external action with human authorization    | User wants to commit, PR, push, or release                                |
 
 Use project state as context, not as a routing lock. A durable spec can help
 with larger work; a small edit may need only build and a focused verification.
@@ -65,20 +65,20 @@ package isn't published to the npm registry yet — install straight from
 GitHub:
 
 ```bash
-npm install --save-dev github:Unibean9/harness-skills
-npm exec -- hs init                    # scaffolds .harness/, copies default hs.settings.json, updates .gitignore
-npm exec -- hs setup --target claude --with-hooks  # opt in to Claude's hook companion
-npm exec -- hs doctor                  # reports what's wired and what's still missing
+npm i -g github:Unibean9/harness-skills
+hs init                    # scaffolds .harness/, copies default hs.settings.json, updates .gitignore
+hs setup --target claude --with-hooks  # opt in to Claude's hook companion
+hs doctor                  # reports what's wired and what's still missing
 ```
 
 This repo supports four agents, split into two tiers of coverage:
 
-| Tier | Agent | What's wired |
-|---|---|---|
-| 1 — Full | Claude Code | skills + subagents + all four hooks |
-| 1 — Full | Codex CLI | skills + subagents + hooks snippet |
-| 2 — Partial | Cursor | skills + subagents + ship-gate/privacy-block hooks; session-state/monitoring NOT wired |
-| 2 — Experimental | Antigravity CLI | skills + subagents (confirmed paths); hooks NOT wired, config path unconfirmed |
+| Tier             | Agent           | What's wired                                                                           |
+| ---------------- | --------------- | -------------------------------------------------------------------------------------- |
+| 1 — Full         | Claude Code     | skills + subagents + all four hooks                                                    |
+| 1 — Full         | Codex CLI       | skills + subagents + hooks snippet                                                     |
+| 2 — Partial      | Cursor          | skills + subagents + ship-gate/privacy-block hooks; session-state/monitoring NOT wired |
+| 2 — Experimental | Antigravity CLI | skills + subagents (confirmed paths); hooks NOT wired, config path unconfirmed         |
 
 `hs setup` accepts `--target claude|codex|cursor|antigravity` and produces
 portable skills plus generated `hs-scout`/`hs-reviewer` subagents. Add
@@ -130,19 +130,19 @@ the definition file for whichever one you're using with a single command,
 from the project root:
 
 ```bash
-npm exec -- hs agents                   # all four targets in one pass
-npm exec -- hs agents --target codex    # just one
+hs agents                   # all four targets in one pass
+hs agents --target codex    # just one
 ```
 
-| Agent       | Where it's written                                              | Format                                                                                                                                  |
-| ----------- | --------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------- |
-| Claude Code | `.claude/agents/hs-scout.md`, `.claude/agents/hs-reviewer.md`   | Markdown + YAML frontmatter                                                                                                              |
-| Codex CLI   | `.codex/agents/hs-scout.toml`, `.codex/agents/hs-reviewer.toml` | TOML — `name`/`description`/`developer_instructions`                                                                                    |
-| Cursor      | `.cursor/agents/hs-scout.md`, `.cursor/agents/hs-reviewer.md`   | Same shape as Claude Code — and Cursor reads `.claude/agents/` directly, so no separate file is needed if that's already in the project |
-| Antigravity CLI | `.agents/agents/hs-scout.md`, `.agents/agents/hs-reviewer.md` | Same Markdown + YAML frontmatter shape as Cursor's — path unconfirmed, see `docs/antigravity-setup.md` |
+| Agent           | Where it's written                                              | Format                                                                                                                                  |
+| --------------- | --------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------- |
+| Claude Code     | `.claude/agents/hs-scout.md`, `.claude/agents/hs-reviewer.md`   | Markdown + YAML frontmatter                                                                                                             |
+| Codex CLI       | `.codex/agents/hs-scout.toml`, `.codex/agents/hs-reviewer.toml` | TOML — `name`/`description`/`developer_instructions`                                                                                    |
+| Cursor          | `.cursor/agents/hs-scout.md`, `.cursor/agents/hs-reviewer.md`   | Same shape as Claude Code — and Cursor reads `.claude/agents/` directly, so no separate file is needed if that's already in the project |
+| Antigravity CLI | `.agents/agents/hs-scout.md`, `.agents/agents/hs-reviewer.md`   | Same Markdown + YAML frontmatter shape as Cursor's — path unconfirmed, see `docs/antigravity-setup.md`                                  |
 
 This repo's own bundled Claude Code copy lives at `agents/hs-scout.md` /
-`agents/hs-reviewer.md` at the repo root (`npm exec -- hs agents --target
+`agents/hs-reviewer.md` at the repo root (`hs agents --target
 claude --out agents` regenerates it after editing `docs/agents.md`). See
 `docs/agents.md` for the source content behind every generated file. No
 subagent mechanism at all on your agent? Do the same work inline instead —
@@ -174,7 +174,7 @@ coverage table and known limits.
 **If you're rolling this out to a team, not just your own project**:
 `monitoring` is enabled by default and writes every matched tool call
 (redacted for secrets, but still command/path detail) to
-`.harness/state/audit.log` — read it with `npm exec -- hs audit`. Tell
+`.harness/state/audit.log` — read it with `hs audit`. Tell
 whoever's using the harness that this logging exists before they start,
 the same way you'd disclose any local dev-tooling telemetry. Turn it off
 in `hs.settings.json` (`"monitoring": {"enabled": false}`) if that's not
@@ -187,9 +187,10 @@ appropriate for the setting.
 Nothing here is fixed law — this is a starting point meant to be adjusted per
 project. But this package gets updated (`npm update`, a new plugin version),
 and an update overwrites whatever it installed — so the question that
-actually matters is *where* you customize, not just *whether* you can:
+actually matters is _where_ you customize, not just _whether_ you can:
 
 **Survives an update** — lives in your project, not in this package:
+
 - **`hs.settings.json`** (copied into your project by `hs init`, then yours)
   turns the four hooks on/off and holds the couple of fields that genuinely
   vary per project (`privacyBlock`'s allow/deny lists, `shipGate.blockCommands`).
@@ -201,6 +202,7 @@ actually matters is *where* you customize, not just *whether* you can:
 
 **Requires forking this package** — these files ship inside it and get
 overwritten on update:
+
 - **`skills/*/SKILL.md`** are plain markdown. Reword them, add
   project-specific failure modes, or collapse phases for a smaller setup —
   just keep each skill's frontmatter `name` matching its directory and give
@@ -225,12 +227,12 @@ guardrail hooks all wired); Cursor and Antigravity CLI are **tier 2** with
 partial/experimental coverage — see each row's last column for exactly what
 is wired and what is missing.
 
-| Agent           | Tier | Instruction / skills                                         | Agent's native hooks                                                         | Agent's native subagents                                           | This repo's wiring                                                                                                                                                                      |
-| --------------- | ---- | ------------------------------------------------------------ | ---------------------------------------------------------------------------- | ------------------------------------------------------------------ | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Claude Code     | 1    | Root `skills/` auto-discovery                                | Yes — `.claude/settings.json` / plugin `hooks.json`                          | Yes — `.claude/agents/*.md`                                        | Full: `hooks/hooks.json` auto-wires on install; `hs agents --target claude` generates `hs-scout`/`hs-reviewer`.                                                                         |
-| Codex CLI       | 1    | `skills/` via `.codex-plugin/plugin.json`                    | Yes, since ~v0.124.0 — `.codex/hooks.json` or `config.toml`                  | Yes, since ~v0.115.0 — `.codex/agents/*.toml`                      | Hooks: merge `hooks/codex/hooks.json.snippet`. Subagents: `hs agents --target codex` generates both TOML files.                                                                         |
-| Cursor          | 2    | `.cursor-plugin/plugin.json` declares `skills: "./skills/"`  | Yes — `.cursor/hooks.json`, own event/payload shape                          | Yes — `.cursor/agents/*.md`; also reads `.claude/agents/` directly | Partial: `ship-gate`/`privacy-block` wired to `beforeShellExecution`/`beforeReadFile` (see `hooks/cursor/hooks.json.snippet`); `session-state`/`monitoring` not yet. Subagents: `hs agents --target cursor` generates both files (or rely on `.claude/agents/` if already present).    |
-| Antigravity CLI | 2    | No native manifest for this repo yet — `npx skills add` only | Expected yes, inherited from Gemini CLI's engine per Google's transition announcement (unconfirmed exact config path) | Expected yes, same inheritance                                    | Hooks not wired — no confirmed config path yet. Subagents: `hs agents --target antigravity` generates both files (see `docs/antigravity-setup.md` for what's confirmed vs. guessed).   |
+| Agent           | Tier | Instruction / skills                                         | Agent's native hooks                                                                                                  | Agent's native subagents                                           | This repo's wiring                                                                                                                                                                                                                                                                  |
+| --------------- | ---- | ------------------------------------------------------------ | --------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------ | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Claude Code     | 1    | Root `skills/` auto-discovery                                | Yes — `.claude/settings.json` / plugin `hooks.json`                                                                   | Yes — `.claude/agents/*.md`                                        | Full: `hooks/hooks.json` auto-wires on install; `hs agents --target claude` generates `hs-scout`/`hs-reviewer`.                                                                                                                                                                     |
+| Codex CLI       | 1    | `skills/` via `.codex-plugin/plugin.json`                    | Yes, since ~v0.124.0 — `.codex/hooks.json` or `config.toml`                                                           | Yes, since ~v0.115.0 — `.codex/agents/*.toml`                      | Hooks: merge `hooks/codex/hooks.json.snippet`. Subagents: `hs agents --target codex` generates both TOML files.                                                                                                                                                                     |
+| Cursor          | 2    | `.cursor-plugin/plugin.json` declares `skills: "./skills/"`  | Yes — `.cursor/hooks.json`, own event/payload shape                                                                   | Yes — `.cursor/agents/*.md`; also reads `.claude/agents/` directly | Partial: `ship-gate`/`privacy-block` wired to `beforeShellExecution`/`beforeReadFile` (see `hooks/cursor/hooks.json.snippet`); `session-state`/`monitoring` not yet. Subagents: `hs agents --target cursor` generates both files (or rely on `.claude/agents/` if already present). |
+| Antigravity CLI | 2    | No native manifest for this repo yet — `npx skills add` only | Expected yes, inherited from Gemini CLI's engine per Google's transition announcement (unconfirmed exact config path) | Expected yes, same inheritance                                     | Hooks not wired — no confirmed config path yet. Subagents: `hs agents --target antigravity` generates both files (see `docs/antigravity-setup.md` for what's confirmed vs. guessed).                                                                                                |
 
 Known per-agent coverage limits where this repo _has_ wired something:
 Claude Code's privacy hook only matches `Read`/`Write`/`Edit`/`Bash`, ship

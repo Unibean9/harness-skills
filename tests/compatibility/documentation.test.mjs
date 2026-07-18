@@ -10,7 +10,7 @@ const read = (path) => readFileSync(join(repo, path), "utf8");
 test("README publishes the four-agent compatibility contract and portable commands", () => {
   const readme = read("README.md");
   for (const agent of ["Claude Code", "Codex CLI", "Antigravity CLI", "Cursor"]) assert.match(readme, new RegExp(`\\|\\s*${agent}\\s*\\|`));
-  assert.match(readme, /npm exec -- hs/);
+  assert.match(readme, /npm i -g github:Unibean9\/harness-skills/);
   assert.match(readme, /zero-dependency Node scripts/);
   assert.match(readme, /plugin marketplace add/);
   assert.match(readme, /privacy is a guardrail, not a complete privacy boundary/);

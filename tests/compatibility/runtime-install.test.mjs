@@ -26,7 +26,9 @@ test("packed runtime installs without network and hs resolves from a nested proj
     assert.ok(existsSync(join(project, "node_modules", "harness-skills", "skills", skill, "SKILL.md")));
   }
   const hs = join(project, "node_modules", "harness-skills", "bin", "hs.mjs");
-  const result = spawnSync(process.execPath, [hs, "state", "reserve", "installed"], { cwd: nested, encoding: "utf8", shell: false });
-  assert.equal(result.status, 0, result.stderr); assert.equal(result.stdout.trim(), "001-installed");
-  assert.ok(existsSync(join(project, ".harness", "specs", "001-installed")));
+  const init = spawnSync(process.execPath, [hs, "init"], { cwd: project, encoding: "utf8", shell: false });
+  assert.equal(init.status, 0, init.stderr);
+  const result = spawnSync(process.execPath, [hs, "status"], { cwd: nested, encoding: "utf8", shell: false });
+  assert.equal(result.status, 0, result.stderr); assert.match(result.stdout, /phase: none/);
+  assert.ok(existsSync(join(project, ".harness", "specs", "INDEX.md")));
 });
