@@ -1,13 +1,10 @@
-# Hooks — the enforced layer
+# Hooks — optional companion enforcement
 
-Every skill in `skills/` tells the agent what to do and gives it a
-script to check its own work. That's *guidance* — the agent can still, in
-principle, ignore the script or misreport its result. A hook removes that
-possibility for the specific case it covers: it's a check the harness runs
+Portable skills guide the agent to use native project tools and report honest
+evidence. A hook is different: the optional companion runtime runs it
 automatically, outside the model's discretion, at a fixed point in the
-tool-call loop. In terms of the harness's five frames, a hook still lives in
-**Tools** — it's just the branch of Tools the *application* invokes, not the
-branch the model chooses to invoke.
+tool-call loop. Hooks are never required for skills; install them only where
+the provider accepts a confirmed adapter and the project wants that policy.
 
 `hs.settings.json` at the repo root is the actual config each hook reads —
 but deliberately minimal: an `enabled` switch per hook, plus only the couple
@@ -27,7 +24,7 @@ own top-level key out of `hs.settings.json`:
 |---|---|---|---|
 | `privacy-block.mjs` | `PreToolUse` | `privacyBlock` | Blocks reading/referencing a path matching `denyList` unless it's also in `allowList` (e.g. blocks `.env`, allows `.env.example`). |
 | `ship-gate.mjs` | `PreToolUse` | `shipGate` | Blocks `git commit`/`git push`/`gh pr create`-style commands (from `blockCommands`) unless a valid, spec-and-worktree-bound attestation exists (see `scripts/attestation.mjs`) — a hand-edited `.harness/state/verify-all.status` string alone is not enough. |
-| `session-state.mjs` | `SessionStart` | `sessionState` | Reads `.harness/state/current-spec` to find the active spec, computes the phase/next-skill answer (`scripts/next-skill.mjs`, same decision tree as `AGENTS.md`'s routing diagram — also runnable standalone as `hs status`), digests `spec.md`/`plan.md`/`progress.md`/`implement-notes.md`, and writes/injects both — so a fresh session doesn't miss what a prior one already established or have to re-derive which skill comes next. |
+| `session-state.mjs` | `SessionStart` | `sessionState` | Reads `.harness/state/current-spec` to find the active spec, computes the phase/next-skill answer (`scripts/next-skill.mjs`, mirroring the phase skills' routing logic — also runnable standalone as `hs status`), digests `spec.md`/`plan.md`/`progress.md`/`implement-notes.md`, and writes/injects both — so a fresh session doesn't miss what a prior one already established or have to re-derive which skill comes next. |
 | `monitoring.mjs` | `PreToolUse` / `PostToolUse` | `monitoring` | Appends one line per tool call to `.harness/state/audit.log`, tagged with a fixed `category` (`ship`/`shell`/`file-write`/`file-read`/`other`) — an audit trail independent of what any transcript claims happened. Also trims the log to `monitoring.retention` (`maxLines`, default 5000; `maxAgeDays`, default 30) so it stays a bounded operational record instead of growing forever. Read it with `npm exec -- hs audit` (category counts, time range, last N entries) — a log nobody reads isn't evidence, so this is the intended consumer, not an afterthought. |
 
 They're separate files on purpose: turning one off, changing its trigger

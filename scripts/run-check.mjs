@@ -5,7 +5,6 @@ import { dirname, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import { resolveSpecIdentity, specRuntimePaths } from "./paths.mjs";
 import { fingerprintWorktree } from "./worktree.mjs";
-import { recordTaskProgress } from "./bookkeeping.mjs";
 
 const labelPattern = /^[a-z0-9]+(?:-[a-z0-9]+)*$/;
 
@@ -43,22 +42,11 @@ export function runCheck(root = process.cwd(), explicitSpec, label, argv) {
   writeFileSync(`${base}.log`, `${result.stdout || ""}${result.stderr || ""}`);
   writeFileSync(`${base}.json`, `${JSON.stringify(evidence)}\n`);
   writeFileSync(`${base}.status`, pass ? "PASS\n" : "FAIL\n");
-  try {
-    evidence.bookkeeping = recordTaskProgress(root, spec, label, argv, pass);
-  } catch {
-    // Bookkeeping is a convenience, not a source of truth -- a spec/plan
-    // shape it can't parse (or no plan.md/spec.md yet) must never fail the
-    // check itself, only skip the auto-append.
-    evidence.bookkeeping = { recorded: false, reason: "bookkeeping lookup failed" };
-  }
   return evidence;
 }
 
-// A trivial change (typo, config value) is exempt from the full
-// spec/plan/build cycle per AGENTS.md, but still needs a verified,
-// worktree-bound check before it ships -- one that doesn't require an
-// active spec to exist, since the whole point is skipping that apparatus.
-// Evidence lives under .harness/state/trivial/ instead of a per-spec dir.
+// The companion runtime can record evidence for a small change without an
+// active spec. Evidence lives under .harness/state/trivial/.
 export function runTrivialCheck(root = process.cwd(), label, argv) {
   if (!labelPattern.test(label || "")) throw new Error("label must be a kebab-case string");
   if (!Array.isArray(argv) || !argv.length) throw new Error("a command to run is required after --");

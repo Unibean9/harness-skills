@@ -25,8 +25,8 @@ export function evaluateReadiness(root = process.cwd()) {
   // would make it unreachable in every real repo after its first spec ships.
   // A trivial change is orthogonal to whatever bigger spec is in progress or
   // already shipped -- its own worktree-bound attestation is sufficient on
-  // its own, same as AGENTS.md's exemption promises ("no spec, no plan,
-  // nothing else required").
+  // its own, so an optional ship policy can support a small change without
+  // requiring a durable spec or plan.
   if (validateTrivialAttestation(root)) return { ready: true, errors: [], trivial: true };
 
   const current = join(root, ".harness", "state", "current-spec");

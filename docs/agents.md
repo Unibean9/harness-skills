@@ -86,7 +86,7 @@ npm exec -- hs agents                        # all four targets in one pass
   `developer_instructions` (the role/responsibilities above), and a
   lightweight `model` set explicitly since Codex's built-in agent tiers
   (`default`/`worker`/`explorer`) don't guarantee a cheap model on their own.
-  Codex routes to it from `AGENTS.md`/skill context or direct request.
+  Codex routes to it from installed skill context or a direct request.
 - **Cursor** (tier 2 — subagents work, hooks don't): native subagents at
   `.cursor/agents/hs-scout.md`, Markdown + YAML frontmatter (`name`,
   `description`, `model`, `readonly: true` fits this role). Cursor also reads
@@ -146,7 +146,7 @@ pass's assumptions, not a cheaper one.
 
 ### When to use it
 
-After `hs-verify` produces a valid attestation (the change works) and before
+After `hs-verify` has relevant verification evidence (the change works) and before
 `hs-ship` (the change gets published) — see `skills/hs-review/SKILL.md`. Hand
 it the diff against the spec's baseline and the spec/plan files for context;
 nothing more.

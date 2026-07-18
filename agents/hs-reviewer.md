@@ -50,7 +50,7 @@ pass's assumptions, not a cheaper one.
 
 ### When to use it
 
-After `hs-verify` produces a valid attestation (the change works) and before
+After `hs-verify` has relevant verification evidence (the change works) and before
 `hs-ship` (the change gets published) — see `skills/hs-review/SKILL.md`. Hand
 it the diff against the spec's baseline and the spec/plan files for context;
 nothing more.

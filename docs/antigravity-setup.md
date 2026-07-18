@@ -12,9 +12,9 @@ Multiple independent sources agree the project-level convention is a
 `.antigravity/` directory:
 
 - Skills: `.agents/skills/<name>/SKILL.md`
-- Project instructions: `.agents/agents.md` (root `AGENTS.md` is also read
-  natively since Antigravity CLI v1.20.3, March 2026 — this repo already has
-  one)
+- Project instructions: `.agents/agents.md`
+- Installed skills are read natively since Antigravity CLI v1.20.3 (March
+  2026)
 - Global (user-level) skills fall back to `~/.gemini/config/skills/` — the
   one location recognized across AGY, AGY CLI, and AGY IDE
 - Plugin install: `agy plugin install <url-or-path>`, landing at
@@ -53,7 +53,7 @@ npm exec -- hs agents --target antigravity   # writes .agents/agents/hs-scout.md
 
 **Native plugin:** `agy plugin install <this-repo-url-or-local-path>` should
 work directly, since Antigravity's plugin/skill discovery already looks for
-`skills/` and reads root `AGENTS.md` — this repo ships both. Not yet
+`skills/` and reads installed skill instructions. Not yet
 independently verified against a real Antigravity CLI install; report back if
 you try it.
 

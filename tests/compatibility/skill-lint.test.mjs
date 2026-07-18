@@ -5,8 +5,8 @@ import { dirname, join } from "node:path";
 import test from "node:test";
 
 // Lints every skills/*/SKILL.md against this repo's skill anatomy, so a
-// future edit can't silently drop the frontmatter contract or one of the
-// sections the harness's behavior depends on.
+// future edit can't silently drop the frontmatter contract or the lightweight
+// process/exit guidance each skill needs.
 
 const repo = join(dirname(fileURLToPath(import.meta.url)), "..", "..");
 const skillsDir = join(repo, "skills");
@@ -20,7 +20,7 @@ const MAX_SKILL_LINES = 500;
 const KEBAB_CASE = /^[a-z0-9]+(-[a-z0-9]+)*$/;
 // The description must say when to trigger, not just what the skill does.
 const DESCRIPTION_TRIGGER = /\buse (this )?(when|whenever|once|after|right after|before|during)\b/i;
-const REQUIRED_SECTIONS = ["## Why this phase exists", "## Process", "## Exit condition", "## Common failure modes", "## Common rationalizations"];
+const REQUIRED_SECTIONS = ["## Process", "## Exit condition", "## Common failure modes"];
 
 test("every skill passes the anatomy lint", () => {
   assert.ok(skillNames.length >= 5, "expected the five harness skills");

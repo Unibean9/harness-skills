@@ -4,7 +4,7 @@
   "private": true,
   "engines": { "node": ">=22" },
   "bin": { "hs": "bin/hs.mjs" },
-  "files": ["bin", "scripts", "skills", "hooks", "agents", "docs", "AGENTS.md", "README.md", "hs.settings.json"],
+  "files": ["bin", "scripts", "skills", "hooks", "agents", "docs", "README.md", "hs.settings.json"],
   "scripts": {
     "test": "node --test tests/compatibility/*.test.mjs",
     "validate:skills": "node scripts/validate-skills.mjs",

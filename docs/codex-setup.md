@@ -10,7 +10,7 @@ Codex from trying to auto-load Claude Code's `hooks/hooks.json`.
 **One command (full standard structure — skills + subagents + hooks):**
 
 ```bash
-npm exec -- hs setup --target codex
+npm exec -- hs setup --target codex --with-hooks
 ```
 
 Writes `.codex/skills/`, `.codex/agents/hs-scout.toml`/`hs-reviewer.toml`,
@@ -32,7 +32,7 @@ codex plugin marketplace add Unibean9/harness-skills
 This reads `.codex-plugin/plugin.json` directly off the repo — same manifest
 the fast path above targets, just installed as a real plugin instead of
 copied files. Older Codex CLI versions don't have `plugin marketplace add`;
-if yours doesn't, `AGENTS.md` + `skills/` still work as long as this repo is
+if yours doesn't, the installed `skills/` still work as long as this repo is
 the working directory or a parent context Codex reads instructions from — no
 plugin mechanism is required for the skills themselves to be readable and
 usable.

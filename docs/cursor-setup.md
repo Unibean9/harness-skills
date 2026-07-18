@@ -12,7 +12,7 @@ yet (see "Hooks" below for exactly what's covered and what isn't).
 **One command (skills + subagents + pointer rule + partial hooks):**
 
 ```bash
-npm exec -- hs setup --target cursor
+npm exec -- hs setup --target cursor --with-hooks
 ```
 
 Writes `.cursor/skills/`, `.cursor/agents/hs-scout.md`/`hs-reviewer.md`,
@@ -40,9 +40,9 @@ cat > .cursor/rules/harness-skills.mdc <<'EOF'
 description: Harness Skills — spec-driven dev flow (hs-brainstorm -> hs-plan -> hs-build -> hs-verify -> hs-review -> hs-ship)
 alwaysApply: true
 ---
-Follow AGENTS.md and skills/hs-*/SKILL.md in this repo for any nontrivial
-change: spec first, small verifiable tasks, real verify evidence before
-"done", human approval before shipping.
+Use the installed skills/hs-*/SKILL.md as proportionate guidance for any
+nontrivial change: clarify intent, choose useful checks, report evidence and
+limits honestly, and get human approval before external actions.
 EOF
 ```
 
@@ -124,7 +124,7 @@ for each role's responsibilities.
 | Symptom | Check |
 |---|---|
 | Skills not found | Confirm Cursor is reading `.cursor-plugin/plugin.json`'s `skills` field, or fall back to pointing it at `skills/*/SKILL.md` directly. |
-| Ship-gate/privacy-block don't fire | Confirm `.cursor/hooks.json` exists and Cursor picked it up (re-run `npm exec -- hs setup --target cursor` if it predates this wiring); on Windows, confirm the `$CURSOR_PROJECT_DIR`-based command string actually resolves in your shell — that path is unconfirmed. |
+| Ship-gate/privacy-block don't fire | Confirm `.cursor/hooks.json` exists and Cursor picked it up (re-run `npm exec -- hs setup --target cursor --with-hooks` if it predates this wiring); on Windows, confirm the `$CURSOR_PROJECT_DIR`-based command string actually resolves in your shell — that path is unconfirmed. |
 | session-state/monitoring don't fire | Expected — not wired for Cursor yet, see "Hooks" above. |
 | Expecting `hs-scout`/`hs-reviewer` to just work | Check whether `.claude/agents/` is present in the project (Cursor reads it directly); otherwise run `npm exec -- hs agents --target cursor` per "Subagents" above. |
 | A skill's behavior differs from Claude Code's | It shouldn't — `skills/*/SKILL.md` is the one canonical source every agent reads unmodified. If it does differ, that's a bug worth reporting, not an intentional per-agent variation. |

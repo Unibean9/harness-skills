@@ -9,7 +9,7 @@
 // agent entirely) doesn't have to re-read and re-derive where things stand.
 // On Claude Code, also injects the digest directly into the new session via
 // additionalContext; on agents without that field, the digest file itself is
-// still there because AGENTS.md already instructs skills to read .harness/
+// still there because the phase skills already instruct agents to read .harness/
 // before doing anything.
 import { existsSync, readFileSync, writeFileSync, mkdirSync } from "node:fs";
 import { dirname } from "node:path";
@@ -39,7 +39,7 @@ const summaryFile = projectPath(call, SUMMARY_FILE);
 
 // Computed once, deterministically, so a fresh session doesn't have to infer
 // "which skill comes next" from spec.md/plan.md/progress.md prose each time
-// -- it's the exact same decision tree AGENTS.md describes, just pre-run.
+// -- it's the same decision tree the phase skills describe, just pre-run.
 let next;
 try {
   next = computeNextSkill(projectPath(call));
@@ -48,7 +48,7 @@ try {
 }
 const nextSkillLine = next
   ? `**Next: \`${next.nextSkill}\`** (phase: ${next.phase} — ${next.reason})`
-  : "**Next: unable to determine — read `.harness/` and `AGENTS.md`'s routing tree manually.**";
+  : "**Next: unable to determine — read `.harness/` and the applicable phase skill manually.**";
 
 let digest;
 if (!existsSync(currentSpecFile)) {

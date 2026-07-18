@@ -6,7 +6,6 @@ import { existsSync } from "node:fs";
 
 const root = dirname(dirname(fileURLToPath(import.meta.url)));
 const commands = {
-  state: "state.mjs",
   check: "run-check.mjs",
   attest: "attestation.mjs",
   readiness: "check-ship-ready.mjs",
@@ -31,7 +30,7 @@ function projectRoot(start) {
   }
 }
 if (!command || !(command in commands)) {
-  console.error("usage: hs <state|check|attest|readiness|status|audit|init|setup|doctor|agents> ...");
+  console.error("usage: hs <check|attest|readiness|status|audit|init|setup|doctor|agents> ...");
   process.exitCode = 2;
 } else {
   const cwd = runsInCwd.has(command) ? process.cwd() : projectRoot(process.cwd());

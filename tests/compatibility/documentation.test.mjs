@@ -11,7 +11,7 @@ test("README publishes the four-agent compatibility contract and portable comman
   const readme = read("README.md");
   for (const agent of ["Claude Code", "Codex CLI", "Antigravity CLI", "Cursor"]) assert.match(readme, new RegExp(`\\|\\s*${agent}\\s*\\|`));
   assert.match(readme, /npm exec -- hs/);
-  assert.match(readme, /Node-native/);
+  assert.match(readme, /zero-dependency Node scripts/);
   assert.match(readme, /plugin marketplace add/);
   assert.match(readme, /privacy is a guardrail, not a complete privacy boundary/);
 });
@@ -25,7 +25,7 @@ test("hook documentation agrees with shipped adapter event and matcher names", (
   assert.match(codex, /Bash\|apply_patch/);
 });
 
-test("all agent entry points delegate to the canonical project instructions", () => {
-  assert.match(read("CLAUDE.md"), /AGENTS\.md/);
-  assert.match(read("AGENTS.md"), /Skills work fully\s+without hooks/);
+test("the Claude entry point delegates workflow ownership to installed skills", () => {
+  assert.match(read("CLAUDE.md"), /applicable `hs-\*` skill/);
+  assert.match(read("README.md"), /each phase's own\s+detail and exit condition live in\s+its `SKILL\.md`/);
 });

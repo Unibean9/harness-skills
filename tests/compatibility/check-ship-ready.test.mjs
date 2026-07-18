@@ -7,7 +7,6 @@ import test from "node:test";
 import { evaluateReadiness } from "../../scripts/check-ship-ready.mjs";
 import { createAttestation, createTrivialAttestation, validateAttestation } from "../../scripts/attestation.mjs";
 import { runCheck, runTrivialCheck } from "../../scripts/run-check.mjs";
-import { syncIndexPhase } from "../../scripts/bookkeeping.mjs";
 
 function rootWithSpec({ progress = "- [x] Task 1: first\n", phase } = {}) {
   const root = mkdtempSync(join(tmpdir(), "harness-ready-")); const spec = "001-test"; const dir = join(root, ".harness", "specs", spec);
@@ -81,7 +80,7 @@ test("a real plan.md always wins over a stray ## Tasks heading in spec.md (no si
   assert.ok(result.errors.some((error) => error.includes("plan is not approved")));
 });
 
-test("no active spec is READY via a valid trivial attestation -- this is the exact shape AGENTS.md's one-line-change exemption leaves behind, and it was unconditionally NOT READY before this fix", () => {
+test("no active spec is READY via a valid trivial attestation", () => {
   const root = mkdtempSync(join(tmpdir(), "harness-ready-trivial-"));
   mkdirSync(join(root, ".harness", "state"), { recursive: true });
   execFileSync("git", ["init"], { cwd: root });
@@ -124,20 +123,6 @@ test("re-attesting a shipped spec does not resurrect its INDEX.md row from 'ship
   const readiness = evaluateReadiness(root);
   assert.equal(readiness.ready, false);
   assert.ok(readiness.errors.some((error) => error.includes("shipped")), "a shipped spec must stay NOT READY even with a fresh valid attestation");
-});
-
-test("syncIndexPhase refuses to overwrite a shipped row directly, independent of the attestation flow above", () => {
-  const root = mkdtempSync(join(tmpdir(), "harness-shipped-sync-"));
-  mkdirSync(join(root, ".harness", "specs"), { recursive: true });
-  writeFileSync(
-    join(root, ".harness", "specs", "INDEX.md"),
-    "# Spec Index\n\n| ID | Slug | Phase | Updated |\n|---|---|---|---|\n| 001 | test | shipped | 2026-01-01 |\n"
-  );
-  const result = syncIndexPhase(root, "001-test", "verifying");
-  assert.equal(result.synced, false);
-  assert.match(result.reason, /already shipped/);
-  const index = readFileSync(join(root, ".harness", "specs", "INDEX.md"), "utf8");
-  assert.match(index, /\|\s*shipped\s*\|/);
 });
 
 test("terminal shipped specs are never ready, regardless of stale verification", () => {

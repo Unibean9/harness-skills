@@ -96,7 +96,7 @@ test("manual checks stay explicit and combine with machine checks in one attesta
   assert.equal(validateAttestation(root, "001-test"), true);
 });
 
-test("trivial attestation works without any active spec -- the AGENTS.md one-line-change exemption had no path to a real attestation before this", () => {
+test("trivial attestation works without any active spec", () => {
   const root = initSpecRoot();
   // Deliberately no active spec, no plan, nothing -- initSpecRoot() sets one
   // up, but trivial mode must work even if we ignore all of it.
@@ -154,14 +154,14 @@ test("a missing/unparseable createdAt is treated as invalid, not as 'never expir
   assert.match(explainAttestationValidity(root, "001-test"), /missing or unparseable createdAt/);
 });
 
-test("describeCollectionError gives trivial-appropriate rerun instructions, not a spec-mode 'rerun hs-verify' that doesn't apply", () => {
+test("describeCollectionError gives trivial-appropriate helper rerun instructions", () => {
   const root = initSpecRoot();
   runTrivialCheck(root, "verify-tests", [process.execPath, "-e", "process.exit(0)"]);
   createTrivialAttestation(root);
   writeFileSync(join(root, "a.txt"), "changed");
   const reason = explainTrivialAttestationValidity(root);
-  assert.match(reason, /rerun hs check --trivial/);
-  assert.doesNotMatch(reason, /hs-verify/);
+  assert.match(reason, /run-check\.mjs.*--trivial/);
+  assert.doesNotMatch(reason, /required verification commands/);
 });
 
 test("trivial and spec-bound attestations are independent -- one existing doesn't fake-satisfy the other", () => {

@@ -1,9 +1,7 @@
 #!/usr/bin/env node
-// Computes "which skill comes next" from disk state alone -- the exact
-// decision tree AGENTS.md describes in prose ("route from state, not
-// memory"). A model still has to read this correctly every session; this
-// module makes the read deterministic instead of leaving it to inference
-// over spec.md/plan.md/progress.md each time.
+// Computes a suggested next skill from companion disk state. A model still
+// needs to judge task size and user intent; this only makes existing durable
+// spec/plan/progress evidence easy to inspect at session start.
 import { existsSync, readFileSync } from "node:fs";
 import { join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
@@ -38,12 +36,8 @@ export function computeNextSkill(root = process.cwd()) {
     return { phase: "none", nextSkill: "hs-brainstorm", reason: "no active spec selected" };
   }
 
-  // A shipped spec is terminal -- readiness/AGENTS.md's own routing tree
-  // both treat it as "start a new feature," not as still being worked on.
-  // Without this check, computeNextSkill kept reporting whatever phase the
-  // (now-frozen) disk state implied forever, disagreeing with `hs readiness`
-  // the moment a spec shipped -- exactly the mismatch AGENTS.md now says to
-  // treat as a bug.
+  // A shipped spec is terminal for the companion's suggested route: offer a
+  // new brainstorm instead of presenting frozen historical state as active.
   if (indexPhase(root, activeSpec) === "shipped") {
     return { phase: "none", nextSkill: "hs-brainstorm", reason: "active spec already shipped -- start a new one", activeSpec };
   }

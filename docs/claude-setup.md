@@ -9,7 +9,7 @@ root. No files get copied into your project; the plugin loads `skills/`,
 **One command (full standard structure — skills + subagents + hooks):**
 
 ```bash
-npm exec -- hs setup --target claude
+npm exec -- hs setup --target claude --with-hooks
 ```
 
 Writes `.claude/skills/`, `.claude/agents/hs-scout.md`/`hs-reviewer.md`,
@@ -55,7 +55,7 @@ Start a session in a project where the plugin is installed and describe what
 you want. Claude Code should reach for `hs-brainstorm` on its own from the
 skill's `description` frontmatter; if it doesn't the first few times, invoke
 it explicitly (`Use the hs-brainstorm skill`) until the triggering is proven
-out. From there the five/six-phase flow in `AGENTS.md` takes over.
+out. From there the installed phase skills take over.
 
 ## How it works
 

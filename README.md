@@ -1,17 +1,16 @@
 # harness-skills
 
-**A small, portable spec-driven harness for coding agents.**
+**A small, portable quality harness for coding agents.**
 
-Skills encode the workflow senior engineers actually follow — spec before
-code, small verifiable steps, real evidence before "done," a human in the
-loop where it matters — packaged so an agent follows it consistently
-regardless of which model or CLI is doing the work.
+Skills encode useful engineering habits—clear intent, proportionate planning,
+real evidence before "done," and human control where it matters—without
+forcing every change through the same sequence or runtime.
 
 ```
  BRAINSTORM        PLAN            BUILD          VERIFY          REVIEW          SHIP
 ┌──────────┐   ┌──────────┐   ┌──────────┐   ┌──────────┐   ┌──────────┐   ┌──────────┐
-│   Idea   │──▶│  Spec +  │──▶│  Task-   │──▶│  Whole-  │──▶│  2nd     │──▶│  Human   │
-│  Refine  │   │  Tasks   │   │ by-task  │   │  suite   │   │  opinion │   │  gate    │
+│  Clarify │   │  Approach│   │  Change  │   │ Evidence │   │  Fresh   │   │  Human   │
+│  intent  │   │ + checks │   │ + checks │   │ + limits │   │  review  │   │ control  │
 └──────────┘   └──────────┘   └──────────┘   └──────────┘   └──────────┘   └──────────┘
  hs-brainstorm   hs-plan        hs-build       hs-verify      hs-review       hs-ship
                                                                 (advisory)
@@ -19,55 +18,56 @@ regardless of which model or CLI is doing the work.
 
 ---
 
-## Phases
+## Skills
 
-Six skills, one per phase, each with an exit condition. `hs-brainstorm` and
-`hs-plan` gate on explicit human approval; `hs-build` verifies task-by-task;
-`hs-verify` is the whole-suite sensor — a versioned per-spec check manifest
-and worktree-bound evidence make "done" a fact
-instead of an opinion; `hs-review` gets an independent second opinion on the
-diff (correctness/security/performance/quality/tests) and is advisory —
-`hs-ship` doesn't require it to have run; `hs-ship` is the last gate and
-never auto-commits or auto-pushes.
+The six skills are a menu of complementary practices, not a mandatory state
+machine. Select, combine, skip, or revisit them according to task size, risk,
+and explicit user intent. Their exit conditions are handoff criteria, not
+automatic phase transitions. Only external actions such as commit, push, or
+release require explicit human authorization.
 
 | Phase                                          | What it does                                                                         | Use when                                                |
 | ---------------------------------------------- | ------------------------------------------------------------------------------------ | ------------------------------------------------------- |
-| [hs-brainstorm](skills/hs-brainstorm/SKILL.md) | Turns a vague ask into an approved, filed spec                                       | "what to build" isn't fully nailed down yet             |
-| [hs-plan](skills/hs-plan/SKILL.md)             | Breaks an approved spec into small, ordered tasks, each with its own verify command  | Spec is approved, no code written yet                   |
-| [hs-build](skills/hs-build/SKILL.md)           | Implements one task at a time, verifying each before moving on                       | Plan is approved, time to write code                    |
-| [hs-verify](skills/hs-verify/SKILL.md)         | Runs the full test/lint/build suite as one pass, records a pass/fail verdict on disk | All tasks done, need a real answer to "is this working" |
-| [hs-review](skills/hs-review/SKILL.md)         | Independent, structured review of the verified diff                                  | After a valid `hs-verify` attestation, before shipping  |
-| [hs-ship](skills/hs-ship/SKILL.md)             | Final readiness checks, then commit/PR/push — only with explicit human confirmation  | Every task checked off, user wants to ship              |
+| [hs-brainstorm](skills/hs-brainstorm/SKILL.md) | Clarifies a vague ask into proportionate acceptance criteria                         | Outcome or scope is not clear                            |
+| [hs-plan](skills/hs-plan/SKILL.md)             | Chooses a focused approach and useful checks                                         | Work is nontrivial, risky, or needs a plan               |
+| [hs-build](skills/hs-build/SKILL.md)           | Implements a change with incremental feedback                                        | Intent is clear enough to act                            |
+| [hs-verify](skills/hs-verify/SKILL.md)         | Reports relevant automated/manual evidence and limitations                           | Before handoff, review, or external action               |
+| [hs-review](skills/hs-review/SKILL.md)         | Independent, structured review of a change and available evidence                    | When a fresh perspective adds value, especially before high-risk shipping |
+| [hs-ship](skills/hs-ship/SKILL.md)             | Prepares a handoff or external action with human authorization                       | User wants to commit, PR, push, or release               |
 
-Route from state, not memory — see `AGENTS.md` for the full decision tree
-(`.harness/` missing → `hs-brainstorm`; spec approved but no plan →
-`hs-plan`; and so on). A trivial one-line change (typo, config value) is
-exempt from the full flow but still gets an `hs-verify` pass before it
-ships. This README stays a map — the phase's own detail lives in its
-`SKILL.md`, and the full flow lives in `AGENTS.md`.
+Use project state as context, not as a routing lock. A durable spec can help
+with larger work; a small edit may need only build and a focused verification.
+This README stays a map; each phase's own detail and exit condition live in
+its `SKILL.md`.
 
 ---
 
 ## Install
 
-**Fastest path — any agent, one command.** [vercel-labs/skills](https://github.com/vercel-labs/skills)
-copies/symlinks `skills/hs-*/SKILL.md` into whichever agents it finds on your
-machine:
+**Portable path — any agent, one command.** [vercel-labs/skills](https://github.com/vercel-labs/skills)
+copies/symlinks each complete `skills/hs-*/` directory, including its
+references and any deliberately small phase-local helper, into the selected agent:
 
 ```bash
 npx skills add Unibean9/harness-skills --list   # preview the 6 skills first
 npx skills add Unibean9/harness-skills          # install, prompts for which agents
+npx skills add Unibean9/harness-skills --skill '*' -a codex -y  # install all for Codex
 ```
 
-Skills-only installs the instructions, not the executable runtime. In every
-project that uses the workflow, also install this package locally so the
-skills can run `npm exec -- hs` from any working directory. This package
-isn't published to the npm registry yet — install straight from GitHub:
+Each skill owns lightweight guidance, not a rigid runtime workflow. Agents use
+the target project's native tools directly; `hs-verify` alone includes an
+optional worktree-fingerprint helper when exact evidence linkage is useful.
+The portable path needs no package-level `hs` runtime.
+
+**Enhanced integration — optional.** Install the package only when you want
+the optional `hs` companion CLI, generated subagents, or agent-native hook wiring. This
+package isn't published to the npm registry yet — install straight from
+GitHub:
 
 ```bash
 npm install --save-dev github:Unibean9/harness-skills
 npm exec -- hs init                    # scaffolds .harness/, copies default hs.settings.json, updates .gitignore
-npm exec -- hs setup --target claude   # writes the full standard structure for your agent
+npm exec -- hs setup --target claude --with-hooks  # opt in to Claude's hook companion
 npm exec -- hs doctor                  # reports what's wired and what's still missing
 ```
 
@@ -81,9 +81,9 @@ This repo supports four agents, split into two tiers of coverage:
 | 2 — Experimental | Antigravity CLI | skills + subagents (confirmed paths); hooks NOT wired, config path unconfirmed |
 
 `hs setup` accepts `--target claude|codex|cursor|antigravity` and produces
-that agent's complete self-contained convention in one pass — skills,
-generated `hs-scout`/`hs-reviewer` subagents, and hook wiring where the
-agent's hook schema is supported (Claude: `.claude/settings.json`; Codex:
+portable skills plus generated `hs-scout`/`hs-reviewer` subagents. Add
+`--with-hooks` only when the user opts into the companion enforcement plugin
+and the target has a confirmed adapter (Claude: `.claude/settings.json`; Codex:
 `.codex/hooks.json`; Cursor: `.cursor/hooks.json`, wiring `ship-gate`/
 `privacy-block` only — `session-state`/`monitoring` aren't yet; Antigravity:
 skills + subagents only, with an honest note about why hooks aren't wired).
@@ -116,8 +116,8 @@ add ./` from the repo root, no build step.
 ## Subagents
 
 Two narrow jobs are worth delegating to a separate subagent rather than
-doing inline with the main model — see `AGENTS.md` and `docs/agents.md` for
-both roles and per-agent wiring:
+doing inline with the main model — see `docs/agents.md` for both roles and
+per-agent wiring:
 
 | Subagent                             | Role                                                                                              | Use when                                                                               |
 | ------------------------------------ | ------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------- |
@@ -153,9 +153,9 @@ fresh, deliberate re-read rather than skipping it.
 
 ## How it's enforced
 
-Every skill tells the agent what to do and gives it a script to check its
-own work — that's guidance, not enforcement. Four optional hooks turn the
-specific cases below into checks the harness runs automatically, outside
+Skills guide the agent to use native project tools and report honest evidence;
+they do not require a shared runtime. Four optional hooks turn the specific
+policies below into checks the companion runtime runs automatically, outside
 the model's discretion:
 
 | Hook                | Event                      | Does                                                                                                                                                                             |
@@ -193,8 +193,9 @@ actually matters is *where* you customize, not just *whether* you can:
 - **`hs.settings.json`** (copied into your project by `hs init`, then yours)
   turns the four hooks on/off and holds the couple of fields that genuinely
   vary per project (`privacyBlock`'s allow/deny lists, `shipGate.blockCommands`).
-- **Your project's own `AGENTS.md`** — add test/lint/build commands or
-  conventions specific to your codebase; skills read it first.
+- **Your project's own instructions and docs** — add test/lint/build commands
+  or conventions specific to the codebase. An `AGENTS.md` is one optional
+  place to keep them; portable skills do not require it.
 - Anything you add under `.harness/` itself (it's your project's state, this
   package never writes outside `.harness/state/` and `.harness/specs/`).
 
@@ -220,14 +221,14 @@ Two different questions, easy to conflate: does the _agent_ natively support
 hooks/subagents at all, and has _this repo_ shipped config wiring its
 guardrails/subagents to that agent. Four agents are supported, split into two
 tiers: Claude Code and Codex CLI are **tier 1** (skills, subagents, and
-guardrail hooks all wired); Cursor and Antigravity CLI are **tier 2**
-(skills and subagents wired, hooks not) — see each row's last column for
-exactly what's missing and why.
+guardrail hooks all wired); Cursor and Antigravity CLI are **tier 2** with
+partial/experimental coverage — see each row's last column for exactly what
+is wired and what is missing.
 
 | Agent           | Tier | Instruction / skills                                         | Agent's native hooks                                                         | Agent's native subagents                                           | This repo's wiring                                                                                                                                                                      |
 | --------------- | ---- | ------------------------------------------------------------ | ---------------------------------------------------------------------------- | ------------------------------------------------------------------ | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Claude Code     | 1    | `AGENTS.md`; plugin auto-discovers root `skills/`            | Yes — `.claude/settings.json` / plugin `hooks.json`                          | Yes — `.claude/agents/*.md`                                        | Full: `hooks/hooks.json` auto-wires on install; `hs agents --target claude` generates `hs-scout`/`hs-reviewer`.                                                                         |
-| Codex CLI       | 1    | `AGENTS.md` and `skills/` via `.codex-plugin/plugin.json`    | Yes, since ~v0.124.0 — `.codex/hooks.json` or `config.toml`                  | Yes, since ~v0.115.0 — `.codex/agents/*.toml`                      | Hooks: merge `hooks/codex/hooks.json.snippet`. Subagents: `hs agents --target codex` generates both TOML files.                                                                         |
+| Claude Code     | 1    | Root `skills/` auto-discovery                                | Yes — `.claude/settings.json` / plugin `hooks.json`                          | Yes — `.claude/agents/*.md`                                        | Full: `hooks/hooks.json` auto-wires on install; `hs agents --target claude` generates `hs-scout`/`hs-reviewer`.                                                                         |
+| Codex CLI       | 1    | `skills/` via `.codex-plugin/plugin.json`                    | Yes, since ~v0.124.0 — `.codex/hooks.json` or `config.toml`                  | Yes, since ~v0.115.0 — `.codex/agents/*.toml`                      | Hooks: merge `hooks/codex/hooks.json.snippet`. Subagents: `hs agents --target codex` generates both TOML files.                                                                         |
 | Cursor          | 2    | `.cursor-plugin/plugin.json` declares `skills: "./skills/"`  | Yes — `.cursor/hooks.json`, own event/payload shape                          | Yes — `.cursor/agents/*.md`; also reads `.claude/agents/` directly | Partial: `ship-gate`/`privacy-block` wired to `beforeShellExecution`/`beforeReadFile` (see `hooks/cursor/hooks.json.snippet`); `session-state`/`monitoring` not yet. Subagents: `hs agents --target cursor` generates both files (or rely on `.claude/agents/` if already present).    |
 | Antigravity CLI | 2    | No native manifest for this repo yet — `npx skills add` only | Expected yes, inherited from Gemini CLI's engine per Google's transition announcement (unconfirmed exact config path) | Expected yes, same inheritance                                    | Hooks not wired — no confirmed config path yet. Subagents: `hs agents --target antigravity` generates both files (see `docs/antigravity-setup.md` for what's confirmed vs. guessed).   |
 
@@ -237,23 +238,19 @@ gate only `Bash`; Codex's matchers cover `Bash`/`apply_patch` only, so
 privacy is a guardrail, not a complete privacy boundary.
 
 Run `npm test` for the Node 22+ compatibility suite; CI runs the same
-command. State/verification is Node-native — `scripts/state.mjs`,
-`run-check.mjs`, `attestation.mjs`, `check-ship-ready.mjs` — zero dependency
-beyond Node.js.
+command. The optional CLI and hook companion use zero-dependency Node scripts;
+portable skills themselves do not require that runtime.
 
 ---
 
 ## Why this harness?
 
-Agents default to the shortest path to "looks done" — which usually means
-skipping the spec, self-reporting tests as passing, and shipping without a
-second look. This harness makes each of those a checkpoint instead of a
-vibe: a spec a human actually approved, a verify script that writes its
-verdict to disk instead of the model's transcript, a ship gate that reads
-that verdict rather than trusting it was mentioned. None of it depends on a
-specific model or vendor — it's five (well, six) small markdown files and a
-handful of zero-dependency Node scripts, so swapping which agent is doing
-the work doesn't mean rebuilding the workflow.
+Agents can take the shortest path to "looks done": skip discovery, overstate
+test confidence, or take external actions without confirmation. This harness
+keeps useful counterweights—clear intent, proportionate evidence, fresh
+review, and human control—without requiring a fixed phase machine. The
+portable core is six small markdown skills; optional CLI and hook companions
+add enforcement only where a provider supports and a project opts into it.
 
 ---
 
@@ -263,8 +260,7 @@ the work doesn't mean rebuilding the workflow.
   `harness-state` server — a reasonable next step, not a first one.
 - **No `hs-debug` skill.** Error-driven retry-then-escalate lives inside
   `hs-build`/`hs-verify` directly.
-- **Cursor and Antigravity hook wiring.** Both have their own native hooks
-  system now, but this repo's `hooks/*.mjs` scripts only emit Claude Code's
-  JSON output shape — no Cursor or Antigravity snippet exists yet, so
-  pointing either agent's hook config at these scripts unmodified would
-  silently do nothing rather than fail loudly.
+- **Full Cursor and Antigravity hook coverage.** Cursor has only
+  `ship-gate`/`privacy-block` adapters today; Antigravity has no confirmed
+  adapter. The remaining hooks need provider-specific payload/output support
+  before they should be wired.
