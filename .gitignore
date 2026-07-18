@@ -5,3 +5,6 @@
 # OS cruft
 .DS_Store
 Thumbs.db
+
+# Temp
+temp/

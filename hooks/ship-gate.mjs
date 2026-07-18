@@ -7,7 +7,7 @@
 // setting -- only *which commands trigger the check* is worth exposing
 // in hs.settings.json.
 import { loadSettings, projectPath, readStdinJson, block, allow, isShipCommand, extractCommand } from "./lib/common.mjs";
-import { evaluateReadiness } from "../scripts/readiness.mjs";
+import { evaluateReadiness } from "../scripts/check-ship-ready.mjs";
 
 const call = await readStdinJson();
 if (call.__malformedPayload) block("Blocked by shipGate: malformed hook payload.");
@@ -22,7 +22,7 @@ if (!isShipCommand(command)) allow();
 
 if (!evaluateReadiness(projectPath(call)).ready) {
   block(
-    "Blocked by shipGate: this spec lacks a valid v2 attestation, resolved review, or explicit ship approval. Run hs-verify, hs-review, then hs-ship."
+    "Blocked by shipGate: this spec lacks a valid verify attestation, an approved plan, or a fully checked-off task list. Run hs-verify (and hs-review, advisory) before hs-ship."
   );
 }
 

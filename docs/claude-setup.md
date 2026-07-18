@@ -6,6 +6,17 @@ root. No files get copied into your project; the plugin loads `skills/`,
 
 ## Install
 
+**One command (full standard structure — skills + subagents + hooks):**
+
+```bash
+npm exec -- hs setup --target claude
+```
+
+Writes `.claude/skills/`, `.claude/agents/hs-scout.md`/`hs-reviewer.md`,
+`.claude/hooks/` (+ the runtime scripts they import), and a
+`.claude/settings.json` wiring the four hooks. Requires the package installed
+locally (`npm i -D github:Unibean9/harness-skills`).
+
 **Fast path (skills only, no guardrails):**
 
 ```
@@ -57,9 +68,8 @@ out. From there the five/six-phase flow in `AGENTS.md` takes over.
   `${CLAUDE_PLUGIN_ROOT}`-relative commands on `SessionStart`, `PreToolUse`,
   `PostToolUse`. No manual settings merge needed once installed as a plugin.
 - `agents/hs-scout.md`, `agents/hs-reviewer.md` — real Claude Code subagents,
-  generated from `docs/agents.md` (`node scripts/generate-claude-scout.mjs` /
-  `generate-claude-reviewer.mjs`). Invoke them with the Agent tool like any
-  other subagent.
+  generated from `docs/agents.md` (`npm exec -- hs agents --target claude
+  --out agents`). Invoke them with the Agent tool like any other subagent.
 - `skills/<name>/SKILL.md` — the six harness skills, unchanged across agents.
 
 ## Troubleshooting
@@ -68,5 +78,5 @@ out. From there the five/six-phase flow in `AGENTS.md` takes over.
 |---|---|
 | Skill never triggers | Re-read the skill's `description` frontmatter — it's what Claude Code matches against. Invoke it by name a few times to confirm the workflow itself is right, independent of triggering. |
 | Hooks don't seem to run | Confirm the plugin actually installed (`/plugin list` or equivalent) and that `hs.settings.json`'s relevant key has `"enabled": true`. |
-| Ship gate blocks a commit unexpectedly | Run `node scripts/attestation.mjs validate` — it fails on any worktree change since the last `hs-verify` attest, by design. |
-| `agents/hs-scout.md` looks stale after editing `docs/agents.md` | Regenerate: `node scripts/generate-claude-scout.mjs` and `node scripts/generate-claude-reviewer.mjs`. |
+| Ship gate blocks a commit unexpectedly | Run `npm exec -- hs attest validate` — it fails on any worktree change since the last `hs-verify` attest, by design. |
+| `agents/hs-scout.md` looks stale after editing `docs/agents.md` | Regenerate: `npm exec -- hs agents --target claude --out agents`. |

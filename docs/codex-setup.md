@@ -7,6 +7,17 @@ Codex from trying to auto-load Claude Code's `hooks/hooks.json`.
 
 ## Install
 
+**One command (full standard structure — skills + subagents + hooks):**
+
+```bash
+npm exec -- hs setup --target codex
+```
+
+Writes `.codex/skills/`, `.codex/agents/hs-scout.toml`/`hs-reviewer.toml`,
+`.codex/hooks/` (+ the runtime scripts they import), and `.codex/hooks.json`
+pointing at them. Requires the package installed locally
+(`npm i -D github:Unibean9/harness-skills`).
+
 **Fast path (skills only):** `npx skills add Unibean9/harness-skills -a codex`
 places the six `hs-*` skills where Codex looks for them. It doesn't touch
 `.codex/hooks.json`, so pair it with the hooks step below if you want
@@ -42,19 +53,24 @@ plugin install. Merge `hooks/codex/hooks.json.snippet` into
 `apply_patch`. This requires trusting the project's `.codex/` layer and any
 changed hooks — Codex's own trust model, not something this repo can bypass.
 
-## Subagents (optional, manual)
+## Subagents (optional)
 
 Codex CLI has native subagents (TOML files, one per agent, at
-`.codex/agents/` project-level or `~/.codex/agents/` personal) — this repo
-doesn't generate them the way it does for Claude Code, so wire `hs-scout` and
-`hs-reviewer` by hand once per project: create
-`.codex/agents/hs-scout.toml` and `.codex/agents/hs-reviewer.toml` with
-`name`, `description`, and `developer_instructions` copied from the
-corresponding section of `docs/agents.md`. See that file's "Per-agent wiring"
-for the specifics of each role (`hs-scout` wants a lightweight `model`;
-`hs-reviewer` should stay at Codex's default reasoning tier). Codex ships
-three built-in agents (`default`/`worker`/`explorer`) that these don't
-replace.
+`.codex/agents/` project-level or `~/.codex/agents/` personal). Generate
+`hs-scout` and `hs-reviewer` for Codex with one command, from the project
+root:
+
+```bash
+npm exec -- hs agents --target codex
+```
+
+This writes `.codex/agents/hs-scout.toml` and `.codex/agents/hs-reviewer.toml`
+from `docs/agents.md`'s source content — `name`, `description`, and
+`developer_instructions` for each role (`hs-scout` gets a lightweight
+`model`; `hs-reviewer` stays at Codex's default reasoning tier, since
+independence matters more than cost there). See `docs/agents.md`'s
+"Per-agent wiring" for the specifics of each role. Codex ships three
+built-in agents (`default`/`worker`/`explorer`) that these don't replace.
 
 ## How it works
 
@@ -65,9 +81,8 @@ replace.
 - `hooks/codex/hooks.json.snippet` — the manual-merge hook config, separate
   from Claude Code's auto-wired `hooks/hooks.json` because Codex's hook
   schema and trust model differ.
-- `.codex/agents/*.toml` (not shipped by this repo) — where a project-level
-  `hs-scout`/`hs-reviewer` definition would live, per the Subagents section
-  above.
+- `.codex/agents/*.toml` — generated per project by `npm exec -- hs agents
+  --target codex`, per the Subagents section above.
 
 ## Troubleshooting
 

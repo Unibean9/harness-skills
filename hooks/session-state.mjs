@@ -13,15 +13,10 @@
 // before doing anything.
 import { existsSync, readFileSync, writeFileSync, mkdirSync } from "node:fs";
 import { dirname } from "node:path";
-import { loadSettings, projectPath, readStdinJson, findProjectRoot } from "./lib/common.mjs";
-import { evaluateReadiness } from "../scripts/readiness.mjs";
+import { loadSettings, projectPath, readStdinJson } from "./lib/common.mjs";
 
 const CURRENT_SPEC_FILE = ".harness/state/current-spec";
 const SUMMARY_FILE = ".harness/state/session-summary.md";
-
-// Route to the next phase from what's actually on disk, mirroring the
-// decision tree in AGENTS.md ("Required flow"). A suggestion, not a gate —
-// the skills still re-check their own preconditions.
 
 function describeFile(file) {
   if (!existsSync(file)) return `- ${file}: missing`;
@@ -58,7 +53,6 @@ if (!existsSync(currentSpecFile)) {
     describeFile(`${specDir}/plan.md`),
     describeFile(`${specDir}/progress.md`),
     describeFile(`${specDir}/implement-notes.md`),
-    `- suggested next phase: ${evaluateReadiness(findProjectRoot(call.cwd || process.cwd())).nextPhase}`,
   ];
   digest = ["# Harness session summary (auto-generated)", "", ...sections].join("\n");
 }

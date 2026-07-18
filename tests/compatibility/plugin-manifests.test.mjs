@@ -58,7 +58,7 @@ test("Claude Code's root hooks.json references the plugin-root variable, not the
   assert.doesNotMatch(hooksJson, /CLAUDE_PROJECT_DIR/);
 });
 
-// Mirrors the section-extraction logic in scripts/generate-claude-*.mjs, so
+// Mirrors the section-extraction logic in scripts/generate-agents.mjs, so
 // this test catches drift between the generator and its own generated output
 // without duplicating the generator's file-writing side effects.
 function extractSection(doc, heading) {
@@ -68,22 +68,26 @@ function extractSection(doc, heading) {
   return doc.slice(startIdx + 1, nextIdx === -1 ? undefined : nextIdx).trim();
 }
 
-test("the Claude scout adapter is generated from docs/agents.md's hs-scout section", () => {
-  const generator = read("scripts/generate-claude-scout.mjs");
-  const adapter = read("agents/hs-scout.md");
-  const agentsDoc = read("docs/agents.md");
-  const section = extractSection(agentsDoc, "## hs-scout");
-  assert.match(generator, /"docs", "agents\.md"/);
-  assert.match(adapter, /GENERATED from docs\/agents\.md's "## hs-scout" section/);
-  assert.ok(section && adapter.endsWith(`${section}\n`));
-});
+for (const name of ["hs-scout", "hs-reviewer"]) {
+  test(`the Claude ${name} adapter is generated from docs/agents.md's ${name} section`, () => {
+    const generator = read("scripts/generate-agents.mjs");
+    const adapter = read(`agents/${name}.md`);
+    const agentsDoc = read("docs/agents.md");
+    const section = extractSection(agentsDoc, `## ${name}`);
+    assert.match(generator, /"docs", "agents\.md"/);
+    assert.match(adapter, new RegExp(`GENERATED from docs/agents\\.md's "## ${name}" section`));
+    assert.ok(section && adapter.endsWith(`${section}\n`));
+  });
+}
 
-test("the Claude reviewer adapter is generated from docs/agents.md's hs-reviewer section", () => {
-  const generator = read("scripts/generate-claude-reviewer.mjs");
-  const adapter = read("agents/hs-reviewer.md");
-  const agentsDoc = read("docs/agents.md");
-  const section = extractSection(agentsDoc, "## hs-reviewer");
-  assert.match(generator, /"docs", "agents\.md"/);
-  assert.match(adapter, /GENERATED from docs\/agents\.md's "## hs-reviewer" section/);
-  assert.ok(section && adapter.endsWith(`${section}\n`));
+test("all four manifest versions (package.json, Claude, Codex, Cursor, Gemini) stay in lockstep", () => {
+  const pkg = readJson("package.json");
+  const claude = readJson(".claude-plugin/plugin.json");
+  const codex = readJson(".codex-plugin/plugin.json");
+  const cursor = readJson(".cursor-plugin/plugin.json");
+  const gemini = readJson("gemini-extension.json");
+  assert.equal(claude.version, pkg.version, ".claude-plugin/plugin.json version must match package.json");
+  assert.equal(codex.version, pkg.version, ".codex-plugin/plugin.json version must match package.json");
+  assert.equal(cursor.version, pkg.version, ".cursor-plugin/plugin.json version must match package.json");
+  assert.equal(gemini.version, pkg.version, "gemini-extension.json version must match package.json");
 });

@@ -31,15 +31,15 @@ you need to know that now, not discover it mid-build and wonder if you caused it
 
 3. **Capture a baseline.** Find the project's existing test/build/lint command
    (check `package.json`, `Makefile`, CI config, or ask if it's not obvious), then
-   run it through the bundled script:
+   run it through the bundled runtime:
 
    ```bash
-   node scripts/run-check.mjs baseline -- <test-or-build-command>
+   npm exec -- hs check baseline -- <test-or-build-command>
    ```
 
    This writes `baseline.status` (`PASS`/`FAIL`) and `baseline.log` under this
-   spec's own state directory (`.harness/specs/<active>/state/`, so a second
-   spec running concurrently doesn't overwrite this one's baseline). If
+   spec's own runtime directory (`.harness/state/specs/<active>/checks/`, so a
+   second spec running concurrently doesn't overwrite this one's baseline). If
    baseline is `FAIL`, tell the user before planning further — building on a
    broken foundation means you can't tell your changes apart from pre-existing
    breakage later.
@@ -52,13 +52,10 @@ you need to know that now, not discover it mid-build and wonder if you caused it
    - what it does (a few bullet points, not prose)
    - the exact command that verifies it's done
 
-5. Write `.harness/specs/<active>/plan.md` using the template below.
-
-   Also create `.harness/specs/<active>/verify.json`: version `1` with the
-   complete required check set. A machine check has `label`, `kind: "machine"`,
-   and an argv array; a manual check has `kind: "manual"` and `argv: null`.
-   This is the machine-readable contract hs-verify must attest, not prose the
-   agent may silently narrow later.
+5. Write `.harness/specs/<active>/plan.md` using the template in
+   `references/plan-template.md`. Each task's `Verify:` line is the actual
+   contract `hs-build` runs against — not prose the agent may silently narrow
+   later, the literal command `hs-build` will pass to `hs check`.
 
 6. **Cut ruthlessly.** Re-read the task list. Any task that doesn't trace back
    to a spec requirement gets removed — this is where YAGNI actually earns its
@@ -70,24 +67,6 @@ you need to know that now, not discover it mid-build and wonder if you caused it
 
 8. Update this spec's row in `.harness/specs/INDEX.md`: `Phase` = `planning`,
    `Updated` = today's date.
-
-## Plan template (`.harness/specs/<active>/plan.md`)
-
-```markdown
-# Plan: <feature name>
-
-**Status:** draft
-
-**Baseline:** `<command>` -> see `.harness/specs/<active>/state/baseline.status`
-
-## Task 1: <name>
-- Spec: <which requirement this satisfies>
-- Files: <concrete paths>
-- Do: <1-3 bullets>
-- Verify: `<exact command>`
-
-## Task 2: ...
-```
 
 ## Exit condition
 

@@ -11,8 +11,19 @@ rather than "not available."
 
 ## Install
 
-Cursor has no plugin-marketplace command for installing this repo directly
-today, so sync the skill files by hand:
+**One command (skills + subagents + pointer rule):**
+
+```bash
+npm exec -- hs setup --target cursor
+```
+
+Writes `.cursor/skills/`, `.cursor/agents/hs-scout.md`/`hs-reviewer.md`, and
+`.cursor/rules/harness-skills.mdc`. Hooks are intentionally NOT wired — see
+"Hooks" below for why. Requires the package installed locally
+(`npm i -D github:Unibean9/harness-skills`).
+
+**Manual path** — Cursor has no plugin-marketplace command for installing
+this repo directly today, so alternatively sync the skill files by hand:
 
 ```bash
 mkdir -p .cursor/skills
@@ -63,27 +74,32 @@ the remaining work, not a missing feature on Cursor's end.
 Skills work fully without hooks — this is a missing *harness-side*
 enforcement layer, not a missing Cursor capability.
 
-## Subagents (native to Cursor, not wired by this repo yet)
+## Subagents (native to Cursor)
 
-Cursor also has native subagents: Markdown files with YAML frontmatter
-(`name`, `description`, `model`, `readonly`, `is_background`) at
-`.cursor/agents/` (project) or `~/.cursor/agents/` (user), plus three
-built-in agents (`explore`, `bash`, `browser`). Notably, Cursor also reads
-`.claude/agents/` directly — if this repo is installed as a Claude Code
-plugin in the same project, Cursor picks up `agents/hs-scout.md` and
-`agents/hs-reviewer.md` from there without any Cursor-specific file needed.
-Otherwise, create `.cursor/agents/hs-scout.md` and
-`.cursor/agents/hs-reviewer.md` by hand — see `docs/agents.md`'s "Per-agent
-wiring" for each role's responsibilities.
+Cursor has native subagents: Markdown files with YAML frontmatter (`name`,
+`description`, `model`, `readonly`, `is_background`) at `.cursor/agents/`
+(project) or `~/.cursor/agents/` (user), plus three built-in agents
+(`explore`, `bash`, `browser`). Notably, Cursor also reads `.claude/agents/`
+directly — if `.claude/agents/hs-scout.md`/`hs-reviewer.md` are already
+present in the same project (see `docs/claude-setup.md`), Cursor picks them
+up without a separate copy. Otherwise, generate the Cursor-specific files
+with one command, from the project root:
+
+```bash
+npm exec -- hs agents --target cursor
+```
+
+This writes `.cursor/agents/hs-scout.md` and `.cursor/agents/hs-reviewer.md`
+from `docs/agents.md`'s source content — see that file's "Per-agent wiring"
+for each role's responsibilities.
 
 ## How it works
 
 - `.cursor-plugin/plugin.json` — manifest with `skills: "./skills/"`, no
   `hooks` field (this repo doesn't ship a Cursor hooks snippet yet).
 - `skills/<name>/SKILL.md` — same files every other agent reads.
-- `.cursor/agents/*.md` (not shipped by this repo) — where a
-  Cursor-specific `hs-scout`/`hs-reviewer` would live, if `.claude/agents/`
-  isn't already present in the project.
+- `.cursor/agents/*.md` — generated per project by `npm exec -- hs agents
+  --target cursor`, if `.claude/agents/` isn't already present in the project.
 
 ## Troubleshooting
 
@@ -91,5 +107,5 @@ wiring" for each role's responsibilities.
 |---|---|
 | Skills not found | Confirm Cursor is reading `.cursor-plugin/plugin.json`'s `skills` field, or fall back to pointing it at `skills/*/SKILL.md` directly. |
 | Expecting hook-based guardrails (privacy block, ship gate) | This repo doesn't ship a Cursor `hooks.json` snippet yet — Cursor's hook mechanism itself works, see "Hooks" above. |
-| Expecting `hs-scout`/`hs-reviewer` to just work | Check whether `.claude/agents/` is present in the project (Cursor reads it directly); otherwise create `.cursor/agents/*.md` by hand per "Subagents" above. |
+| Expecting `hs-scout`/`hs-reviewer` to just work | Check whether `.claude/agents/` is present in the project (Cursor reads it directly); otherwise run `npm exec -- hs agents --target cursor` per "Subagents" above. |
 | A skill's behavior differs from Claude Code's | It shouldn't — `skills/*/SKILL.md` is the one canonical source every agent reads unmodified. If it does differ, that's a bug worth reporting, not an intentional per-agent variation. |

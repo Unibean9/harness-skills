@@ -2,25 +2,9 @@
 import { existsSync, mkdirSync, readFileSync, readdirSync, renameSync, rmSync, writeFileSync } from "node:fs";
 import { join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
-import { detectLegacySpecState, detectSpecVersion, harnessPaths, readActiveSpec, resolveSpecIdentity, specPaths, specRuntimePaths, validateSpecId } from "./paths.mjs";
-export { initializeWorkflow, loadWorkflow, transitionWorkflow, validateWorkflow, workflowRoute } from "./workflow-state.mjs";
+import { harnessPaths, validateSpecId } from "./paths.mjs";
 
 const slugPattern = /^[a-z0-9]+(?:-[a-z0-9]+)*$/;
-
-// Per-check logs (baseline, task-N, verify-*) live under the active spec's own
-// v1 state directory until its callers migrate in Task 5. New v2 callers must
-// pass an explicit spec to resolveSpecRuntimeDir instead of using selection as
-// an execution identity.
-export function resolveCheckStateDir(root = process.cwd()) {
-  const { state } = harnessPaths(root);
-  const active = readActiveSpec(root);
-  if (!active) return state;
-  return harnessPaths(root, active).legacySpecStateDir;
-}
-
-export function resolveSpecRuntimeDir(root = process.cwd(), explicitSpec) {
-  return specRuntimePaths(root, explicitSpec).dir;
-}
 
 export function reserveSpec(slug, root = process.cwd()) {
   if (!slugPattern.test(slug)) throw new Error("spec slug must be kebab-case");
@@ -59,8 +43,6 @@ export function selectActiveSpec(identity, root = process.cwd(), { replace = fal
     rmSync(selectionLock, { recursive: true, force: true });
   }
 }
-
-export { detectLegacySpecState, detectSpecVersion, harnessPaths, readActiveSpec, resolveSpecIdentity, specPaths, specRuntimePaths, validateSpecId };
 
 if (process.argv[1] && fileURLToPath(import.meta.url) === resolve(process.argv[1])) {
   const [action, value, option] = process.argv.slice(2);

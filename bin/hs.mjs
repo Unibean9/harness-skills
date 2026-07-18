@@ -8,14 +8,19 @@ const root = dirname(dirname(fileURLToPath(import.meta.url)));
 const commands = {
   state: "state.mjs",
   check: "run-check.mjs",
-  verify: "verification-runner.mjs",
   attest: "attestation.mjs",
-  manual: "manual-evidence.mjs",
   readiness: "check-ship-ready.mjs",
-  changeset: "changeset-cli.mjs",
-  "plan-review": "plan-review.mjs",
+  init: "init.mjs",
+  setup: "setup.mjs",
+  doctor: "doctor.mjs",
+  agents: "generate-agents.mjs",
 };
 const [command, ...args] = process.argv.slice(2);
+// init/setup CREATE the project markers, so they must act on the directory
+// the user is standing in -- walking up from an empty folder would land on
+// some parent repo and scaffold there instead. Every other command reads
+// existing state, so walking up to the project root is what the user means.
+const runsInCwd = new Set(["init", "setup"]);
 function projectRoot(start) {
   let current = start;
   for (;;) {
@@ -24,9 +29,10 @@ function projectRoot(start) {
   }
 }
 if (!command || !(command in commands)) {
-  console.error("usage: hs <state|plan-review|changeset|check|verify|attest|manual|readiness> ...");
+  console.error("usage: hs <state|check|attest|readiness|init|setup|doctor|agents> ...");
   process.exitCode = 2;
 } else {
-  const result = spawnSync(process.execPath, [join(root, "scripts", commands[command]), ...args], { cwd: projectRoot(process.cwd()), stdio: "inherit", shell: false });
+  const cwd = runsInCwd.has(command) ? process.cwd() : projectRoot(process.cwd());
+  const result = spawnSync(process.execPath, [join(root, "scripts", commands[command]), ...args], { cwd, stdio: "inherit", shell: false });
   process.exitCode = result.status ?? 1;
 }

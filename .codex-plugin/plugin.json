@@ -1,6 +1,6 @@
 {
   "name": "harness-skills",
-  "version": "1.0.0",
+  "version": "2.0.0",
   "description": "A six-phase spec-driven development harness (brainstorm -> plan -> build -> verify -> review -> ship) with evidence gates.",
   "author": {
     "name": "danielleit241"

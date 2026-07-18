@@ -5,7 +5,7 @@ description: Get an independent, structured review of the verified diff — corr
 
 # hs-review
 
-Use the project-local runtime as `npm exec -- hs`; review the recorded changeset, not an inferred commit baseline.
+Use the project-local runtime as `npm exec -- hs`; review the real diff, not a summary of it.
 
 ## Why this phase exists
 
@@ -27,8 +27,8 @@ blocking review gate just becomes a rubber stamp the moment it's inconvenient.
 ## Process
 
 1. Read `.harness/state/current-spec` to get the selected `<active>`. Confirm
-   `node scripts/attestation.mjs validate` prints `VALID` — this phase reviews
-   a change that's already known to work, not one still being debugged. If
+   `npm exec -- hs attest validate` prints `VALID` — this phase reviews a
+   change that's already known to work, not one still being debugged. If
    it's not valid yet, that's a signal to finish `hs-verify` first, not a hard
    stop — proceed anyway if the user specifically wants a look at
    work-in-progress.
@@ -36,8 +36,9 @@ blocking review gate just becomes a rubber stamp the moment it's inconvenient.
 2. **Dispatch the review to hs-reviewer** (see `docs/agents.md#hs-reviewer--independent-code-review-subagent`), not the
    same context that implemented the change — a fresh subagent invocation,
    even on the same model. Hand it:
-   - the diff: `git diff <baseline>...HEAD` (or `git diff --stat` plus the
-     full diff) against whatever baseline the spec's plan recorded
+   - the diff: `git diff --stat` plus the full working-tree diff (or
+     `git diff <commit-before-hs-build>...HEAD` if the plan recorded a
+     starting commit) — the actual change, not your account of it
    - the spec's requirements and acceptance criteria, and the plan's task list
    - nothing else — let it form its own read of the diff, not a summary of
      what you believe it does

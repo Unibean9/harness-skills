@@ -35,15 +35,16 @@ exceptions for "but the tests are green."
 4. Run the readiness check:
 
    ```bash
-   node scripts/check-ship-ready.mjs
+   npm exec -- hs readiness
    ```
 
-   This fails closed — it checks that `.harness/specs/<active>/progress.md`
-   has no unchecked tasks left, that `.harness/state/verify-all.status` says
-   `PASS`, and that it actually exists (i.e., `hs-verify` really ran,
-   recently, not from a stale memory of an earlier pass). It is read-only:
-   resolve misplaced or conflicting state explicitly instead of expecting the
-   readiness sensor to mutate evidence while deciding whether shipping is safe.
+   This fails closed — it checks that the spec and plan are both approved,
+   that `.harness/specs/<active>/progress.md` has no unchecked tasks left,
+   and that a valid, fresh, worktree-bound verify attestation exists (i.e.,
+   `hs-verify` really ran, recently, not from a stale memory of an earlier
+   pass). It is read-only: resolve misplaced or conflicting state explicitly
+   instead of expecting the readiness sensor to mutate evidence while
+   deciding whether shipping is safe.
 
 5. If it reports NOT READY, stop here and fix whatever it flagged — go back to
    `hs-build` or `hs-verify` as appropriate. Don't route around this check by
@@ -73,7 +74,7 @@ exceptions for "but the tests are green."
 
 ## Exit condition
 
-- `check-ship-ready.mjs` reports READY.
+- `npm exec -- hs readiness` reports READY.
 - The human has explicitly confirmed the specific ship action taken.
 - The spec's `INDEX.md` row says `shipped`.
 

@@ -5,7 +5,7 @@ tools: Read, Grep, Glob, WebFetch, WebSearch
 model: haiku
 ---
 
-<!-- GENERATED from docs/agents.md's "## hs-scout" section; run node scripts/generate-claude-scout.mjs -->
+<!-- GENERATED from docs/agents.md's "## hs-scout" section; run `npm exec -- hs agents --target claude` -->
 
 ## hs-scout — cheap context-gathering subagent
 
@@ -55,37 +55,39 @@ specific question it hands to hs-scout.
 
 ### Per-agent wiring
 
-All four agents below now have a native subagent mechanism — none of them
-require approximating this inline anymore. This repo auto-generates the
-Claude Code definition only; the other three need the equivalent file
-created by hand once, following each agent's own format.
+All four agents below have a native subagent mechanism, and this repo
+generates the file for all of them from this section — run, from the
+project root:
 
-- **Claude Code**: `agents/hs-scout.md` at the repo root (auto-discovered once
-  installed as a plugin; regenerate with
-  `node scripts/generate-claude-scout.mjs` after editing this section)
-  defines this as a real subagent with `model: haiku` and read-only tools.
-  Invoke it as you would any subagent.
-- **Codex CLI**: native subagents since Codex CLI ~v0.115.0 — one TOML file
-  per agent at `.codex/agents/hs-scout.toml` (project) or
-  `~/.codex/agents/hs-scout.toml` (personal), with `name`, `description`,
-  `developer_instructions` (the role/responsibilities above), and a
-  lightweight `model` set explicitly since Codex's built-in agent tiers
-  (`default`/`worker`/`explorer`) don't guarantee a cheap model on their own.
-  Codex routes to it from `AGENTS.md`/skill context or direct request; no
-  auto-wiring from this repo yet, so create the file once per project.
+```bash
+npm exec -- hs agents --target claude   # writes .claude/agents/hs-scout.md, hs-reviewer.md
+npm exec -- hs agents --target codex    # writes .codex/agents/hs-scout.toml, hs-reviewer.toml
+npm exec -- hs agents --target gemini   # writes .gemini/agents/hs-scout.md, hs-reviewer.md
+npm exec -- hs agents --target cursor   # writes .cursor/agents/hs-scout.md, hs-reviewer.md
+npm exec -- hs agents                   # all four targets in one pass
+```
+
+- **Claude Code**: `.claude/agents/hs-scout.md`, defining this as a real
+  subagent with `model: haiku` and read-only tools. Invoke it as you would
+  any subagent. (This repo's own bundled copy lives at `agents/hs-scout.md`
+  at the repo root — regenerate it with `--out agents` after editing this
+  section.)
+- **Codex CLI**: native subagents since Codex CLI ~v0.115.0 — `.codex/agents/hs-scout.toml`
+  with `name`, `description`, `developer_instructions` (the role/responsibilities
+  above), and a lightweight `model` set explicitly since Codex's built-in
+  agent tiers (`default`/`worker`/`explorer`) don't guarantee a cheap model
+  on their own. Codex routes to it from `AGENTS.md`/skill context or direct
+  request.
 - **Gemini CLI**: native subagents (Markdown + YAML frontmatter, same shape
-  as Claude Code's) at `.gemini/agents/hs-scout.md` (project) or
-  `~/.gemini/agents/hs-scout.md` (user) — frontmatter needs `name`,
-  `description`; the file body is the system prompt (the role above). The
-  main agent routes to it automatically by matching `description`, or invoke
-  explicitly with `@hs-scout`.
-- **Cursor**: native subagents at `.cursor/agents/hs-scout.md` (project) or
-  `~/.cursor/agents/hs-scout.md` (user), same Markdown + YAML frontmatter
-  shape (`name`, `description`, `model`, `readonly: true` fits this role).
-  Cursor also reads `.claude/agents/` directly — if Claude Code's
-  `agents/hs-scout.md` is already present in the repo, Cursor picks it up
-  without a separate copy; only add a `.cursor/agents/` file if you need
-  Cursor-specific overrides.
+  as Claude Code's) at `.gemini/agents/hs-scout.md` — frontmatter needs
+  `name`, `description`; the file body is the system prompt (the role
+  above). The main agent routes to it automatically by matching
+  `description`, or invoke explicitly with `@hs-scout`.
+- **Cursor**: native subagents at `.cursor/agents/hs-scout.md`, same
+  Markdown + YAML frontmatter shape (`name`, `description`, `model`,
+  `readonly: true` fits this role). Cursor also reads `.claude/agents/`
+  directly — if that's already present, Cursor picks it up without a
+  separate copy.
 
 If a project genuinely can't use any of the above, doing the scouting step
 inline with the main model is still strictly better than skipping it — the

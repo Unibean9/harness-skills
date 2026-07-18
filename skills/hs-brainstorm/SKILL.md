@@ -50,17 +50,19 @@ history living only in scattered, overwritten files.
    at roughly 3-5 questions. Don't ask about things the scouting pass already
    answered or that don't actually matter to the shape of the solution.
 
-4. **Create the spec directory.** Get the next ID:
+4. **Create the spec directory.** Pick a short kebab-case slug for the
+   feature (e.g. `user-auth`), reserve the next ID, then select it as active:
 
    ```bash
-   node scripts/next-spec-id.mjs <kebab-case-slug>
+   npm exec -- hs state reserve <kebab-case-slug>
+   npm exec -- hs state select <ID>-<slug> --replace
    ```
 
-   Pick a short kebab-case slug for the feature (e.g. `user-auth`), then:
-   - create `.harness/specs/<ID>-<slug>/spec.md` using the template below
-   - select it through `node scripts/state.mjs select <ID>-<slug> --replace`
-   - add a row to `.harness/specs/INDEX.md` (create it with the header shown
-     below if it doesn't exist yet)
+   Then:
+   - create `.harness/specs/<ID>-<slug>/spec.md` using the template in
+     `references/spec-template.md`
+   - add a row to `.harness/specs/INDEX.md` (see the same reference file for
+     the header row if it doesn't exist yet)
 
 5. **Stop and ask for approval.** Present the spec, then end your turn
    waiting for an explicit answer. Don't infer approval from silence, and
@@ -68,47 +70,12 @@ history living only in scattered, overwritten files.
    after the user actually confirms. If they ask for changes, revise and ask
    again.
 
-## Spec template (`.harness/specs/<ID>-<slug>/spec.md`)
-
-```markdown
-# Spec: <feature name>
-
-**Status:** draft
-
-## Goal
-<1-2 sentences, in plain language>
-
-## Requirements
-- WHEN <condition> THEN <observable behavior>
-- ...
-<Write these so each one could become a test. Vague requirements ("handle errors
-gracefully") produce vague verification later — push for specifics now, while
-it's cheap.>
-
-## Out of scope
-<What you're deliberately not doing, and why. If you can't find anything to put
-here, you probably haven't scoped tightly enough yet — go back and cut.>
-
-## Acceptance criteria
-- [ ] <a concrete, checkable criterion — this becomes input to hs-plan and hs-verify>
-```
-
-## Index template (`.harness/specs/INDEX.md`)
-
-```markdown
-# Spec Index
-
-| ID | Slug | Phase | Updated |
-|---|---|---|---|
-| 001 | user-auth | brainstorming | 2026-07-16 |
-```
-
-`Phase` tracks which skill last touched this spec (`brainstorming`,
-`planning`, `building`, `verifying`, `reviewing`, `shipped`) — each skill
-updates its own row when it acts. `reviewing` is set only if `hs-review` ran;
-it's advisory, so `hs-ship` may jump straight from `verifying` to `shipped`.
-It's a glance-level index, not a duplicate of the detail already in each
-spec's own files.
+Templates for `spec.md` and `INDEX.md` are in `references/spec-template.md`
+— read it the first time you create either file. `Phase` on the `INDEX.md`
+row tracks which skill last touched a spec (`brainstorming`, `planning`,
+`building`, `verifying`, `reviewing`, `shipped`); `reviewing` is set only if
+`hs-review` ran — it's advisory, so `hs-ship` may jump straight from
+`verifying` to `shipped`.
 
 ## Exit condition
 

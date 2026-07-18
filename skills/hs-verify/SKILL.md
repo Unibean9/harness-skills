@@ -25,12 +25,14 @@ phase for it instead of folding it into `hs-build`.
    — check package.json scripts, Makefile, and CI config." Don't guess these;
    a wrong command produces a false PASS, which is worse than no verdict.
 
-3. Run each check through the bundled script, one label per check:
+3. Run each check through the bundled runtime, one `verify-*` label per check
+   — the `verify-` prefix is what tells the attestation step (below) which
+   checks belong to this pass:
 
    ```bash
-   node scripts/run-check.mjs verify-tests -- <test command>
-   node scripts/run-check.mjs verify-lint -- <lint command>
-   node scripts/run-check.mjs verify-build -- <build command>
+   npm exec -- hs check verify-tests -- <test command>
+   npm exec -- hs check verify-lint -- <lint command>
+   npm exec -- hs check verify-build -- <build command>
    ```
 
    Adjust labels/commands to whatever the project actually has — not every
@@ -39,29 +41,29 @@ phase for it instead of folding it into `hs-build`.
 4. **If a check can't be automated** (visual appearance, UX feel, subjective
    quality) — that's a real limit of the sensor, not something to fake a
    result for. Describe what you can't verify programmatically, show the user
-   the relevant output, and let their judgment fill that specific gap. Then
-   write that verdict as a status file yourself, in the same place and format
-   `run-check.mjs` would have written it — `<spec-state-dir>/<label>.status`
-   containing exactly `PASS` or `FAIL` (find `<spec-state-dir>` by resolving
-   `.harness/specs/<active>/state/`; that's what `run-check.mjs` also targets
-   once a spec is selected). Give it its own label (e.g. `verify-ux`) alongside
-   the automated ones.
-
-5. **Combine into one attested verdict.** Don't hand-write
-   `.harness/state/verify-all.status` — that file only means something when
-   it's bound to this exact spec and this exact worktree, which is what the
-   attestation script does:
+   the relevant output, and let their judgment fill that specific gap, then
+   record their verdict explicitly (don't infer it):
 
    ```bash
-   node scripts/attestation.mjs attest
+   npm exec -- hs check --manual verify-ux PASS --note "<what the user confirmed>"
    ```
 
-   This derives every required label from the active spec's `verify.json`.
-   It fails closed if any required check is missing, stale, command-mismatched,
-   or not `PASS`, instead of writing an
-   attestation — `hs-ship`'s readiness check and the `shipGate` hook both
-   require a valid attestation, not just a `PASS` string, so this step is what
-   actually makes verification count for anything downstream.
+5. **Combine into one attested verdict.** Don't hand-write a status file —
+   that only means something when it's bound to this exact spec and this
+   exact worktree, which is what the attestation step does:
+
+   ```bash
+   npm exec -- hs attest
+   ```
+
+   This bundles every `verify-*` check recorded for the active spec into one
+   verdict. It fails if none exist yet, if any isn't `PASS`, or if any isn't
+   bound to the exact current worktree state — `hs-ship`'s readiness check and
+   the `shipGate` hook both require a valid attestation, not just a `PASS`
+   string, so this step is what actually makes verification count for
+   anything downstream. Which checks you ran is still this skill's judgment
+   call (step 3), not something a manifest enforces — that's why step 3 and
+   step 8 matter: nothing catches a skipped check for you.
 
 6. Append the outcome to `.harness/specs/<active>/progress.md` so it's visible
    without re-running anything:
@@ -89,7 +91,7 @@ phase for it instead of folding it into `hs-build`.
 
 ## Exit condition
 
-- `node scripts/attestation.mjs validate` prints `VALID` — a real
+- `npm exec -- hs attest validate` prints `VALID` — a real
   attestation exists, binding a PASS to this spec and this exact worktree
   state, not just a `.status` file someone could have hand-edited.
 - The result is reflected in `.harness/specs/<active>/progress.md` and the
@@ -106,10 +108,10 @@ phase for it instead of folding it into `hs-build`.
   automate, instead of flagging it for human judgment.
 - Guessing the test/build command instead of checking — a guessed command
   that happens to exit 0 for the wrong reason is a false PASS.
-- Hand-writing `.harness/state/verify-all.status` instead of running the
-  `attest` step — a hand-written `PASS` isn't bound to a specific spec or
-  worktree state, so `hs-ship`'s readiness check (and the `shipGate` hook)
-  will reject it as `NOT GREEN` even though the string says `PASS`.
+- Hand-writing a `.status` file instead of running `hs attest` — a
+  hand-written `PASS` isn't bound to a specific spec or worktree state, so
+  `hs-ship`'s readiness check (and the `shipGate` hook) will reject it as
+  `NOT READY` even though the string says `PASS`.
 
 ## Common rationalizations
 

@@ -3,12 +3,10 @@ import { existsSync, mkdirSync, writeFileSync } from "node:fs";
 import { spawnSync } from "node:child_process";
 import { dirname, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
-import { manifestDigest, checksForStage, loadVerifyManifestV2 } from "./verify-manifest.mjs";
-import { specRuntimePaths } from "./paths.mjs";
+import { resolveSpecIdentity, specRuntimePaths } from "./paths.mjs";
 import { fingerprintWorktree } from "./worktree.mjs";
 
 const labelPattern = /^[a-z0-9]+(?:-[a-z0-9]+)*$/;
-const timestampValid = (value) => Number.isFinite(Date.parse(value)) && Math.abs(Date.now() - Date.parse(value)) <= 5 * 60 * 1000;
 
 function execute(argv, root) {
   let executable = argv[0];
@@ -23,41 +21,67 @@ function execute(argv, root) {
   return spawnSync(executable, arguments_, { cwd: root, encoding: "utf8", shell: false });
 }
 
-export function runCheck(root = process.cwd(), { spec, stage, label } = {}) {
-  if (!spec || !stage || !labelPattern.test(label || "")) throw new Error("spec, stage, and kebab-case label are required");
-  const manifest = loadVerifyManifestV2(root, spec);
-  const check = checksForStage(manifest, stage).find((candidate) => candidate.label === label);
-  if (!check || check.kind !== "machine") throw new Error("label must name a machine check declared for this manifest stage");
+export function runCheck(root = process.cwd(), explicitSpec, label, argv) {
+  const spec = resolveSpecIdentity(root, explicitSpec);
+  if (!labelPattern.test(label || "")) throw new Error("label must be a kebab-case string");
+  if (!Array.isArray(argv) || !argv.length) throw new Error("a command to run is required after --");
   const runtime = specRuntimePaths(root, spec);
   mkdirSync(runtime.checks, { recursive: true });
   const startedAt = new Date().toISOString();
   const fingerprintBefore = fingerprintWorktree(root);
-  const result = execute(check.argv, root);
+  const result = execute(argv, root);
   const fingerprintAfter = fingerprintWorktree(root);
   const finishedAt = new Date().toISOString();
   const worktreeChanged = fingerprintBefore !== fingerprintAfter;
-  const pass = !result.error && result.status === 0 && !worktreeChanged && timestampValid(startedAt) && timestampValid(finishedAt);
+  const pass = !result.error && result.status === 0 && !worktreeChanged;
   const evidence = {
-    version: 2, spec, stage, label: check.label, kind: check.kind, argv: check.argv, covers: check.covers,
-    manifestDigest: manifestDigest(manifest), startedAt, finishedAt, fingerprintBefore, fingerprintAfter,
+    spec, label, kind: "machine", argv, startedAt, finishedAt, fingerprintBefore, fingerprintAfter,
     exitCode: result.status ?? null, pass, worktreeChanged, error: result.error?.message || null,
   };
-  const base = join(runtime.checks, `${stage}-${label}`);
+  const base = join(runtime.checks, label);
   writeFileSync(`${base}.log`, `${result.stdout || ""}${result.stderr || ""}`);
   writeFileSync(`${base}.json`, `${JSON.stringify(evidence)}\n`);
   writeFileSync(`${base}.status`, pass ? "PASS\n" : "FAIL\n");
   return evidence;
 }
 
+export function runManualCheck(root = process.cwd(), explicitSpec, label, verdict, note) {
+  const spec = resolveSpecIdentity(root, explicitSpec);
+  if (!labelPattern.test(label || "")) throw new Error("label must be a kebab-case string");
+  if (verdict !== "PASS" && verdict !== "FAIL") throw new Error("manual verdict must be PASS or FAIL");
+  if (!note || !note.trim()) throw new Error("a --note explaining the manual verdict is required");
+  const runtime = specRuntimePaths(root, spec);
+  mkdirSync(runtime.checks, { recursive: true });
+  const evidence = {
+    spec, label, kind: "manual", verdict, note: note.trim(),
+    confirmedAt: new Date().toISOString(), fingerprint: fingerprintWorktree(root),
+  };
+  const base = join(runtime.checks, label);
+  writeFileSync(`${base}.json`, `${JSON.stringify(evidence)}\n`);
+  writeFileSync(`${base}.status`, `${verdict}\n`);
+  return evidence;
+}
+
 if (process.argv[1] && fileURLToPath(import.meta.url) === resolve(process.argv[1])) {
-  const [specFlag, spec, stageFlag, stage, labelFlag, label] = process.argv.slice(2);
+  const args = process.argv.slice(2);
   try {
-    if (specFlag !== "--spec" || stageFlag !== "--stage" || labelFlag !== "--label" || process.argv.length !== 8) {
-      throw new Error("usage: run-check.mjs --spec <id> --stage <baseline|final> --label <label>");
+    if (args[0] === "--manual") {
+      const [, label, verdict, noteFlag, ...noteParts] = args;
+      if (!label || !verdict || noteFlag !== "--note" || !noteParts.length) {
+        throw new Error("usage: run-check.mjs --manual <label> <PASS|FAIL> --note \"<reason>\"");
+      }
+      const evidence = runManualCheck(process.cwd(), null, label, verdict, noteParts.join(" "));
+      console.log(`---- ${label} (${evidence.verdict}) [manual] ----`);
+      if (evidence.verdict !== "PASS") process.exitCode = 1;
+    } else {
+      const [label, separator, ...command] = args;
+      if (!label || separator !== "--" || !command.length) {
+        throw new Error("usage: run-check.mjs <label> -- <command...>");
+      }
+      const evidence = runCheck(process.cwd(), null, label, command);
+      process.stdout.write(`---- ${label} (${evidence.pass ? "PASS" : "FAIL"}) ----\n`);
+      if (!evidence.pass) process.exitCode = evidence.exitCode || 1;
     }
-    const evidence = runCheck(process.cwd(), { spec, stage, label });
-    process.stdout.write(`---- ${label} (${evidence.pass ? "PASS" : "FAIL"}) ----\n`);
-    if (!evidence.pass) process.exitCode = evidence.exitCode || 1;
   } catch (error) {
     console.error(error.message);
     process.exitCode = 1;

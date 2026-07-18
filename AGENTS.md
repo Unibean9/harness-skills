@@ -52,12 +52,16 @@ history otherwise.
 
 - `.harness/specs/INDEX.md` — one row per spec: ID, slug, phase, last updated.
 - `.harness/state/current-spec` — one line, which spec directory is active.
-- `.harness/specs/<id>-<slug>/verify.json` — the versioned, complete check
-  contract; attestations reject evidence that does not match it exactly.
+- `.harness/state/specs/<id>-<slug>/checks/` — per-check evidence (`<label>.status`/`.json`/`.log`)
+  and the spec's attestation, bound to the exact worktree state; runtime,
+  not durable — safe to gitignore, `hs init` does this for you.
 - `spec.md`/`plan.md` carry a `**Status:** draft|approved` line only a human
   can flip to `approved`. `progress.md` is an append-only log of completed
   tasks with their verify evidence. `implement-notes.md` records judgment
   calls the plan didn't spell out.
+
+`.harness/specs/` is durable project history — commit it. `.harness/state/`
+is per-worktree runtime evidence — gitignore it (`hs init` wires this).
 
 Where the `sessionState` hook is wired, a digest rebuilds into
 `.harness/state/session-summary.md` at session start — read it if present;

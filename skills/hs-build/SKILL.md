@@ -58,15 +58,15 @@ Then repeat for each task in `.harness/specs/<active>/plan.md`, in order:
    work, tell "followed the plan exactly" apart from "used judgment here" —
    both are legitimate, but only one is visible in the diff without this file.
 
-5. **Run this task's verify command** using the bundled script:
+5. **Run this task's verify command** using the bundled runtime:
 
    ```bash
-   node scripts/run-check.mjs task-<N> -- <verify command from the plan>
+   npm exec -- hs check task-<N> -- <verify command from the plan>
    ```
 
-   This writes `task-<N>.status`/`.log` under this spec's own state directory
-   (`.harness/specs/<active>/state/`), not the shared `.harness/state/` — so a
-   second spec's task numbering can't collide with this one's.
+   This writes `task-<N>.status`/`.log` under this spec's own runtime
+   directory (`.harness/state/specs/<active>/checks/`) — so a second spec's
+   task numbering can't collide with this one's.
 
    If it fails, treat the error output as information, not a verdict on you:
    read it literally, form one specific hypothesis about the cause, and test
