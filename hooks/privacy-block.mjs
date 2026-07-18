@@ -3,7 +3,7 @@
 // Blocks a tool call that reads or references a path matching denyList,
 // unless that path also matches allowList. Config-driven -- change what's
 // blocked by editing hs.settings.json, not this file.
-import { loadSettings, readStdinJson, matchesAny, block, allow, extractCommand } from "./lib/common.mjs";
+import { loadSettings, readStdinJson, matchesAny, block, allow, extractCommand, extractCursorPath } from "./lib/common.mjs";
 
 function extractPaths(call) {
   const ti = call.tool_input || {};
@@ -11,6 +11,10 @@ function extractPaths(call) {
   for (const key of ["file_path", "path", "target_file", "notebook_path", "absolute_path"]) {
     if (ti[key]) paths.push(ti[key]);
   }
+  // Cursor's beforeReadFile/afterFileEdit payloads put file_path at the top
+  // level instead of nesting it under tool_input.
+  const cursorPath = extractCursorPath(call);
+  if (cursorPath) paths.push(cursorPath);
   const command = extractCommand(call);
   // Codex's apply_patch sends the patch envelope in tool_input.command (same
   // field as Bash), not a separate "patch" field -- parse the envelope's own

@@ -55,39 +55,39 @@ specific question it hands to hs-scout.
 
 ### Per-agent wiring
 
-All four agents below have a native subagent mechanism, and this repo
-generates the file for all of them from this section — run, from the
-project root:
+All four agents below have a native (or expected-native) subagent mechanism,
+and this repo generates the file for all of them from this section — run,
+from the project root:
 
 ```bash
-npm exec -- hs agents --target claude   # writes .claude/agents/hs-scout.md, hs-reviewer.md
-npm exec -- hs agents --target codex    # writes .codex/agents/hs-scout.toml, hs-reviewer.toml
-npm exec -- hs agents --target gemini   # writes .gemini/agents/hs-scout.md, hs-reviewer.md
-npm exec -- hs agents --target cursor   # writes .cursor/agents/hs-scout.md, hs-reviewer.md
-npm exec -- hs agents                   # all four targets in one pass
+npm exec -- hs agents --target claude        # writes .claude/agents/hs-scout.md, hs-reviewer.md
+npm exec -- hs agents --target codex         # writes .codex/agents/hs-scout.toml, hs-reviewer.toml
+npm exec -- hs agents --target cursor        # writes .cursor/agents/hs-scout.md, hs-reviewer.md
+npm exec -- hs agents --target antigravity   # writes .agents/agents/hs-scout.md, hs-reviewer.md
+npm exec -- hs agents                        # all four targets in one pass
 ```
 
-- **Claude Code**: `.claude/agents/hs-scout.md`, defining this as a real
-  subagent with `model: haiku` and read-only tools. Invoke it as you would
-  any subagent. (This repo's own bundled copy lives at `agents/hs-scout.md`
-  at the repo root — regenerate it with `--out agents` after editing this
-  section.)
-- **Codex CLI**: native subagents since Codex CLI ~v0.115.0 — `.codex/agents/hs-scout.toml`
-  with `name`, `description`, `developer_instructions` (the role/responsibilities
-  above), and a lightweight `model` set explicitly since Codex's built-in
-  agent tiers (`default`/`worker`/`explorer`) don't guarantee a cheap model
-  on their own. Codex routes to it from `AGENTS.md`/skill context or direct
-  request.
-- **Gemini CLI**: native subagents (Markdown + YAML frontmatter, same shape
-  as Claude Code's) at `.gemini/agents/hs-scout.md` — frontmatter needs
-  `name`, `description`; the file body is the system prompt (the role
-  above). The main agent routes to it automatically by matching
-  `description`, or invoke explicitly with `@hs-scout`.
-- **Cursor**: native subagents at `.cursor/agents/hs-scout.md`, same
-  Markdown + YAML frontmatter shape (`name`, `description`, `model`,
-  `readonly: true` fits this role). Cursor also reads `.claude/agents/`
-  directly — if that's already present, Cursor picks it up without a
-  separate copy.
+- **Claude Code** (tier 1): `.claude/agents/hs-scout.md`, defining this as a
+  real subagent with `model: haiku` and read-only tools. Invoke it as you
+  would any subagent. (This repo's own bundled copy lives at
+  `agents/hs-scout.md` at the repo root — regenerate it with `--out agents`
+  after editing this section.)
+- **Codex CLI** (tier 1): native subagents since Codex CLI ~v0.115.0 —
+  `.codex/agents/hs-scout.toml` with `name`, `description`,
+  `developer_instructions` (the role/responsibilities above), and a
+  lightweight `model` set explicitly since Codex's built-in agent tiers
+  (`default`/`worker`/`explorer`) don't guarantee a cheap model on their own.
+  Codex routes to it from `AGENTS.md`/skill context or direct request.
+- **Cursor** (tier 2 — subagents work, hooks don't): native subagents at
+  `.cursor/agents/hs-scout.md`, Markdown + YAML frontmatter (`name`,
+  `description`, `model`, `readonly: true` fits this role). Cursor also reads
+  `.claude/agents/` directly — if that's already present, Cursor picks it up
+  without a separate copy.
+- **Antigravity CLI** (tier 2, experimental — see
+  `docs/antigravity-setup.md`): `.agents/agents/hs-scout.md`, same
+  Markdown + YAML frontmatter shape as Cursor's. Whether the subagent is
+  auto-routed by `description` or needs an explicit invocation hasn't been
+  confirmed against Antigravity's own docs yet.
 
 If a project genuinely can't use any of the above, doing the scouting step
 inline with the main model is still strictly better than skipping it — the

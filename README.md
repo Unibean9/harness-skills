@@ -71,11 +71,21 @@ npm exec -- hs setup --target claude   # writes the full standard structure for 
 npm exec -- hs doctor                  # reports what's wired and what's still missing
 ```
 
-`hs setup` accepts `--target claude|codex|gemini|cursor|antigravity` and
-produces that agent's complete self-contained convention in one pass —
-skills, generated `hs-scout`/`hs-reviewer` subagents, and hook wiring where
-the agent's hook schema is supported (Claude: `.claude/settings.json`; Codex:
-`.codex/hooks.json`; Gemini: `.gemini/settings.json`; Cursor/Antigravity:
+This repo supports four agents, split into two tiers of coverage:
+
+| Tier | Agent | What's wired |
+|---|---|---|
+| 1 — Full | Claude Code | skills + subagents + all four hooks |
+| 1 — Full | Codex CLI | skills + subagents + hooks snippet |
+| 2 — Partial | Cursor | skills + subagents + ship-gate/privacy-block hooks; session-state/monitoring NOT wired |
+| 2 — Experimental | Antigravity CLI | skills + subagents (confirmed paths); hooks NOT wired, config path unconfirmed |
+
+`hs setup` accepts `--target claude|codex|cursor|antigravity` and produces
+that agent's complete self-contained convention in one pass — skills,
+generated `hs-scout`/`hs-reviewer` subagents, and hook wiring where the
+agent's hook schema is supported (Claude: `.claude/settings.json`; Codex:
+`.codex/hooks.json`; Cursor: `.cursor/hooks.json`, wiring `ship-gate`/
+`privacy-block` only — `session-state`/`monitoring` aren't yet; Antigravity:
 skills + subagents only, with an honest note about why hooks aren't wired).
 
 Runtime evidence lives in `.harness/state/` (gitignored by `hs init`);
@@ -86,19 +96,16 @@ hooks/subagents, install natively instead:
 | --------------- | ------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | Claude Code     | `npx skills add Unibean9/harness-skills -a claude-code` | `/plugin marketplace add Unibean9/harness-skills` then `/plugin install harness-skills`                                                                              |
 | Codex CLI       | `npx skills add Unibean9/harness-skills -a codex`       | `codex plugin marketplace add Unibean9/harness-skills` (Codex CLI v0.122+); merge `hooks/codex/hooks.json.snippet` into `.codex/hooks.json` for guardrails           |
-| Gemini CLI      | `npx skills add Unibean9/harness-skills -a gemini`      | `gemini extensions install <this-repo-url>`                                                                                                                          |
 | Cursor          | `npx skills add Unibean9/harness-skills -a cursor`      | No marketplace command for this repo — sync `skills/hs-*` into `.cursor/skills/` and drop a short pointer rule in `.cursor/rules/*.mdc` (see `docs/cursor-setup.md`) |
 | Antigravity CLI | `npx skills add Unibean9/harness-skills -a antigravity` | No plugin manifest for this repo yet — skills-only command above is the only path (see `docs/antigravity-setup.md`)                                                  |
 
 "Native plugin" above is about installing _this repo's_ skills — it's
 independent of whether the agent itself supports hooks/subagents (see
-Compatibility and Subagents below; Cursor and Antigravity both have their
-own native hook/subagent systems even though this repo hasn't shipped
-config for either yet).
+Compatibility and Subagents below; Cursor now has `ship-gate`/`privacy-block`
+wired, Antigravity has neither hooks wired yet).
 
 Per-agent details, guardrail coverage, and known gaps: `docs/claude-setup.md`,
-`docs/codex-setup.md`, `docs/gemini-setup.md`, `docs/cursor-setup.md`,
-`docs/antigravity-setup.md`.
+`docs/codex-setup.md`, `docs/cursor-setup.md`, `docs/antigravity-setup.md`.
 
 Once installed, start the agent and ask for something — it should reach for
 `hs-brainstorm` on its own. Developing this repo itself: `/plugin marketplace
@@ -117,10 +124,10 @@ both roles and per-agent wiring:
 | [hs-scout](agents/hs-scout.md)       | Delegates broad reading — existing code, docs, an external API — to a cheap/fast subagent         | Before each phase, when the phase needs context the main model doesn't have loaded yet |
 | [hs-reviewer](agents/hs-reviewer.md) | Reviews the verified diff from a context-independent subagent, not the same context that wrote it | `hs-review`, before shipping                                                           |
 
-All five supported agents have a **native** subagent mechanism (Antigravity
-inherits Gemini CLI's — see `docs/antigravity-setup.md`). Generate the
-definition file for whichever one you're using with a single command, from
-the project root:
+All four supported agents have a native (or expected-native, for
+Antigravity — see `docs/antigravity-setup.md`) subagent mechanism. Generate
+the definition file for whichever one you're using with a single command,
+from the project root:
 
 ```bash
 npm exec -- hs agents                   # all four targets in one pass
@@ -131,8 +138,8 @@ npm exec -- hs agents --target codex    # just one
 | ----------- | --------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------- |
 | Claude Code | `.claude/agents/hs-scout.md`, `.claude/agents/hs-reviewer.md`   | Markdown + YAML frontmatter                                                                                                              |
 | Codex CLI   | `.codex/agents/hs-scout.toml`, `.codex/agents/hs-reviewer.toml` | TOML — `name`/`description`/`developer_instructions`                                                                                    |
-| Gemini CLI  | `.gemini/agents/hs-scout.md`, `.gemini/agents/hs-reviewer.md`   | Markdown + YAML frontmatter, invoke with `@hs-scout`                                                                                    |
 | Cursor      | `.cursor/agents/hs-scout.md`, `.cursor/agents/hs-reviewer.md`   | Same shape as Claude Code — and Cursor reads `.claude/agents/` directly, so no separate file is needed if that's already in the project |
+| Antigravity CLI | `.agents/agents/hs-scout.md`, `.agents/agents/hs-reviewer.md` | Same Markdown + YAML frontmatter shape as Cursor's — path unconfirmed, see `docs/antigravity-setup.md` |
 
 This repo's own bundled Claude Code copy lives at `agents/hs-scout.md` /
 `agents/hs-reviewer.md` at the repo root (`npm exec -- hs agents --target
@@ -163,6 +170,15 @@ of fields that genuinely vary per project (`privacyBlock`'s allow/deny
 lists, `shipGate.blockCommands`). Skills work fully without hooks; hooks add
 scoped enforcement on top. See `hooks/README.md` for the full per-agent
 coverage table and known limits.
+
+**If you're rolling this out to a team, not just your own project**:
+`monitoring` is enabled by default and writes every matched tool call
+(redacted for secrets, but still command/path detail) to
+`.harness/state/audit.log` — read it with `npm exec -- hs audit`. Tell
+whoever's using the harness that this logging exists before they start,
+the same way you'd disclose any local dev-tooling telemetry. Turn it off
+in `hs.settings.json` (`"monitoring": {"enabled": false}`) if that's not
+appropriate for the setting.
 
 ---
 
@@ -202,26 +218,23 @@ overwritten on update:
 
 Two different questions, easy to conflate: does the _agent_ natively support
 hooks/subagents at all, and has _this repo_ shipped config wiring its
-guardrails/subagents to that agent. As of mid-2026, all five agents below
-have native hooks and native subagents — this repo generates `hs-scout`/
-`hs-reviewer` for all four (`npm exec -- hs agents`) and has wired its own
-guardrail hooks natively for Claude Code, with snippets to merge by hand for
-Codex and Gemini.
+guardrails/subagents to that agent. Four agents are supported, split into two
+tiers: Claude Code and Codex CLI are **tier 1** (skills, subagents, and
+guardrail hooks all wired); Cursor and Antigravity CLI are **tier 2**
+(skills and subagents wired, hooks not) — see each row's last column for
+exactly what's missing and why.
 
-| Agent           | Instruction / skills                                         | Agent's native hooks                                                         | Agent's native subagents                                           | This repo's wiring                                                                                                                                                                      |
-| --------------- | ------------------------------------------------------------ | ---------------------------------------------------------------------------- | ------------------------------------------------------------------ | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Claude Code     | `AGENTS.md`; plugin auto-discovers root `skills/`            | Yes — `.claude/settings.json` / plugin `hooks.json`                          | Yes — `.claude/agents/*.md`                                        | Full: `hooks/hooks.json` auto-wires on install; `hs agents --target claude` generates `hs-scout`/`hs-reviewer`.                                                                         |
-| Codex CLI       | `AGENTS.md` and `skills/` via `.codex-plugin/plugin.json`    | Yes, since ~v0.124.0 — `.codex/hooks.json` or `config.toml`                  | Yes, since ~v0.115.0 — `.codex/agents/*.toml`                      | Hooks: merge `hooks/codex/hooks.json.snippet`. Subagents: `hs agents --target codex` generates both TOML files.                                                                         |
-| Gemini CLI      | `GEMINI.md` -> `AGENTS.md`, and `skills/`                    | Yes — `.gemini/settings.json`, more events than this repo's snippet uses     | Yes — `.gemini/agents/*.md`, invoke with `@name`                   | Hooks: merge `hooks/gemini/settings.snippet.json`. Subagents: `hs agents --target gemini` generates both files.                                                                         |
-| Cursor          | `.cursor-plugin/plugin.json` declares `skills: "./skills/"`  | Yes — `.cursor/hooks.json`, own event/payload shape                          | Yes — `.cursor/agents/*.md`; also reads `.claude/agents/` directly | Hooks not wired yet — `hooks/*.mjs` don't emit Cursor's output shape. Subagents: `hs agents --target cursor` generates both files (or rely on `.claude/agents/` if already present).    |
-| Antigravity CLI | No native manifest for this repo yet — `npx skills add` only | Yes, inherited from Gemini CLI's engine per Google's transition announcement | Yes, same inheritance                                              | Not wired — no hooks snippet, no plugin manifest for this repo yet (`docs/antigravity-setup.md`); Gemini-generated subagent files apply via the same inheritance.                       |
+| Agent           | Tier | Instruction / skills                                         | Agent's native hooks                                                         | Agent's native subagents                                           | This repo's wiring                                                                                                                                                                      |
+| --------------- | ---- | ------------------------------------------------------------ | ---------------------------------------------------------------------------- | ------------------------------------------------------------------ | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Claude Code     | 1    | `AGENTS.md`; plugin auto-discovers root `skills/`            | Yes — `.claude/settings.json` / plugin `hooks.json`                          | Yes — `.claude/agents/*.md`                                        | Full: `hooks/hooks.json` auto-wires on install; `hs agents --target claude` generates `hs-scout`/`hs-reviewer`.                                                                         |
+| Codex CLI       | 1    | `AGENTS.md` and `skills/` via `.codex-plugin/plugin.json`    | Yes, since ~v0.124.0 — `.codex/hooks.json` or `config.toml`                  | Yes, since ~v0.115.0 — `.codex/agents/*.toml`                      | Hooks: merge `hooks/codex/hooks.json.snippet`. Subagents: `hs agents --target codex` generates both TOML files.                                                                         |
+| Cursor          | 2    | `.cursor-plugin/plugin.json` declares `skills: "./skills/"`  | Yes — `.cursor/hooks.json`, own event/payload shape                          | Yes — `.cursor/agents/*.md`; also reads `.claude/agents/` directly | Partial: `ship-gate`/`privacy-block` wired to `beforeShellExecution`/`beforeReadFile` (see `hooks/cursor/hooks.json.snippet`); `session-state`/`monitoring` not yet. Subagents: `hs agents --target cursor` generates both files (or rely on `.claude/agents/` if already present).    |
+| Antigravity CLI | 2    | No native manifest for this repo yet — `npx skills add` only | Expected yes, inherited from Gemini CLI's engine per Google's transition announcement (unconfirmed exact config path) | Expected yes, same inheritance                                    | Hooks not wired — no confirmed config path yet. Subagents: `hs agents --target antigravity` generates both files (see `docs/antigravity-setup.md` for what's confirmed vs. guessed).   |
 
 Known per-agent coverage limits where this repo _has_ wired something:
 Claude Code's privacy hook only matches `Read`/`Write`/`Edit`/`Bash`, ship
 gate only `Bash`; Codex's matchers cover `Bash`/`apply_patch` only, so
-privacy is a guardrail, not a complete privacy boundary; Gemini's tool
-names/hook semantics can shift across CLI releases — recheck the snippet
-after upgrading.
+privacy is a guardrail, not a complete privacy boundary.
 
 Run `npm test` for the Node 22+ compatibility suite; CI runs the same
 command. State/verification is Node-native — `scripts/state.mjs`,

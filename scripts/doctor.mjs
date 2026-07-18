@@ -59,8 +59,8 @@ export function runDoctor(root = process.cwd()) {
   const subagentLocations = {
     "Claude Code": { dirs: [".claude/agents", "agents"], files: ["hs-scout.md", "hs-reviewer.md"] },
     "Codex CLI": { dirs: [".codex/agents"], files: ["hs-scout.toml", "hs-reviewer.toml"] },
-    "Gemini CLI": { dirs: [".gemini/agents"], files: ["hs-scout.md", "hs-reviewer.md"] },
-    Cursor: { dirs: [".cursor/agents"], files: ["hs-scout.md", "hs-reviewer.md"] },
+    "Cursor (tier 2)": { dirs: [".cursor/agents"], files: ["hs-scout.md", "hs-reviewer.md"] },
+    "Antigravity CLI (tier 2)": { dirs: [".agents/agents"], files: ["hs-scout.md", "hs-reviewer.md"] },
   };
   for (const [agent, { dirs, files }] of Object.entries(subagentLocations)) {
     checks.push(check(`${agent} subagents`, () => {

@@ -44,14 +44,6 @@ test("Cursor plugin manifest declares skill discovery only (no unverified hook w
   assert.equal(manifest.hooks, undefined);
 });
 
-test("Gemini extension manifest exists, points at GEMINI.md, and matches the plugin version", () => {
-  const claude = readJson(".claude-plugin/plugin.json");
-  const manifest = readJson("gemini-extension.json");
-  assert.equal(manifest.name, "harness-skills");
-  assert.equal(manifest.version, claude.version);
-  assert.equal(manifest.contextFileName, "GEMINI.md");
-});
-
 test("Claude Code's root hooks.json references the plugin-root variable, not the project-root one", () => {
   const hooksJson = read("hooks/hooks.json");
   assert.match(hooksJson, /\$\{CLAUDE_PLUGIN_ROOT\}/);
@@ -80,14 +72,12 @@ for (const name of ["hs-scout", "hs-reviewer"]) {
   });
 }
 
-test("all four manifest versions (package.json, Claude, Codex, Cursor, Gemini) stay in lockstep", () => {
+test("all plugin manifest versions (package.json, Claude, Codex, Cursor) stay in lockstep", () => {
   const pkg = readJson("package.json");
   const claude = readJson(".claude-plugin/plugin.json");
   const codex = readJson(".codex-plugin/plugin.json");
   const cursor = readJson(".cursor-plugin/plugin.json");
-  const gemini = readJson("gemini-extension.json");
   assert.equal(claude.version, pkg.version, ".claude-plugin/plugin.json version must match package.json");
   assert.equal(codex.version, pkg.version, ".codex-plugin/plugin.json version must match package.json");
   assert.equal(cursor.version, pkg.version, ".cursor-plugin/plugin.json version must match package.json");
-  assert.equal(gemini.version, pkg.version, "gemini-extension.json version must match package.json");
 });

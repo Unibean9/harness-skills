@@ -1,6 +1,0 @@
-{
-  "name": "harness-skills",
-  "version": "2.0.0",
-  "description": "A six-phase spec-driven development harness (brainstorm -> plan -> build -> verify -> review -> ship) with evidence gates.",
-  "contextFileName": "GEMINI.md"
-}

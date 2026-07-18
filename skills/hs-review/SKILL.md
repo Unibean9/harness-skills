@@ -9,20 +9,18 @@ Use the project-local runtime as `npm exec -- hs`; review the real diff, not a s
 
 ## Why this phase exists
 
-`hs-verify` proves the change works; it says nothing about whether the change
-is *good* — clean, secure, free of duplication, actually testing what matters.
-The agent that just implemented the change is structurally the worst reviewer
-of it: it already believes its own decisions, and it's blind to exactly the
-assumptions it made along the way. This phase exists to put a second,
-independent pass between "it works" and "it ships" — one that reads the diff
-cold, without the accumulated justification for why each line looks the way
-it does.
+`hs-verify` proves the change works; it says nothing about whether it's
+*good* — clean, secure, free of duplication, actually testing what matters.
+The agent that just implemented the change is structurally the worst
+reviewer of it, already believing its own decisions and blind to the
+assumptions behind them — this phase puts a second, independent pass between
+"it works" and "it ships," reading the diff cold.
 
-Unlike every other phase, this one is **advisory**: it doesn't write an
-attestation, and `hs-ship`'s readiness check doesn't require it to have run.
-A team in a hurry can ship straight from a valid `hs-verify` attestation. The
-value here is a habit worth having, not a gate worth enforcing — a
-blocking review gate just becomes a rubber stamp the moment it's inconvenient.
+This phase alone is **advisory**: no attestation, and `hs-ship` doesn't
+require it to have run. A team in a hurry can ship straight from a valid
+`hs-verify` attestation — the value here is a habit worth having, not a gate
+worth enforcing, since a blocking review just becomes a rubber stamp the
+moment it's inconvenient.
 
 ## Process
 

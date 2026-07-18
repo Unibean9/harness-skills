@@ -9,20 +9,13 @@ Use the project-local runtime as `npm exec -- hs`; never assume `scripts/` exist
 
 ## Why this phase exists, and why specs live in their own folder
 
-Code is a derived artifact of a decision about what to build. If that
-decision never gets written down, it lives only in the conversation — which
-means it gets re-litigated every time context gets compacted, a new session
-starts, or someone else picks up the thread. A spec is what lets "is this
-done" become a factual question instead of a matter of opinion later in
-`hs-verify`.
-
-In practice this cycle runs over and over on the same project — a second
-feature starts while the first is still being verified, a third revisits
-something already shipped. A single `.harness/spec.md` can't hold that: the
-next feature would silently overwrite the last one's spec. So each feature
-gets its own directory under `.harness/specs/`, and `.harness/specs/INDEX.md`
-keeps a glanceable record of every spec this project has ever had, instead of
-history living only in scattered, overwritten files.
+An unwritten decision lives only in the conversation, and gets re-litigated
+every time context compacts or a new session starts — a spec is what makes
+"is this done" a factual question later in `hs-verify` instead of an opinion.
+And since this cycle repeats per feature on the same project, a single
+`.harness/spec.md` would let the next feature silently overwrite the last
+one's — hence one directory per spec under `.harness/specs/`, with
+`.harness/specs/INDEX.md` as the glanceable index across all of them.
 
 ## Process
 
@@ -59,12 +52,21 @@ history living only in scattered, overwritten files.
    ```
 
    Then:
-   - create `.harness/specs/<ID>-<slug>/spec.md` using the template in
-     `references/spec-template.md`
+   - **Pick spec weight.** If the whole change fits a single sitting, the
+     files it touches are already obvious, and the requirement has no
+     remaining ambiguity — use the **light template** in
+     `references/spec-template.md` (`spec.md` embeds its own `## Tasks`
+     checklist; `hs-plan` is skipped entirely once this one file is
+     approved). Otherwise use the **full template** (separate `hs-plan`
+     pass follows). When unsure, use the full template — light mode trades
+     ceremony for speed, not for a lower bar on "does this need a plan."
+   - create `.harness/specs/<ID>-<slug>/spec.md` using the chosen template
+     from `references/spec-template.md`
    - add a row to `.harness/specs/INDEX.md` (see the same reference file for
      the header row if it doesn't exist yet)
 
-5. **Stop and ask for approval.** Present the spec, then end your turn
+5. **Stop and ask for approval.** Present the spec (and, in light mode, its
+   embedded task list — this one approval covers both), then end your turn
    waiting for an explicit answer. Don't infer approval from silence, and
    don't write `**Status:** approved` yourself — that line only gets set
    after the user actually confirms. If they ask for changes, revise and ask

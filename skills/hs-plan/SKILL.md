@@ -23,6 +23,13 @@ you need to know that now, not discover it mid-build and wonder if you caused it
    `**Status:**` isn't `approved`, stop — go back to `hs-brainstorm` first.
    Don't plan against an unapproved spec; it may still change.
 
+   **If `spec.md` already has a `## Tasks` section** (light mode — see
+   `skills/hs-brainstorm/references/spec-template.md`), this phase is done
+   before it starts: the approved spec *is* the approved plan. Skip straight
+   to `hs-build`, which reads its task list from `spec.md` directly. Don't
+   write a separate `plan.md` in this case — that would just be duplicating
+   what light mode exists to avoid.
+
 2. **Delegate a scouting pass** (see `docs/agents.md#hs-scout--cheap-context-gathering-subagent`) with a
    narrow question: "which files would a change like `<spec goal>` likely
    touch, and does this project have an existing pattern for similar work?"
@@ -56,6 +63,15 @@ you need to know that now, not discover it mid-build and wonder if you caused it
    `references/plan-template.md`. Each task's `Verify:` line is the actual
    contract `hs-build` runs against — not prose the agent may silently narrow
    later, the literal command `hs-build` will pass to `hs check`.
+
+   **The verify command must leave the worktree exactly as it found it.**
+   `hs check` fingerprints the worktree before and after running it — if the
+   command writes any file git doesn't already ignore (a coverage report, a
+   build cache, a generated lockfile), the check fails with `FAIL` even
+   though the command itself exited 0. If a task's verify command produces
+   output like that, either point it at `/dev/null`/a flag that suppresses
+   the write, or add the output path to `.gitignore` as part of the task —
+   don't discover this the hard way mid-`hs-build`.
 
 6. **Cut ruthlessly.** Re-read the task list. Any task that doesn't trace back
    to a spec requirement gets removed — this is where YAGNI actually earns its

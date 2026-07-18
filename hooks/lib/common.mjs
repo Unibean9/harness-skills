@@ -83,7 +83,15 @@ export function isShipCommand(command) {
 
 export function extractCommand(call) {
   const ti = call.tool_input || {};
-  return ti.command || ti.cmd || "";
+  // Claude/Codex nest the command in tool_input; Cursor's beforeShellExecution
+  // puts it at the payload's top level instead -- check both shapes.
+  return ti.command || ti.cmd || call.command || "";
+}
+
+// Cursor's beforeReadFile/afterFileEdit payloads put the path at the top
+// level (`file_path`), not nested under tool_input like Claude/Codex.
+export function extractCursorPath(call) {
+  return call.file_path || "";
 }
 
 export function appendAuditLine(logFile, line) {
@@ -95,11 +103,18 @@ export function nowIso() {
   return new Date().toISOString();
 }
 
+// Exit code 2 = block on Claude Code, Codex, and Cursor alike (Cursor's docs
+// state exit 2 is equivalent to `permission: "deny"`) -- the stdout JSON is
+// purely additive: Cursor reads it for user_message/agent_message, Claude and
+// Codex ignore unrecognized stdout fields on a block (they act on the exit
+// code and stderr text instead), so one shape works for all three.
 export function block(reason) {
+  process.stdout.write(JSON.stringify({ permission: "deny", user_message: reason, agent_message: reason }) + "\n");
   process.stderr.write(reason + "\n");
   process.exit(2);
 }
 
 export function allow() {
+  process.stdout.write(JSON.stringify({ permission: "allow" }) + "\n");
   process.exit(0);
 }

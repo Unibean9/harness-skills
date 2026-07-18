@@ -17,7 +17,7 @@ import { generateAgents } from "./generate-agents.mjs";
 const packageRoot = resolve(join(fileURLToPath(import.meta.url), "..", ".."));
 
 const HOOK_FILES = ["privacy-block.mjs", "ship-gate.mjs", "session-state.mjs", "monitoring.mjs"];
-const HOOK_SCRIPT_DEPS = ["check-ship-ready.mjs", "attestation.mjs", "paths.mjs", "worktree.mjs", "run-check.mjs"];
+const HOOK_SCRIPT_DEPS = ["check-ship-ready.mjs", "attestation.mjs", "paths.mjs", "worktree.mjs", "run-check.mjs", "next-skill.mjs", "bookkeeping.mjs"];
 
 const CURSOR_RULE = `---
 description: Harness Skills — spec-driven dev flow (hs-brainstorm -> hs-plan -> hs-build -> hs-verify -> hs-review -> hs-ship)
@@ -104,31 +104,23 @@ const TARGETS = {
     writeIfMissing(join(agentDir, "hooks.json"), rewrittenSnippet("hooks/codex/hooks.json.snippet", ".codex"), log, "hooks-wiring");
     copySettings(root, log);
   },
-  gemini: (root, log) => {
-    const agentDir = join(root, ".gemini");
-    copySkills(agentDir, log);
-    generateAgents({ target: "gemini", outDir: join(agentDir, "agents") }).forEach((file) => log(`agent   -> ${file}`));
-    copyHooksBundle(agentDir, log);
-    writeIfMissing(join(agentDir, "settings.json"), rewrittenSnippet("hooks/gemini/settings.snippet.json", ".gemini"), log, "hooks-wiring");
-    copySettings(root, log);
-  },
   cursor: (root, log) => {
     const agentDir = join(root, ".cursor");
     copySkills(agentDir, log);
     generateAgents({ target: "cursor", outDir: join(agentDir, "agents") }).forEach((file) => log(`agent   -> ${file}`));
     mkdirSync(join(agentDir, "rules"), { recursive: true });
     writeIfMissing(join(agentDir, "rules", "harness-skills.mdc"), CURSOR_RULE, log, "rule");
+    copyHooksBundle(agentDir, log);
+    writeIfMissing(join(agentDir, "hooks.json"), rewrittenSnippet("hooks/cursor/hooks.json.snippet", ".cursor"), log, "hooks-wiring");
     copySettings(root, log);
-    log("note    -> Cursor hooks NOT wired: this package's hook scripts emit Claude Code's output shape, which Cursor's hooks.json does not read (see docs/cursor-setup.md).");
+    log("note    -> TIER 2 (partial): ship-gate + privacy-block ARE wired (beforeShellExecution/beforeReadFile) -- session-state and monitoring are NOT (their Cursor event/output shape isn't adapted yet, see docs/cursor-setup.md).");
   },
   antigravity: (root, log) => {
-    const agentDir = join(root, ".antigravity");
+    const agentDir = join(root, ".agents");
     copySkills(agentDir, log);
-    // No antigravity renderer exists; it inherits Gemini CLI's agent format,
-    // so generate the gemini shape into the (unconfirmed) .antigravity dir.
-    generateAgents({ target: "gemini", outDir: join(agentDir, "agents") }).forEach((file) => log(`agent   -> ${file}`));
+    generateAgents({ target: "antigravity", outDir: join(agentDir, "agents") }).forEach((file) => log(`agent   -> ${file}`));
     copySettings(root, log);
-    log("note    -> '.antigravity/' is an UNCONFIRMED path guess (see docs/antigravity-setup.md); verify against Antigravity's own docs. Hooks not wired: no confirmed Antigravity hook config path exists yet.");
+    log("note    -> TIER 2 (experimental): '.agents/skills' + '.agents/agents' match the confirmed mid-2026 Antigravity CLI convention (see docs/antigravity-setup.md for sources); this repo's root AGENTS.md is natively read by Antigravity CLI v1.20.3+ already. Hooks not wired: no confirmed Antigravity hook config path exists yet.");
   },
 };
 
@@ -145,7 +137,7 @@ if (process.argv[1] && fileURLToPath(import.meta.url) === resolve(process.argv[1
   const targetIndex = args.indexOf("--target");
   try {
     const target = targetIndex !== -1 ? args[targetIndex + 1] : null;
-    if (!target) throw new Error("usage: setup.mjs --target <claude|codex|gemini|cursor|antigravity>");
+    if (!target) throw new Error("usage: setup.mjs --target <claude|codex|cursor|antigravity>");
     for (const line of setupAgent(target, process.cwd())) console.log(line);
   } catch (error) {
     console.error(error.message);

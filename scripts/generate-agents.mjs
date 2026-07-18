@@ -1,9 +1,10 @@
 #!/usr/bin/env node
 // Generates the hs-scout / hs-reviewer subagent definitions for whichever
 // agent CLI is asking, from the single source of truth in docs/agents.md.
-// Editing docs/agents.md and regenerating is how these stay in sync across
-// four incompatible file formats -- never hand-edit a generated file, it's
-// overwritten on the next run.
+// Four targets, two file formats (Markdown+YAML frontmatter for
+// claude/cursor/antigravity, TOML for codex) -- editing docs/agents.md and
+// regenerating is how these stay in sync; never hand-edit a generated file,
+// it's overwritten on the next run.
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import { dirname, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
@@ -51,18 +52,16 @@ function renderClaude(name, section, info) {
   return `${lines.join("\n")}\n<!-- GENERATED from docs/agents.md's "## ${name}" section; run \`npm exec -- hs agents --target claude\` -->\n\n${section}\n`;
 }
 
-function renderGemini(name, section, info) {
-  const lines = ["---", `name: ${name}`, `description: ${info.description}`];
-  lines.push("---", "");
-  const note = info.lightweight ? `<!-- model intentionally unset: ${LIGHTWEIGHT_NOTE} -->\n` : "";
-  return `${lines.join("\n")}\n<!-- GENERATED from docs/agents.md's "## ${name}" section; run \`npm exec -- hs agents --target gemini\` -->\n${note}\n${section}\n`;
-}
-
-function renderCursor(name, section, info) {
-  const lines = ["---", `name: ${name}`, `description: ${info.description}`, "readonly: true"];
-  lines.push("---", "");
-  const note = info.lightweight ? `<!-- model intentionally unset: ${LIGHTWEIGHT_NOTE} -->\n` : "";
-  return `${lines.join("\n")}\n<!-- GENERATED from docs/agents.md's "## ${name}" section; run \`npm exec -- hs agents --target cursor\` -->\n${note}\n${section}\n`;
+// Cursor and Antigravity both use Markdown + YAML frontmatter, same shape as
+// Claude's -- one renderer, parametrized by which extra frontmatter keys and
+// which `--target` name shows up in the generated comment.
+function renderMarkdownFrontmatter(target, extraFrontmatter = []) {
+  return (name, section, info) => {
+    const lines = ["---", `name: ${name}`, `description: ${info.description}`, ...extraFrontmatter];
+    lines.push("---", "");
+    const note = info.lightweight ? `<!-- model intentionally unset: ${LIGHTWEIGHT_NOTE} -->\n` : "";
+    return `${lines.join("\n")}\n<!-- GENERATED from docs/agents.md's "## ${name}" section; run \`npm exec -- hs agents --target ${target}\` -->\n${note}\n${section}\n`;
+  };
 }
 
 function tomlString(text) {
@@ -78,8 +77,21 @@ function renderCodex(name, section, info) {
 
 const RENDERERS = {
   claude: { render: renderClaude, extension: "md", defaultOut: () => join(process.cwd(), ".claude", "agents") },
-  gemini: { render: renderGemini, extension: "md", defaultOut: () => join(process.cwd(), ".gemini", "agents") },
-  cursor: { render: renderCursor, extension: "md", defaultOut: () => join(process.cwd(), ".cursor", "agents") },
+  cursor: {
+    render: renderMarkdownFrontmatter("cursor", ["readonly: true"]),
+    extension: "md",
+    defaultOut: () => join(process.cwd(), ".cursor", "agents"),
+  },
+  // Confirmed convention (mid-2026, multiple independent sources): project-level
+  // Antigravity CLI config lives under `.agents/` (`.agents/skills/`,
+  // `.agents/agents.md`), not a dedicated `.antigravity/` directory -- see
+  // docs/antigravity-setup.md for sources. Subagent folder naming under
+  // `.agents/` is the best-supported guess, not independently confirmed.
+  antigravity: {
+    render: renderMarkdownFrontmatter("antigravity"),
+    extension: "md",
+    defaultOut: () => join(process.cwd(), ".agents", "agents"),
+  },
   codex: { render: renderCodex, extension: "toml", defaultOut: () => join(process.cwd(), ".codex", "agents") },
 };
 

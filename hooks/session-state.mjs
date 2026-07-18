@@ -14,6 +14,7 @@
 import { existsSync, readFileSync, writeFileSync, mkdirSync } from "node:fs";
 import { dirname } from "node:path";
 import { loadSettings, projectPath, readStdinJson } from "./lib/common.mjs";
+import { computeNextSkill } from "../scripts/next-skill.mjs";
 
 const CURRENT_SPEC_FILE = ".harness/state/current-spec";
 const SUMMARY_FILE = ".harness/state/session-summary.md";
@@ -36,10 +37,25 @@ if (!cfg.enabled) process.exit(0);
 const currentSpecFile = projectPath(call, CURRENT_SPEC_FILE);
 const summaryFile = projectPath(call, SUMMARY_FILE);
 
+// Computed once, deterministically, so a fresh session doesn't have to infer
+// "which skill comes next" from spec.md/plan.md/progress.md prose each time
+// -- it's the exact same decision tree AGENTS.md describes, just pre-run.
+let next;
+try {
+  next = computeNextSkill(projectPath(call));
+} catch {
+  next = null;
+}
+const nextSkillLine = next
+  ? `**Next: \`${next.nextSkill}\`** (phase: ${next.phase} — ${next.reason})`
+  : "**Next: unable to determine — read `.harness/` and `AGENTS.md`'s routing tree manually.**";
+
 let digest;
 if (!existsSync(currentSpecFile)) {
   digest = [
     "# Harness session summary (auto-generated)",
+    "",
+    nextSkillLine,
     "",
     "No active spec yet (.harness/state/current-spec doesn't exist).",
     "Run hs-brainstorm to start one, or check .harness/specs/INDEX.md for prior specs.",
@@ -54,7 +70,7 @@ if (!existsSync(currentSpecFile)) {
     describeFile(`${specDir}/progress.md`),
     describeFile(`${specDir}/implement-notes.md`),
   ];
-  digest = ["# Harness session summary (auto-generated)", "", ...sections].join("\n");
+  digest = ["# Harness session summary (auto-generated)", "", nextSkillLine, "", ...sections].join("\n");
 }
 
 mkdirSync(dirname(summaryFile), { recursive: true });

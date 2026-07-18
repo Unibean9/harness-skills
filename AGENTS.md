@@ -28,7 +28,19 @@ hs-brainstorm -> hs-plan -> hs-build -> hs-verify -> hs-review -> hs-ship
 
 Each phase's exit condition is in its own `SKILL.md`. Don't skip ahead — a
 trivial one-line change (typo, config value) is exempt from the full flow but
-still gets an `hs-verify` pass before it ships.
+still gets a real, worktree-bound check before it ships: run
+`npm exec -- hs check --trivial verify-<name> -- <command>` then
+`npm exec -- hs attest --trivial` (no spec, no plan, nothing else required —
+this is a separate attestation path from the per-spec one `hs-verify` writes,
+built specifically so this exemption isn't just a promise the `shipGate` hook
+can't actually honor).
+
+This path has no automatic size or scope check — nothing measures whether a
+change is actually trivial before accepting a `--trivial` attestation for it.
+"Is this genuinely trivial" is a judgment call the model (or the human) makes
+honestly, not something `hs` enforces structurally; using it for a change
+that isn't trivial defeats the whole harness, the same way lying on any other
+step would.
 
 Route from state, not memory:
 
@@ -37,12 +49,20 @@ Task arrives
     |
     +-- .harness/ missing or current-spec empty? ----------> hs-brainstorm
     +-- spec.md not "approved" yet? -----------------------> hs-brainstorm
+    +-- spec.md has its own "## Tasks" (light mode)? ------> skip hs-plan, go straight to hs-build
     +-- spec approved, plan.md missing or not approved? ---> hs-plan
-    +-- plan approved, unchecked tasks in progress.md? ----> hs-build
+    +-- plan (or light spec's task list) approved,
+    |   unchecked tasks in progress.md? -------------------> hs-build
     +-- all tasks [x], no valid verify attestation? -------> hs-verify
     +-- attestation valid, no "## Review" in progress.md? -> hs-review (recommended, not required)
     +-- attestation valid, user wants to commit/PR? -------> hs-ship
 ```
+
+This tree is also computed for you, not just described: `npm exec -- hs status`
+(or the `sessionState` hook's digest at session start, where wired) prints
+the same answer read off disk — phase, next skill, and why. Treat a mismatch
+between what it says and what a skill's own exit condition says as a bug to
+fix, not something to route around.
 
 ## State conventions
 
@@ -96,9 +116,12 @@ out ambiguous once you're implementing it.
 `hs.settings.json` at the repo root configures four optional hooks:
 `privacyBlock` (block reading/exposing secrets), `shipGate` (block
 commit/push without a valid verify attestation), `sessionState` (rebuild the
-session digest), `monitoring` (audit log of matched tool calls). See
+session digest, plus compute the next-skill phase — see `hs status`),
+`monitoring` (audit log of matched tool calls, readable with `hs audit`). See
 `hooks/README.md` for per-agent wiring and coverage limits. Skills work fully
-without hooks; hooks add scoped enforcement on top.
+without hooks; hooks add scoped enforcement on top. `monitoring` is on by
+default — disclose that to anyone else using the harness before they start,
+same as any other local dev-tooling telemetry.
 
 ## Customizing this for your project
 
@@ -111,10 +134,15 @@ to fit the project you're installing the harness into:
   directly in this file so every skill finds them without asking.
 - **`hs.settings.json`**: turn hooks on/off, tune `privacyBlock`'s
   allow/deny lists, adjust `shipGate.blockCommands`.
-- **Phase count**: five phases is the default, not a minimum. A project doing
-  only quick fixes might collapse `hs-brainstorm`/`hs-plan` into one pass —
-  edit the SKILL.md files to match, but keep an exit condition on whatever you
-  keep, or "looks done" quietly becomes "is done" again.
+- **Phase count**: six phases is the default, not a minimum. `hs-brainstorm`
+  already collapses `hs-brainstorm`/`hs-plan` into one approval for small
+  tasks — a "light" spec+plan file with its own embedded `## Tasks` list (see
+  `skills/hs-brainstorm/references/spec-template.md`); no editing required,
+  it's a built-in mode, not a customization. `hs-build`/`hs-verify`/`hs-ship`
+  run exactly the same either way — only the spec/plan split and its second
+  approval round-trip disappear. Collapsing further than that is still a
+  valid customization, but keep an exit condition on whatever you keep, or
+  "looks done" quietly becomes "is done" again.
 - **Skill wording**: `skills/*/SKILL.md` are plain markdown — reword,
   retitle, or add project-specific rationalizations/failure modes as you find
   them. Keep each skill's frontmatter `name` matching its directory and its

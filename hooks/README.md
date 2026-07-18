@@ -27,8 +27,8 @@ own top-level key out of `hs.settings.json`:
 |---|---|---|---|
 | `privacy-block.mjs` | `PreToolUse` | `privacyBlock` | Blocks reading/referencing a path matching `denyList` unless it's also in `allowList` (e.g. blocks `.env`, allows `.env.example`). |
 | `ship-gate.mjs` | `PreToolUse` | `shipGate` | Blocks `git commit`/`git push`/`gh pr create`-style commands (from `blockCommands`) unless a valid, spec-and-worktree-bound attestation exists (see `scripts/attestation.mjs`) — a hand-edited `.harness/state/verify-all.status` string alone is not enough. |
-| `session-state.mjs` | `SessionStart` | `sessionState` | Reads `.harness/state/current-spec` to find the active spec, digests its `spec.md`/`plan.md`/`progress.md`/`implement-notes.md`, and writes/injects that digest — so a fresh session doesn't miss what a prior one already established. |
-| `monitoring.mjs` | `PreToolUse` / `PostToolUse` | `monitoring` | Appends one line per tool call to `.harness/state/audit.log`, tagged with a fixed `category` (`ship`/`shell`/`file-write`/`file-read`/`other`) — an audit trail independent of what any transcript claims happened. Also trims the log to `monitoring.retention` (`maxLines`, default 5000; `maxAgeDays`, default 30) so it stays a bounded operational record instead of growing forever. |
+| `session-state.mjs` | `SessionStart` | `sessionState` | Reads `.harness/state/current-spec` to find the active spec, computes the phase/next-skill answer (`scripts/next-skill.mjs`, same decision tree as `AGENTS.md`'s routing diagram — also runnable standalone as `hs status`), digests `spec.md`/`plan.md`/`progress.md`/`implement-notes.md`, and writes/injects both — so a fresh session doesn't miss what a prior one already established or have to re-derive which skill comes next. |
+| `monitoring.mjs` | `PreToolUse` / `PostToolUse` | `monitoring` | Appends one line per tool call to `.harness/state/audit.log`, tagged with a fixed `category` (`ship`/`shell`/`file-write`/`file-read`/`other`) — an audit trail independent of what any transcript claims happened. Also trims the log to `monitoring.retention` (`maxLines`, default 5000; `maxAgeDays`, default 30) so it stays a bounded operational record instead of growing forever. Read it with `npm exec -- hs audit` (category counts, time range, last N entries) — a log nobody reads isn't evidence, so this is the intended consumer, not an afterthought. |
 
 They're separate files on purpose: turning one off, changing its trigger
 event, or replacing its logic doesn't touch the other three, and a new
@@ -42,17 +42,17 @@ one's a library, not a hook, and isn't wired to any event itself.
 The hook payload and decision semantics are agent-specific. Merge the matching
 snippet without assuming coverage beyond the listed matcher.
 
-All five agents below have a *native* hook mechanism — the gap, where one
-exists, is this repo's scripts not yet emitting that agent's specific
-payload/output shape, not the agent lacking hooks.
+Four agents are supported, in two tiers — tier 1 (Claude Code, Codex CLI) has
+all four hooks wired; tier 2 (Cursor, Antigravity CLI) is partial. Cursor now
+has `ship-gate`/`privacy-block` wired (its two other events,
+`session-state`/`monitoring`, aren't yet); Antigravity has none wired.
 
-| Agent | Destination | Events and matched tools | Coverage limitation |
-|---|---|---|---|
-| Claude Code | root `hooks/hooks.json`, auto-wired when installed via `.claude-plugin/plugin.json` (not installed as a plugin? copy `hooks/hooks.json`'s `hooks` key into `.claude/settings.json` and replace `${CLAUDE_PLUGIN_ROOT}` with `${CLAUDE_PROJECT_DIR}`) | `SessionStart`; `PreToolUse` for `Read\|Write\|Edit\|Bash`; `PostToolUse` for `.*` | Ship gate only sees `Bash`; privacy is limited to those four tools. |
-| Codex CLI | `.codex/hooks.json` or `[hooks]` in `config.toml` — project (`.codex/`) or user (`~/.codex/`) | `SessionStart`; `PreToolUse`/`PostToolUse` for `Bash|apply_patch` (Codex also exposes `SubagentStart`/`SubagentStop`/`UserPromptSubmit`/`PreCompact`/`PostCompact`/`Stop`, unused by this repo's snippet) | Non-managed hooks require explicit trust via Codex's `/hooks` command (content-hash keyed) before they fire — expected, not a bug. Unmatched paths are not intercepted. |
-| Gemini CLI | `.gemini/settings.json` or `~/.gemini/settings.json` | `SessionStart`; `BeforeTool` for `read_file|write_file|replace|run_shell_command`; `AfterTool` for `.*` (Gemini also has `SessionEnd`, `Notification`, `PreCompress`, `BeforeAgent`/`AfterAgent`, `BeforeModel`/`AfterModel`, `BeforeToolSelection`, unused by this repo's snippet) | Matchers depend on current Gemini tool names — recheck each release; ship gate only sees `run_shell_command`. |
-| Cursor | native since Cursor added CLI-parity hooks (`.cursor/hooks.json` project, `~/.cursor/hooks.json` user) — **not wired by this repo yet** | Cursor's own events: `sessionStart`/`sessionEnd`, `preToolUse`/`postToolUse`/`postToolUseFailure`, `beforeShellExecution`/`afterShellExecution`, `beforeMCPExecution`/`afterMCPExecution`, `beforeReadFile`/`afterFileEdit`, `subagentStart`/`subagentStop`, `stop` | `session-state.mjs` hardcodes Claude Code's `hookSpecificOutput.additionalContext` JSON shape, not Cursor's own hook-output schema — pointing Cursor's `hooks.json` at it unmodified would silently emit nothing rather than fail loudly. Same for `privacy-block.mjs`/`ship-gate.mjs`/`monitoring.mjs`: the mechanism exists on Cursor's side, the scripts just haven't grown a Cursor-shaped output branch yet. |
-| Antigravity CLI | inherits Gemini CLI's hook engine and event set per Google's Antigravity CLI announcement — **not wired by this repo yet**, no snippet written | Same event set as the Gemini row above | Exact config file location/naming for Antigravity specifically wasn't independently confirmed beyond "same engine as Gemini CLI" — verify against Antigravity's own docs before writing a snippet. |
+| Agent | Tier | Destination | Events and matched tools | Coverage limitation |
+|---|---|---|---|---|
+| Claude Code | 1 | root `hooks/hooks.json`, auto-wired when installed via `.claude-plugin/plugin.json` (not installed as a plugin? copy `hooks/hooks.json`'s `hooks` key into `.claude/settings.json` and replace `${CLAUDE_PLUGIN_ROOT}` with `${CLAUDE_PROJECT_DIR}`) | `SessionStart`; `PreToolUse` for `Read\|Write\|Edit\|Bash`; `PostToolUse` for `.*` | Ship gate only sees `Bash`; privacy is limited to those four tools. |
+| Codex CLI | 1 | `.codex/hooks.json` or `[hooks]` in `config.toml` — project (`.codex/`) or user (`~/.codex/`) | `SessionStart`; `PreToolUse`/`PostToolUse` for `Bash|apply_patch` (Codex also exposes `SubagentStart`/`SubagentStop`/`UserPromptSubmit`/`PreCompact`/`PostCompact`/`Stop`, unused by this repo's snippet) | Non-managed hooks require explicit trust via Codex's `/hooks` command (content-hash keyed) before they fire — expected, not a bug. Unmatched paths are not intercepted. |
+| Cursor | 2 (partial) | `.cursor/hooks.json` (project) or `~/.cursor/hooks.json` (user); confirmed schema (`{"version": 1, "hooks": {<event>: [{"command", "failClosed"}]}}`), stdin JSON, exit code 2 = deny / 0 = allow, `permission`/`user_message`/`agent_message` JSON on stdout | `ship-gate.mjs` + `privacy-block.mjs` wired to `beforeShellExecution` (both) and `beforeReadFile` (privacy-block only), `failClosed: true`. Cursor also has `sessionStart`/`sessionEnd`, `afterShellExecution`, `afterFileEdit`, `subagentStart`/`subagentStop`, `stop` — unused by this repo's snippet. | `session-state.mjs`/`monitoring.mjs` not wired for Cursor yet — their output shape (`hookSpecificOutput.additionalContext`) is Claude-specific and hasn't grown a Cursor branch. Windows invocation of the `$CURSOR_PROJECT_DIR`-based command string is unconfirmed. |
+| Antigravity CLI | 2 (experimental) | expected to inherit Gemini CLI's hook engine and event set per Google's Antigravity CLI announcement — **not wired by this repo yet**, no snippet written | `SessionStart`/`SessionEnd`, `BeforeAgent`/`AfterAgent`, `BeforeModel`/`AfterModel`, `BeforeTool`/`AfterTool`, `PreCompress`, `Notification` (expected, unconfirmed for Antigravity specifically) | Exact config file location/naming for hooks specifically has not been independently confirmed (unlike its skills/agents.md paths, which now are — see `docs/antigravity-setup.md`). |
 
 Ship gate recognizes only simple `git commit`, `git push`, and `gh pr create`
 invocations (including documented global options). Shell chaining, aliases, and
@@ -60,15 +60,15 @@ obfuscated commands are outside this guardrail boundary. A valid structured
 verification attestation for the selected spec and worktree is required.
 
 All hook commands require **Node.js on `PATH`**. The audit log is a mutable,
-redacted operational record, not tamper-proof forensic evidence. The current Codex and Gemini
-snippets also resolve from `git rev-parse --show-toplevel`, so they require
-**Git on `PATH`**. Review the per-agent README and official vendor hook
-reference after upgrading a CLI; a configured hook is a scoped guardrail, not
-a universal privacy or audit boundary.
+redacted operational record, not tamper-proof forensic evidence. The current
+Codex snippet also resolves from `git rev-parse --show-toplevel`, so it
+requires **Git on `PATH`**. Review the per-agent README and official vendor
+hook reference after upgrading a CLI; a configured hook is a scoped
+guardrail, not a universal privacy or audit boundary.
 
 ## What's not wired yet
 
 Only these four. Adding another guardrail (e.g. a `PreToolUse` guard on
 editing source files during `hs-brainstorm`, before the spec is approved)
 means: a new key in `hs.settings.json`, a new `hooks/<name>.mjs` reading it,
-and one line added to each of the three wiring snippets.
+and one line added to each tier-1 wiring snippet.

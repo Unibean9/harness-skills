@@ -76,7 +76,7 @@ built-in agents (`default`/`worker`/`explorer`) that these don't replace.
 
 - `.codex-plugin/plugin.json` — manifest with `skills: "./skills/"`,
   `hooks: {}`.
-- `skills/<name>/SKILL.md` — same files Claude Code and Gemini read; nothing
+- `skills/<name>/SKILL.md` — same files every supported agent reads; nothing
   Codex-specific in them.
 - `hooks/codex/hooks.json.snippet` — the manual-merge hook config, separate
   from Claude Code's auto-wired `hooks/hooks.json` because Codex's hook

@@ -18,3 +18,28 @@ test("Node utilities allocate IDs and record check failures without Bash", () =>
   assert.equal(check.status, 3);
   assert.equal(readFileSync(join(cwd, ".harness/state/specs/007-test/checks/failure.status"), "utf8").trim(), "FAIL");
 });
+
+test("the --trivial CLI branches of run-check.mjs and attestation.mjs work end to end, with no spec required", () => {
+  const cwd = mkdtempSync(join(tmpdir(), "harness-portable-trivial-"));
+  execFileSync("git", ["init"], { cwd });
+  writeFileSync(join(cwd, "a.txt"), "a");
+  execFileSync("git", ["add", "."], { cwd });
+  execFileSync("git", ["-c", "user.name=t", "-c", "user.email=t@t", "commit", "-m", "init"], { cwd });
+
+  const check = spawnSync(process.execPath, [join(repo, "scripts/run-check.mjs"), "--trivial", "verify-tests", "--", process.execPath, "-e", "process.exit(0)"], { cwd, encoding: "utf8" });
+  assert.equal(check.status, 0);
+  assert.match(check.stdout, /PASS.*\[trivial\]/);
+
+  const attest = spawnSync(process.execPath, [join(repo, "scripts/attestation.mjs"), "--trivial", "attest"], { cwd, encoding: "utf8" });
+  assert.equal(attest.status, 0);
+  assert.match(attest.stdout, /attested \(trivial\)/);
+
+  const validate = spawnSync(process.execPath, [join(repo, "scripts/attestation.mjs"), "--trivial", "validate"], { cwd, encoding: "utf8" });
+  assert.equal(validate.status, 0);
+  assert.match(validate.stdout, /^VALID/);
+
+  // A failing trivial check must exit non-zero and print the [trivial] tag too.
+  const failing = spawnSync(process.execPath, [join(repo, "scripts/run-check.mjs"), "--trivial", "verify-lint", "--", process.execPath, "-e", "process.exit(2)"], { cwd, encoding: "utf8" });
+  assert.equal(failing.status, 2);
+  assert.match(failing.stdout, /FAIL.*\[trivial\]/);
+});

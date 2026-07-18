@@ -1,25 +1,24 @@
 # Using harness-skills with Cursor
 
 `.cursor-plugin/plugin.json` at the repo root declares `"skills":
-"./skills/"` for skill discovery. Cursor has since added its own native
-hooks and subagents system (separate from this repo's `.cursor-plugin/`
-manifest) — this repo's guardrail hooks and `hs-scout`/`hs-reviewer`
-subagents aren't wired for Cursor's version of either yet, but the
-mechanism to do so now exists on Cursor's side. This file reflects that:
-skills ship today, hooks/subagents are documented as a manual next step
-rather than "not available."
+"./skills/"` for skill discovery. Cursor has its own native hooks and
+subagents system, and this repo now wires the two highest-value guardrails —
+`ship-gate` and `privacy-block` — to Cursor's confirmed `beforeShellExecution`/
+`beforeReadFile` hook schema. `session-state` and `monitoring` are not wired
+yet (see "Hooks" below for exactly what's covered and what isn't).
 
 ## Install
 
-**One command (skills + subagents + pointer rule):**
+**One command (skills + subagents + pointer rule + partial hooks):**
 
 ```bash
 npm exec -- hs setup --target cursor
 ```
 
-Writes `.cursor/skills/`, `.cursor/agents/hs-scout.md`/`hs-reviewer.md`, and
-`.cursor/rules/harness-skills.mdc`. Hooks are intentionally NOT wired — see
-"Hooks" below for why. Requires the package installed locally
+Writes `.cursor/skills/`, `.cursor/agents/hs-scout.md`/`hs-reviewer.md`,
+`.cursor/rules/harness-skills.mdc`, and `.cursor/hooks.json` wiring
+`ship-gate.mjs`/`privacy-block.mjs` to `beforeShellExecution`/
+`beforeReadFile`. Requires the package installed locally
 (`npm i -D github:Unibean9/harness-skills`).
 
 **Manual path** — Cursor has no plugin-marketplace command for installing
@@ -57,22 +56,39 @@ Describe the task; Cursor should match against `skills/*/SKILL.md`'s
 it doesn't trigger on its own, invoke the relevant skill by name the first
 few times.
 
-## Hooks (native to Cursor, not wired by this repo yet)
+## Hooks (partially wired)
 
-Cursor has its own first-class hooks system, shared with Cursor CLI:
-`.cursor/hooks.json` (project) or `~/.cursor/hooks.json` (user), with events
-including `sessionStart`/`sessionEnd`, `preToolUse`/`postToolUse`/
-`postToolUseFailure`, `beforeShellExecution`/`afterShellExecution`,
-`beforeReadFile`/`afterFileEdit`, `subagentStart`/`subagentStop`, and `stop`.
-This is a different schema from Claude Code's `hookSpecificOutput` shape, so
-this repo's `hooks/*.mjs` scripts can't be pointed at Cursor's `hooks.json`
-unmodified — `session-state.mjs` in particular hardcodes Claude Code's
-`hookSpecificOutput.additionalContext` output field, which Cursor doesn't
-read. Adapting each script to detect Cursor and emit its expected shape is
-the remaining work, not a missing feature on Cursor's end.
+Cursor's hooks system (shared with Cursor CLI) reads JSON from stdin and a
+project's `.cursor/hooks.json` (or `~/.cursor/hooks.json` for user-level),
+with a `{"version": 1, "hooks": {<event>: [{"command": ..., "failClosed":
+...}]}}` shape. `hooks/cursor/hooks.json.snippet` wires:
 
-Skills work fully without hooks — this is a missing *harness-side*
-enforcement layer, not a missing Cursor capability.
+- **`ship-gate.mjs`** to `beforeShellExecution` — blocks `git commit`/
+  `git push`/`gh pr create` without a valid attestation, same rule as every
+  other agent.
+- **`privacy-block.mjs`** to both `beforeShellExecution` (command-embedded
+  paths) and `beforeReadFile` (the `file_path` field) — blocks reads/writes
+  matching `denyList`.
+
+Both use `failClosed: true` so a hook error blocks the action instead of
+silently allowing it. `block()`/`allow()` in `hooks/lib/common.mjs` print
+Cursor's documented `{"permission": "allow"|"deny", "user_message": ...,
+"agent_message": ...}` JSON to stdout in addition to the exit-code contract
+(`2` = deny, `0` = allow) every other agent already relies on — one shape
+serves all three agents. `extractCommand()`/`extractCursorPath()` in the same
+file read Cursor's top-level `command`/`file_path` fields, since Cursor
+doesn't nest them under `tool_input` the way Claude/Codex do.
+
+**Not wired**: `session-state.mjs` (Cursor's `sessionStart` payload/output
+shape isn't adapted yet) and `monitoring.mjs` (would need `afterFileEdit`/
+`afterShellExecution` wiring). Skills work fully without either — this is a
+missing *harness-side* enforcement layer for those two guardrails
+specifically, not a missing Cursor capability.
+
+Windows invocation of `$CURSOR_PROJECT_DIR`-style command strings through
+Cursor's hook runner hasn't been independently confirmed the way the Unix
+path has — if hooks silently don't fire on Windows, that's the first thing
+to check.
 
 ## Subagents (native to Cursor)
 
@@ -96,16 +112,19 @@ for each role's responsibilities.
 ## How it works
 
 - `.cursor-plugin/plugin.json` — manifest with `skills: "./skills/"`, no
-  `hooks` field (this repo doesn't ship a Cursor hooks snippet yet).
+  `hooks` field (`hs setup` writes `.cursor/hooks.json` directly instead).
 - `skills/<name>/SKILL.md` — same files every other agent reads.
 - `.cursor/agents/*.md` — generated per project by `npm exec -- hs agents
   --target cursor`, if `.claude/agents/` isn't already present in the project.
+- `.cursor/hooks.json` — generated from `hooks/cursor/hooks.json.snippet`,
+  wiring `ship-gate.mjs`/`privacy-block.mjs` only.
 
 ## Troubleshooting
 
 | Symptom | Check |
 |---|---|
 | Skills not found | Confirm Cursor is reading `.cursor-plugin/plugin.json`'s `skills` field, or fall back to pointing it at `skills/*/SKILL.md` directly. |
-| Expecting hook-based guardrails (privacy block, ship gate) | This repo doesn't ship a Cursor `hooks.json` snippet yet — Cursor's hook mechanism itself works, see "Hooks" above. |
+| Ship-gate/privacy-block don't fire | Confirm `.cursor/hooks.json` exists and Cursor picked it up (re-run `npm exec -- hs setup --target cursor` if it predates this wiring); on Windows, confirm the `$CURSOR_PROJECT_DIR`-based command string actually resolves in your shell — that path is unconfirmed. |
+| session-state/monitoring don't fire | Expected — not wired for Cursor yet, see "Hooks" above. |
 | Expecting `hs-scout`/`hs-reviewer` to just work | Check whether `.claude/agents/` is present in the project (Cursor reads it directly); otherwise run `npm exec -- hs agents --target cursor` per "Subagents" above. |
 | A skill's behavior differs from Claude Code's | It shouldn't — `skills/*/SKILL.md` is the one canonical source every agent reads unmodified. If it does differ, that's a bug worth reporting, not an intentional per-agent variation. |

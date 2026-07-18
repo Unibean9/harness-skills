@@ -1,16 +1,31 @@
 # Using harness-skills with Antigravity CLI
 
-Antigravity CLI (`agy`) is Google's successor to Gemini CLI — announced May
-2026, transitioning Gemini CLI's free/Pro/Ultra end-user product over to the
-new tool while `google-gemini/gemini-cli` continues as an active,
-independent open-source repo. Google's own announcement states Antigravity
-CLI "retains our most critical features, including Agent Skills, Hooks,
-Subagents, and Extensions (now Antigravity plugins)" — so it inherits
-Gemini CLI's engine for all of this, rebranded. This repo has no dedicated
-`.antigravity-plugin/plugin.json` or Antigravity-specific hook snippet yet;
-until it does, treat Gemini CLI's config shapes (below) as the closest known
-approximation and verify against Antigravity's own docs before relying on
-exact file names.
+**Tier 2 (experimental) — but skills/subagents paths below are confirmed,
+not guessed.** Antigravity CLI (`agy`) is Google's successor to Gemini CLI,
+announced May 2026, and its engine carries over Gemini CLI's Agent Skills,
+Hooks, and Subagents (rebranded as Antigravity plugins).
+
+## Confirmed project-level convention (mid-2026)
+
+Multiple independent sources agree the project-level convention is a
+**`.agents/` directory at the workspace root**, not a dedicated
+`.antigravity/` directory:
+
+- Skills: `.agents/skills/<name>/SKILL.md`
+- Project instructions: `.agents/agents.md` (root `AGENTS.md` is also read
+  natively since Antigravity CLI v1.20.3, March 2026 — this repo already has
+  one)
+- Global (user-level) skills fall back to `~/.gemini/config/skills/` — the
+  one location recognized across AGY, AGY CLI, and AGY IDE
+- Plugin install: `agy plugin install <url-or-path>`, landing at
+  `~/.gemini/antigravity-cli/plugins/<name>/`
+
+Subagent folder naming under `.agents/` (this repo generates
+`.agents/agents/hs-scout.md`) is the best-supported guess by analogy with the
+skills/instructions pattern above, not independently confirmed the same way —
+some sources instead describe a separate `.subagents/` directory. Treat that
+one path as still unverified; everything else above has converging
+independent confirmation.
 
 ## Install
 
@@ -20,73 +35,45 @@ exact file names.
 npm exec -- hs setup --target antigravity
 ```
 
-Writes `.antigravity/skills/` and `.antigravity/agents/` (Gemini-shaped
-subagent files, since Antigravity inherits Gemini CLI's format) — and prints
-a warning that `.antigravity/` is an unconfirmed path guess to verify against
-Antigravity's own docs. Requires the package installed locally
+Writes `.agents/skills/hs-*` and `.agents/agents/hs-scout.md`,
+`hs-reviewer.md`. Requires the package installed locally
 (`npm i -D github:Unibean9/harness-skills`).
 
-**Skills only (needs network + a real Antigravity CLI install to resolve
-where files land):**
+**Skills only:**
 
 ```bash
 npx skills add Unibean9/harness-skills -a antigravity
 ```
 
-Copies/symlinks the six `hs-*` `SKILL.md` files into wherever Antigravity
-looks for skills. No hooks, no subagents, no plugin manifest.
-
-**Manual fallback (works offline, no Antigravity binary required to try):**
-Since Antigravity inherits Gemini CLI's engine, do exactly what
-`docs/gemini-setup.md` says, verbatim — same commands, same paths, same
-`.gemini/...` filenames — and only rename `.gemini/` to whatever Antigravity's
-own config directory turns out to be once you've confirmed it against
-Antigravity's own docs. As a starting guess (unconfirmed, verify before
-trusting it):
+**Subagents on their own:**
 
 ```bash
-mkdir -p .antigravity/skills
-cp -r /path/to/harness-skills/skills/hs-* .antigravity/skills/
+npm exec -- hs agents --target antigravity   # writes .agents/agents/hs-scout.md, hs-reviewer.md
 ```
 
-If `.antigravity/skills/` turns out to be wrong for your build, this is the
-one line to change — the skill files themselves are agent-agnostic.
+**Native plugin:** `agy plugin install <this-repo-url-or-local-path>` should
+work directly, since Antigravity's plugin/skill discovery already looks for
+`skills/` and reads root `AGENTS.md` — this repo ships both. Not yet
+independently verified against a real Antigravity CLI install; report back if
+you try it.
 
-**Native plugin:** Antigravity plugins descend from Gemini CLI's extension
-mechanism (`gemini extensions install <url>` + `gemini-extension.json`), per
-Google's announcement, but the exact Antigravity-side install command and
-manifest filename weren't independently confirmed at the time of writing —
-if your Antigravity CLI has a `plugin install`/`extensions install`
-equivalent, point it at this repo the same way `docs/gemini-setup.md`
-describes and confirm `AGENTS.md`/`skills/` actually load before relying on
-it.
+## Hooks (not wired)
 
-## Hooks (inherited from Gemini CLI, unconfirmed exact path for Antigravity)
-
-Same event set as Gemini CLI (see `docs/gemini-setup.md`'s Hooks section):
-`SessionStart`/`SessionEnd`, `BeforeAgent`/`AfterAgent`, `BeforeModel`/
-`AfterModel`, `BeforeTool`/`AfterTool`, `PreCompress`, `Notification`. This
-repo doesn't ship an Antigravity hooks snippet — `hooks/gemini/settings.snippet.json`
-is the closest starting point, but confirm Antigravity's actual config file
-location before merging it there.
-
-## Subagents (inherited from Gemini CLI, unconfirmed exact path for Antigravity)
-
-Same shape as Gemini CLI's `.gemini/agents/*.md` (Markdown + YAML
-frontmatter, `name`/`description`, invoked automatically or via
-`@agent_name`) — see `docs/agents.md`'s "Per-agent wiring" for `hs-scout`/
-`hs-reviewer` responsibilities. `npm exec -- hs agents` does **not** have an
-`antigravity` target (only `claude`/`codex`/`gemini`/`cursor` — it errors
-with `unknown agent target: antigravity`). The closest working path: run
-`npm exec -- hs agents --target gemini`, which writes
-`.gemini/agents/hs-scout.md`/`hs-reviewer.md`, then copy those two files into
-wherever you've confirmed Antigravity's own agents directory to be.
+No Antigravity hooks snippet ships with this repo yet. The hooks system is
+reported to carry over Gemini CLI's JSON format and lifecycle
+(`SessionStart`/`SessionEnd`, `BeforeAgent`/`AfterAgent`, `BeforeModel`/
+`AfterModel`, `BeforeTool`/`AfterTool`, `PreCompress`, `Notification`), but
+the exact project-level config file path for hooks specifically was not
+confirmed during this round of research (unlike skills/agents.md above).
+Until it is, `privacyBlock`/`shipGate`/`sessionState`/`monitoring` do not run
+automatically on this agent — rely on the workflow's own gates (spec/plan
+approval, `hs attest` before shipping) as the enforcement layer here.
 
 ## Troubleshooting
 
 | Symptom | Check |
 |---|---|
-| Unsure if you're on Gemini CLI or Antigravity CLI | Check which binary/package is actually installed — the two are separate, actively-developed repos during this transition, not the same install. |
-| Skills not found | Confirm `npx skills add ... -a antigravity` actually placed files where your Antigravity build looks, since this repo has no native manifest to fall back on; or use the manual fallback above. |
-| Hooks/subagents don't fire | Expected — this repo hasn't shipped Antigravity-specific config yet; verify Antigravity's actual config file paths against its own docs before assuming the Gemini-shaped snippet above applies unmodified. |
-| `hs agents --target antigravity` errors | By design — there's no Antigravity target. Use `--target gemini` and copy the two generated files into Antigravity's own agents directory once confirmed. |
+| Unsure if you're on Gemini CLI or Antigravity CLI | Check which binary/package is actually installed — Gemini CLI and Antigravity CLI are separate, actively-developed products during this transition. |
+| Skills not found | Confirm `.agents/skills/hs-*` landed where your Antigravity build actually looks — `agy inspect` (if your build has it) reports which config files it loaded. |
+| Hooks don't fire | Expected — see "Hooks (not wired)" above. Rely on the workflow's own approval gates for this agent until a confirmed hook path exists. |
+| Subagents don't route automatically | The `.agents/agents/` subagent folder name is the least-confirmed part of this setup — if it doesn't work, try invoking hs-scout/hs-reviewer's role inline instead, or check whether your build expects `.subagents/` instead. |

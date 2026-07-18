@@ -17,13 +17,22 @@ never have to re-diagnose from scratch.
 
 ## Process
 
-Read `.harness/state/current-spec` once at the start to get the selected `<active>`. If
-it's missing, or `.harness/specs/<active>/plan.md` isn't `**Status:**
-approved`, stop — go get a plan first.
+Read `.harness/state/current-spec` once at the start to get the selected `<active>`.
+The task list lives in one of two places, depending on whether
+`hs-brainstorm` used the full template or the light one (see
+`skills/hs-brainstorm/references/spec-template.md`):
+- **Light mode**: `.harness/specs/<active>/spec.md` has its own `## Tasks`
+  section — this is the plan. Nothing else needs to be `approved`
+  separately; the spec's own `**Status:** approved` already covers it.
+- **Full mode**: `.harness/specs/<active>/plan.md` exists and must be
+  `**Status:** approved`.
 
-Then repeat for each task in `.harness/specs/<active>/plan.md`, in order:
+If neither is true, stop — go get a plan first.
 
-1. Read `.harness/specs/<active>/plan.md` and `.harness/specs/<active>/progress.md`
+Then repeat for each task in the task list, in order:
+
+1. Read the task list (`spec.md`'s `## Tasks` in light mode, `plan.md`
+   otherwise) and `.harness/specs/<active>/progress.md`
    (create the latter if it doesn't exist yet) to find the next task not yet
    marked done.
 
@@ -75,14 +84,18 @@ Then repeat for each task in `.harness/specs/<active>/plan.md`, in order:
    actual error says, and ask how to proceed. Repeatedly retrying the same fix
    without new information isn't diligence, it's noise.
 
-6. **Only after a PASS**, append to `.harness/specs/<active>/progress.md`:
+6. **On a PASS**, `hs check task-<N>` automatically appends the
+   `- [x] Task <N>: <name> — verify: \`<command>\` -> PASS` line to
+   `.harness/specs/<active>/progress.md` itself (looking the task's name up
+   from `plan.md`/`spec.md`) — confirm it looks right rather than re-writing
+   it. If it's missing (the task list wasn't in a shape the lookup could
+   parse), append that exact line yourself; don't silently move on without it.
 
-   ```markdown
-   - [x] Task <N>: <name> — verify: `<command>` -> PASS
-   ```
-
-7. Move to the next task. Once every task is done, update this spec's row in
-   `.harness/specs/INDEX.md`: `Phase` = `building`, `Updated` = today's date
+7. Move to the next task. Once every task is done, `hs check` has already
+   updated this spec's row in `.harness/specs/INDEX.md` to `Phase` =
+   `building` — confirm it, don't re-set it. If it didn't update (same
+   parsing-failure case as step 6), set it yourself: `Phase` = `building`,
+   `Updated` = today's date
    (hs-verify will move it to `verifying` next).
 
 ## Escalating to a human mid-build
@@ -96,8 +109,9 @@ plan. Stop and ask only when:
 
 ## Exit condition
 
-- Every task in `plan.md` has a corresponding `[x]` line in `progress.md` with
-  its real verify command and PASS result.
+- Every task in the task list (`plan.md`, or `spec.md`'s `## Tasks` in light
+  mode) has a corresponding `[x]` line in `progress.md` with its real verify
+  command and PASS result.
 - `git diff --stat` (or equivalent) shows only files the plan named — nothing
   extra snuck in.
 - Any judgment call you made that the plan didn't spell out is in
@@ -106,6 +120,12 @@ plan. Stop and ask only when:
 
 ## Common failure modes
 
+- A check reports `FAIL` even though the command's own output looks fine —
+  check the note printed alongside it first. `hs check` also fails a command
+  that exits 0 but changes the worktree (a coverage file, a build cache not
+  gitignored) — that's a side-effect bug in the *verify command*, not in the
+  code you just wrote. Don't start debugging the implementation before
+  ruling this out.
 - Batching several tasks before running any verification — if it fails, you've
   lost the ability to tell which task broke it.
 - "Tidying up" nearby code that the task didn't ask you to touch — it inflates

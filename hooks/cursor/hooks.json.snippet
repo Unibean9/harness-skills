@@ -1,0 +1,12 @@
+{
+  "version": 1,
+  "hooks": {
+    "beforeShellExecution": [
+      { "command": "node \"$CURSOR_PROJECT_DIR/hooks/privacy-block.mjs\"", "failClosed": true },
+      { "command": "node \"$CURSOR_PROJECT_DIR/hooks/ship-gate.mjs\"", "failClosed": true }
+    ],
+    "beforeReadFile": [
+      { "command": "node \"$CURSOR_PROJECT_DIR/hooks/privacy-block.mjs\"", "failClosed": true }
+    ]
+  }
+}

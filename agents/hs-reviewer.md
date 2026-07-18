@@ -60,19 +60,20 @@ nothing more.
 Same story as `hs-scout` above — generate all four with `npm exec -- hs agents`
 (see that section for the exact commands and output paths).
 
-- **Claude Code**: `.claude/agents/hs-reviewer.md` defines this as a real
-  subagent with read-only tools. Invoke it as you would any subagent. (This
-  repo's own bundled copy lives at `agents/hs-reviewer.md` at the repo root.)
-- **Codex CLI**: `.codex/agents/hs-reviewer.toml` — `name`, `description`,
-  `developer_instructions` carrying the five-axis role above. `model` is left
-  unset (unlike `hs-scout`, independence matters more than cost here).
-- **Gemini CLI**: `.gemini/agents/hs-reviewer.md`, Markdown + YAML frontmatter
-  (`name`, `description`), body = the five-axis role above. Invoke with
-  `@hs-reviewer` right before `hs-ship`, in a fresh turn if the CLI supports
-  starting one without carrying prior context.
-- **Cursor**: `.cursor/agents/hs-reviewer.md`, same Markdown + YAML
-  frontmatter shape, `readonly: true`. Cursor also reads
+- **Claude Code** (tier 1): `.claude/agents/hs-reviewer.md` defines this as a
+  real subagent with read-only tools. Invoke it as you would any subagent.
+  (This repo's own bundled copy lives at `agents/hs-reviewer.md` at the repo
+  root.)
+- **Codex CLI** (tier 1): `.codex/agents/hs-reviewer.toml` — `name`,
+  `description`, `developer_instructions` carrying the five-axis role above.
+  `model` is left unset (unlike `hs-scout`, independence matters more than
+  cost here).
+- **Cursor** (tier 2 — subagents work, hooks don't): `.cursor/agents/hs-reviewer.md`,
+  same Markdown + YAML frontmatter shape, `readonly: true`. Cursor also reads
   `.claude/agents/hs-reviewer.md` directly if that's already present.
+- **Antigravity CLI** (tier 2, experimental): `.agents/agents/hs-reviewer.md`,
+  same Markdown + YAML frontmatter shape as Cursor's — see
+  `docs/antigravity-setup.md` for what's confirmed and what isn't.
 
 If a project genuinely can't use any of the above, a structured self-review
 (the same five axes, explicitly re-read against the spec rather than from

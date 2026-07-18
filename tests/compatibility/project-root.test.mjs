@@ -20,7 +20,7 @@ test("resolves harness state from a nested Claude payload cwd", () => {
   assert.equal(projectPath(call, ".harness", "state", "audit.log"), join(root, ".harness", "state", "audit.log"));
 });
 
-test("resolves harness state from representative Codex and Gemini payloads", () => {
+test("resolves harness state from representative Codex and Gemini-shaped (BeforeTool) payloads", () => {
   const { root, cwd } = projectFixture();
   for (const call of [
     { cwd, hook_event_name: "PreToolUse", tool_name: "Bash", tool_input: { command: "git status" } },

@@ -36,6 +36,35 @@ test("privacy hook blocks denied patch paths and malformed payloads", () => {
   assert.equal(malformed.status, 2);
 });
 
+test("privacy hook blocks a Cursor-shaped beforeReadFile payload (top-level file_path, not nested)", () => {
+  const root = mkdtempSync(join(tmpdir(), "harness-hook-cursor-"));
+  mkdirSync(join(root, ".harness", "state"), { recursive: true });
+  writeFileSync(join(root, "hs.settings.json"), JSON.stringify({ privacyBlock: { enabled: true, denyList: [".env"], allowList: [] } }));
+  const hook = fileURLToPath(new URL("../../hooks/privacy-block.mjs", import.meta.url));
+  const payload = { cwd: root, file_path: join(root, ".env"), hook_event_name: "beforeReadFile" };
+  const result = spawnSync(process.execPath, [hook], { cwd: root, input: JSON.stringify(payload), encoding: "utf8" });
+  assert.equal(result.status, 2);
+  const out = JSON.parse(result.stdout.trim());
+  assert.equal(out.permission, "deny");
+  assert.match(out.agent_message, /privacyBlock/);
+});
+
+test("ship gate blocks a Cursor-shaped beforeShellExecution git commit without a valid attestation, allows a non-ship command", () => {
+  const root = mkdtempSync(join(tmpdir(), "harness-hook-cursor-ship-"));
+  mkdirSync(join(root, ".harness", "state"), { recursive: true });
+  writeFileSync(join(root, "hs.settings.json"), JSON.stringify({ shipGate: { enabled: true } }));
+  const hook = fileURLToPath(new URL("../../hooks/ship-gate.mjs", import.meta.url));
+  const fire = (command) => spawnSync(process.execPath, [hook], { cwd: root, input: JSON.stringify({ cwd: root, command, hook_event_name: "beforeShellExecution" }), encoding: "utf8" });
+
+  const blocked = fire("git commit -m test");
+  assert.equal(blocked.status, 2);
+  assert.equal(JSON.parse(blocked.stdout.trim()).permission, "deny");
+
+  const allowed = fire("ls -la");
+  assert.equal(allowed.status, 0);
+  assert.equal(JSON.parse(allowed.stdout.trim()).permission, "allow");
+});
+
 test("monitoring emits redacted JSON lines", () => {
   const root = mkdtempSync(join(tmpdir(), "harness-audit-"));
   writeFileSync(join(root, "hs.settings.json"), JSON.stringify({ monitoring: { enabled: true } }));

@@ -14,11 +14,21 @@ test("Codex hooks use current tool matchers and stable commands", () => {
   assert.ok(snippet.PostToolUse[0].hooks[0].commandWindows);
 });
 
-test("Claude and Gemini adapters cover their documented file and audit tools", () => {
+test("Claude adapter covers its documented file and audit tools", () => {
   const claude = JSON.parse(read("hooks/hooks.json"));
-  const gemini = JSON.parse(read("hooks/gemini/settings.snippet.json"));
   assert.match(claude.hooks.PreToolUse[0].matcher, /Read\|Write\|Edit\|Bash/);
   assert.equal(claude.hooks.PostToolUse[0].matcher, ".*");
-  assert.match(gemini.hooks.BeforeTool[0].matcher, /read_file\|write_file\|replace\|run_shell_command/);
-  assert.equal(gemini.hooks.AfterTool[0].matcher, ".*");
+});
+
+test("Cursor snippet wires ship-gate and privacy-block with failClosed, using confirmed event names", () => {
+  const snippet = JSON.parse(read("hooks/cursor/hooks.json.snippet"));
+  assert.equal(snippet.version, 1);
+  const shellHooks = snippet.hooks.beforeShellExecution;
+  assert.ok(shellHooks.some((h) => /privacy-block\.mjs/.test(h.command)));
+  assert.ok(shellHooks.some((h) => /ship-gate\.mjs/.test(h.command)));
+  assert.ok(shellHooks.every((h) => h.failClosed === true));
+  assert.ok(snippet.hooks.beforeReadFile.some((h) => /privacy-block\.mjs/.test(h.command)));
+  // session-state/monitoring are deliberately not wired for Cursor yet.
+  assert.equal(snippet.hooks.sessionStart, undefined);
+  assert.equal(snippet.hooks.afterFileEdit, undefined);
 });

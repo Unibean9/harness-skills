@@ -14,6 +14,8 @@ const commands = {
   setup: "setup.mjs",
   doctor: "doctor.mjs",
   agents: "generate-agents.mjs",
+  status: "next-skill.mjs",
+  audit: "audit-summary.mjs",
 };
 const [command, ...args] = process.argv.slice(2);
 // init/setup CREATE the project markers, so they must act on the directory
@@ -29,7 +31,7 @@ function projectRoot(start) {
   }
 }
 if (!command || !(command in commands)) {
-  console.error("usage: hs <state|check|attest|readiness|init|setup|doctor|agents> ...");
+  console.error("usage: hs <state|check|attest|readiness|status|audit|init|setup|doctor|agents> ...");
   process.exitCode = 2;
 } else {
   const cwd = runsInCwd.has(command) ? process.cwd() : projectRoot(process.cwd());
