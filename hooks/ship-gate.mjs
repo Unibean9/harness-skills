@@ -7,7 +7,7 @@
 // setting -- only *which commands trigger the check* is worth exposing
 // in hs.settings.json.
 import { loadSettings, projectPath, readStdinJson, block, allow, isShipCommand, extractCommand } from "./lib/common.mjs";
-import { validateAttestation } from "../scripts/attestation.mjs";
+import { evaluateReadiness } from "../scripts/readiness.mjs";
 
 const STATUS_FILE = ".harness/state/verify-all.status";
 
@@ -22,7 +22,7 @@ if (!command) allow();
 
 if (!isShipCommand(command)) allow();
 
-if (!validateAttestation(projectPath(call))) {
+if (!evaluateReadiness(projectPath(call)).ready) {
   block(
     `Blocked by shipGate: ${STATUS_FILE} lacks a valid attestation for this spec and worktree. Run hs-verify, then hs-ship, before shipping.`
   );

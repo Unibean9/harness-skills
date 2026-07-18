@@ -40,7 +40,9 @@ exceptions for "but the tests are green."
    This fails closed — it checks that `.harness/specs/<active>/progress.md`
    has no unchecked tasks left, that `.harness/state/verify-all.status` says
    `PASS`, and that it actually exists (i.e., `hs-verify` really ran,
-   recently, not from a stale memory of an earlier pass).
+   recently, not from a stale memory of an earlier pass). It is read-only:
+   resolve misplaced or conflicting state explicitly instead of expecting the
+   readiness sensor to mutate evidence while deciding whether shipping is safe.
 
 5. If it reports NOT READY, stop here and fix whatever it flagged — go back to
    `hs-build` or `hs-verify` as appropriate. Don't route around this check by

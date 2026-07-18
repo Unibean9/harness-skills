@@ -14,7 +14,7 @@
 import { existsSync, readFileSync, writeFileSync, mkdirSync } from "node:fs";
 import { dirname } from "node:path";
 import { loadSettings, projectPath, readStdinJson, findProjectRoot } from "./lib/common.mjs";
-import { validateAttestation } from "../scripts/attestation.mjs";
+import { evaluateReadiness } from "../scripts/readiness.mjs";
 
 const CURRENT_SPEC_FILE = ".harness/state/current-spec";
 const SUMMARY_FILE = ".harness/state/session-summary.md";
@@ -22,24 +22,6 @@ const SUMMARY_FILE = ".harness/state/session-summary.md";
 // Route to the next phase from what's actually on disk, mirroring the
 // decision tree in AGENTS.md ("Required flow"). A suggestion, not a gate —
 // the skills still re-check their own preconditions.
-function suggestNextPhase(specDir, root) {
-  const status = (file) => {
-    if (!existsSync(file)) return "missing";
-    return readFileSync(file, "utf8").match(/\*\*Status:\*\*\s*(\w+)/)?.[1] || "missing";
-  };
-  if (status(`${specDir}/spec.md`) !== "approved") return "hs-brainstorm (spec not approved yet)";
-  if (status(`${specDir}/plan.md`) !== "approved") return "hs-plan (plan not approved yet)";
-  const planned = (readFileSync(`${specDir}/plan.md`, "utf8").match(/^## Task /gm) || []).length;
-  const progressFile = `${specDir}/progress.md`;
-  const done = existsSync(progressFile) ? (readFileSync(progressFile, "utf8").match(/^- \[x\]/gm) || []).length : 0;
-  if (done < planned) return `hs-build (${done}/${planned} tasks done)`;
-  let attested = false;
-  try { attested = validateAttestation(root); } catch { attested = false; }
-  if (!attested) return "hs-verify (no valid attestation for this worktree)";
-  const progressText = existsSync(progressFile) ? readFileSync(progressFile, "utf8") : "";
-  if (!/^## Review /m.test(progressText)) return "hs-review (recommended, not required) or hs-ship";
-  return "hs-ship (attestation valid, reviewed; awaiting human ship confirmation)";
-}
 
 function describeFile(file) {
   if (!existsSync(file)) return `- ${file}: missing`;
@@ -76,7 +58,7 @@ if (!existsSync(currentSpecFile)) {
     describeFile(`${specDir}/plan.md`),
     describeFile(`${specDir}/progress.md`),
     describeFile(`${specDir}/implement-notes.md`),
-    `- suggested next phase: ${suggestNextPhase(specDir, findProjectRoot(call.cwd || process.cwd()))}`,
+    `- suggested next phase: ${evaluateReadiness(findProjectRoot(call.cwd || process.cwd())).nextPhase}`,
   ];
   digest = ["# Harness session summary (auto-generated)", "", ...sections].join("\n");
 }

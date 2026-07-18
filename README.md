@@ -23,7 +23,8 @@ regardless of which model or CLI is doing the work.
 
 Six skills, one per phase, each with an exit condition. `hs-brainstorm` and
 `hs-plan` gate on explicit human approval; `hs-build` verifies task-by-task;
-`hs-verify` is the whole-suite sensor — the one place "done" becomes a fact
+`hs-verify` is the whole-suite sensor — a versioned per-spec check manifest
+and worktree-bound evidence make "done" a fact
 instead of an opinion; `hs-review` gets an independent second opinion on the
 diff (correctness/security/performance/quality/tests) and is advisory —
 `hs-ship` doesn't require it to have run; `hs-ship` is the last gate and

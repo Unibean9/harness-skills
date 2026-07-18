@@ -52,12 +52,12 @@ history living only in scattered, overwritten files.
 4. **Create the spec directory.** Get the next ID:
 
    ```bash
-   node scripts/next-spec-id.mjs
+   node scripts/next-spec-id.mjs <kebab-case-slug>
    ```
 
    Pick a short kebab-case slug for the feature (e.g. `user-auth`), then:
    - create `.harness/specs/<ID>-<slug>/spec.md` using the template below
-   - write `.harness/state/current-spec` containing exactly `<ID>-<slug>`
+   - select it through `node scripts/state.mjs select <ID>-<slug> --replace`
    - add a row to `.harness/specs/INDEX.md` (create it with the header shown
      below if it doesn't exist yet)
 

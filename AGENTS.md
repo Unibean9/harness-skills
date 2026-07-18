@@ -52,6 +52,8 @@ history otherwise.
 
 - `.harness/specs/INDEX.md` — one row per spec: ID, slug, phase, last updated.
 - `.harness/state/current-spec` — one line, which spec directory is active.
+- `.harness/specs/<id>-<slug>/verify.json` — the versioned, complete check
+  contract; attestations reject evidence that does not match it exactly.
 - `spec.md`/`plan.md` carry a `**Status:** draft|approved` line only a human
   can flip to `approved`. `progress.md` is an append-only log of completed
   tasks with their verify evidence. `implement-notes.md` records judgment

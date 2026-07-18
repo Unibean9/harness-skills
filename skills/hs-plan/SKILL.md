@@ -53,6 +53,12 @@ you need to know that now, not discover it mid-build and wonder if you caused it
 
 5. Write `.harness/specs/<active>/plan.md` using the template below.
 
+   Also create `.harness/specs/<active>/verify.json`: version `1` with the
+   complete required check set. A machine check has `label`, `kind: "machine"`,
+   and an argv array; a manual check has `kind: "manual"` and `argv: null`.
+   This is the machine-readable contract hs-verify must attest, not prose the
+   agent may silently narrow later.
+
 6. **Cut ruthlessly.** Re-read the task list. Any task that doesn't trace back
    to a spec requirement gets removed — this is where YAGNI actually earns its
    keep, not just as a slogan. Any two tasks doing near-identical things get

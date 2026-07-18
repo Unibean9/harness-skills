@@ -52,12 +52,12 @@ phase for it instead of folding it into `hs-build`.
    attestation script does:
 
    ```bash
-   node scripts/attestation.mjs attest verify-tests verify-lint verify-build
+   node scripts/attestation.mjs attest
    ```
 
-   Pass every label you ran or hand-wrote a verdict for, including any manual
-   one from step 4. This fails closed: if any named label's `.status` file
-   isn't `PASS` (including missing), it errors out instead of writing an
+   This derives every required label from the active spec's `verify.json`.
+   It fails closed if any required check is missing, stale, command-mismatched,
+   or not `PASS`, instead of writing an
    attestation — `hs-ship`'s readiness check and the `shipGate` hook both
    require a valid attestation, not just a `PASS` string, so this step is what
    actually makes verification count for anything downstream.
@@ -82,8 +82,9 @@ phase for it instead of folding it into `hs-build`.
    back to `hs-build` (or straight to the user) to fix, then rerun `hs-verify`
    from the top once it's addressed. Partial re-verification defeats the
    purpose; rerun the full set, then re-attest — a stale attestation is
-   invalidated automatically anyway (its fingerprint won't match the changed
-   worktree), but don't rely on that; just redo the whole pass.
+   invalidated automatically anyway (its fingerprint hashes worktree content,
+   not just changed paths, so a further edit to an already-dirty file still
+   invalidates it), but don't rely on that; just redo the whole pass.
 
 ## Exit condition
 
