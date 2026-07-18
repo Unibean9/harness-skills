@@ -1,0 +1,4 @@
+interface:
+  display_name: "Harness Review"
+  short_description: "Review the recorded product changeset"
+  default_prompt: "Use $hs-review to independently review this verified change."

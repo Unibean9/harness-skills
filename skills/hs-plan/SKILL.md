@@ -1,10 +1,11 @@
 ---
 name: hs-plan
 description: Break an approved spec into a small, ordered list of tasks, each with its own verification command, before writing any implementation code. Use this right after a spec has been approved (see hs-brainstorm) and before touching any source file. Also use it when a user asks to "plan this out," wants a task breakdown, or is about to jump straight into coding a nontrivial change without one — planning first is cheaper than redoing work because the shape of the change wasn't decided.
-compatibility: bundled scripts are Node-native (`node scripts/*.mjs`) — Node.js 22+ on `PATH` is the only requirement, no POSIX shell needed
 ---
 
 # hs-plan
+
+Use the project-local runtime as `npm exec -- hs`; pass the explicit spec ID to every state-changing command.
 
 ## Why this phase exists
 

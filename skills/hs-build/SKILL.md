@@ -1,10 +1,11 @@
 ---
 name: hs-build
 description: Implement an approved plan one task at a time, running each task's own verification command before moving to the next, and recording the actual result — never advance on a task "looking right." Use this once the active spec's plan.md is approved (see hs-plan) and it's time to write code, edit files, or wire up whatever the plan describes. If there's no approved plan yet, go get one first instead of using this skill to freelance.
-compatibility: bundled scripts are Node-native (`node scripts/*.mjs`) — Node.js 22+ on `PATH` is the only requirement, no POSIX shell needed
 ---
 
 # hs-build
+
+Use the project-local runtime as `npm exec -- hs`; record evidence against the explicit spec being built.
 
 ## Why this phase exists
 

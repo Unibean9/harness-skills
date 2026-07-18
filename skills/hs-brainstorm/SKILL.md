@@ -1,10 +1,11 @@
 ---
 name: hs-brainstorm
 description: Turn a vague or incomplete feature request into a clear, testable spec before any code gets written, filed into this project's spec history so it doesn't get silently overwritten by the next feature. Use this whenever a user describes a new feature, a bug whose fix approach isn't decided yet, or any change where "what to build" isn't fully nailed down — even if they didn't ask for a "spec" by name, or jumped straight to "just build me X." Also use it when resuming work on a project that already has `.harness/specs/` with specs in progress. Skip only for genuinely trivial one-line changes (typo, config value tweak).
-compatibility: bundled scripts are Node-native (`node scripts/*.mjs`) — Node.js 22+ on `PATH` is the only requirement, no POSIX shell needed
 ---
 
 # hs-brainstorm
+
+Use the project-local runtime as `npm exec -- hs`; never assume `scripts/` exists in the target project.
 
 ## Why this phase exists, and why specs live in their own folder
 

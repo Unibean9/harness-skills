@@ -3,12 +3,11 @@ import { mkdirSync, mkdtempSync, writeFileSync } from "node:fs";
 import { execFileSync } from "node:child_process";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
-import { fileURLToPath } from "node:url";
 import test from "node:test";
 import { evaluateReadiness } from "../../scripts/readiness.mjs";
+import { createLegacyAttestation } from "../../scripts/attestation.mjs";
+import { fingerprintWorktree } from "../../scripts/worktree.mjs";
 
-const runCheck = fileURLToPath(new URL("../../scripts/run-check.mjs", import.meta.url));
-const attest = fileURLToPath(new URL("../../scripts/attestation.mjs", import.meta.url));
 
 function rootWithSpec({ progress = "- [x] Task 1: first\n", phase } = {}) {
   const root = mkdtempSync(join(tmpdir(), "harness-ready-")); const spec = "001-test"; const dir = join(root, ".harness", "specs", spec);
@@ -22,7 +21,13 @@ function rootWithSpec({ progress = "- [x] Task 1: first\n", phase } = {}) {
   execFileSync("git", ["init"], { cwd: root }); writeFileSync(join(root, ".gitignore"), ".harness/\n"); writeFileSync(join(root, "a.txt"), "a"); execFileSync("git", ["add", "."], { cwd: root }); execFileSync("git", ["-c", "user.name=t", "-c", "user.email=t@t", "commit", "-m", "init"], { cwd: root });
   return root;
 }
-function attestReady(root) { execFileSync(process.execPath, [runCheck, "verify-tests", "--", process.execPath, "-e", "process.exit(0)"], { cwd: root }); execFileSync(process.execPath, [attest, "attest"], { cwd: root }); }
+function attestReady(root) {
+  const checks = join(root, ".harness", "specs", "001-test", "state"); mkdirSync(checks, { recursive: true });
+  const fingerprint = fingerprintWorktree(root);
+  writeFileSync(join(checks, "verify-tests.status"), "PASS\n");
+  writeFileSync(join(checks, "verify-tests.json"), JSON.stringify({ version: 1, spec: "001-test", label: "verify-tests", argv: [process.execPath, "-e", "process.exit(0)"], exitCode: 0, pass: true, worktreeChanged: false, fingerprintError: null, fingerprintBefore: fingerprint, fingerprintAfter: fingerprint }));
+  createLegacyAttestation(root);
+}
 
 test("shared evaluator requires approved state, exact task IDs, and valid evidence", () => {
   const root = rootWithSpec(); attestReady(root); assert.equal(evaluateReadiness(root).ready, true);

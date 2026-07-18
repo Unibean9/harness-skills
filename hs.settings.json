@@ -25,6 +25,10 @@
     "enabled": true
   },
   "monitoring": {
-    "enabled": true
+    "enabled": true,
+    "retention": {
+      "maxLines": 5000,
+      "maxAgeDays": 30
+    }
   }
 }

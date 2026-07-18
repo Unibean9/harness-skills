@@ -1,0 +1,4 @@
+interface:
+  display_name: "Harness Verify"
+  short_description: "Run the manifest and attest the result"
+  default_prompt: "Use $hs-verify to run final verification for this spec."

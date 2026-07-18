@@ -45,3 +45,47 @@ test("monitoring emits redacted JSON lines", () => {
   const line = JSON.parse(readFileSync(join(root, ".harness", "state", "audit.log"), "utf8"));
   assert.match(line.detail, /REDACTED/); assert.doesNotMatch(line.detail, /supersecret/);
 });
+
+test("monitoring categorizes tool calls into fixed buckets", () => {
+  const root = mkdtempSync(join(tmpdir(), "harness-audit-cat-"));
+  writeFileSync(join(root, "hs.settings.json"), JSON.stringify({ monitoring: { enabled: true } }));
+  const hook = fileURLToPath(new URL("../../hooks/monitoring.mjs", import.meta.url));
+  const logPath = join(root, ".harness", "state", "audit.log");
+  const fire = (tool_name, tool_input) => spawnSync(process.execPath, [hook], { cwd: root, input: JSON.stringify({ hook_event_name: "PostToolUse", tool_name, tool_input }), encoding: "utf8" });
+
+  fire("Bash", { command: "git commit -m x" });
+  fire("Bash", { command: "ls -la" });
+  fire("Write", { file_path: "a.txt" });
+  fire("Read", { file_path: "a.txt" });
+  fire("Task", {});
+
+  const categories = readFileSync(logPath, "utf8").trim().split("\n").map((line) => JSON.parse(line).category);
+  assert.deepEqual(categories, ["ship", "shell", "file-write", "file-read", "other"]);
+});
+
+test("monitoring retention trims old and excess lines", () => {
+  const root = mkdtempSync(join(tmpdir(), "harness-audit-retain-"));
+  writeFileSync(join(root, "hs.settings.json"), JSON.stringify({ monitoring: { enabled: true, retention: { maxLines: 3, maxAgeDays: 1 } } }));
+  mkdirSync(join(root, ".harness", "state"), { recursive: true });
+  const logPath = join(root, ".harness", "state", "audit.log");
+  const old = new Date(Date.now() - 10 * 24 * 60 * 60 * 1000).toISOString(); // well past maxAgeDays
+  const recent = new Date().toISOString();
+  const seedLines = [
+    { timestamp: old, event: "PostToolUse", tool: "Read", category: "file-read", detail: "old-1" },
+    { timestamp: recent, event: "PostToolUse", tool: "Read", category: "file-read", detail: "recent-1" },
+    { timestamp: recent, event: "PostToolUse", tool: "Read", category: "file-read", detail: "recent-2" },
+  ];
+  writeFileSync(logPath, seedLines.map((l) => JSON.stringify(l)).join("\n") + "\n");
+
+  const hook = fileURLToPath(new URL("../../hooks/monitoring.mjs", import.meta.url));
+  // Firing four more recent events should: drop the one stale line by age,
+  // then cap the remainder to maxLines (3) by count.
+  for (let i = 0; i < 4; i += 1) {
+    spawnSync(process.execPath, [hook], { cwd: root, input: JSON.stringify({ hook_event_name: "PostToolUse", tool_name: "Read", tool_input: { file_path: `new-${i}.txt` } }), encoding: "utf8" });
+  }
+
+  const kept = readFileSync(logPath, "utf8").trim().split("\n").map((line) => JSON.parse(line));
+  assert.equal(kept.length, 3);
+  assert.ok(kept.every((line) => line.detail !== "old-1"), "stale line past maxAgeDays must be dropped");
+  assert.deepEqual(kept.map((l) => l.detail), ["new-1.txt", "new-2.txt", "new-3.txt"]);
+});

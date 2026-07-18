@@ -6,7 +6,7 @@ import { join } from "node:path";
 import { fileURLToPath } from "node:url";
 import test from "node:test";
 import { mkdtempSync } from "node:fs";
-import { selectActiveSpec } from "../../scripts/state.mjs";
+import { detectLegacySpecState, detectSpecVersion, initializeWorkflow, loadWorkflow, resolveSpecRuntimeDir, selectActiveSpec, specPaths, specRuntimePaths, transitionWorkflow } from "../../scripts/state.mjs";
 
 const repo = fileURLToPath(new URL("../..", import.meta.url));
 const reserve = join(repo, "scripts/next-spec-id.mjs");
@@ -34,4 +34,90 @@ test("active selection validates identity and refuses silent replacement", () =>
   assert.throws(() => selectActiveSpec("bad", root), /invalid/);
   selectActiveSpec("002-two", root, { replace: true });
   assert.equal(readFileSync(join(root, ".harness", "state", "current-spec"), "utf8"), "002-two\n");
+});
+
+test("v2 runtime paths require an explicit valid spec and stay outside durable history", () => {
+  const root = mkdtempSync(join(tmpdir(), "harness-runtime-path-"));
+  mkdirSync(join(root, ".harness", "specs", "001-one"), { recursive: true });
+  assert.equal(resolveSpecRuntimeDir(root, "001-one"), join(root, ".harness", "state", "specs", "001-one"));
+  assert.equal(specPaths(root, "001-one").manifest, join(root, ".harness", "specs", "001-one", "verify.json"));
+  assert.equal(specRuntimePaths(root, "001-one").checks, join(root, ".harness", "state", "specs", "001-one", "checks"));
+  assert.throws(() => resolveSpecRuntimeDir(root, "bad"), /invalid spec identity/);
+  assert.throws(() => resolveSpecRuntimeDir(root, "002-missing"), /does not exist/);
+});
+
+test("explicit runtime identity is stable when active selection changes", () => {
+  const root = mkdtempSync(join(tmpdir(), "harness-explicit-runtime-"));
+  mkdirSync(join(root, ".harness", "specs", "001-one"), { recursive: true });
+  mkdirSync(join(root, ".harness", "specs", "002-two"), { recursive: true });
+  selectActiveSpec("001-one", root);
+  const one = specRuntimePaths(root, "001-one").dir;
+  selectActiveSpec("002-two", root, { replace: true });
+  assert.equal(specRuntimePaths(root, "001-one").dir, one);
+  assert.notEqual(specRuntimePaths(root, "002-two").dir, one);
+});
+
+test("legacy spec-local evidence is detected read-only with regeneration guidance", () => {
+  const root = mkdtempSync(join(tmpdir(), "harness-legacy-state-"));
+  const legacy = join(root, ".harness", "specs", "001-one", "state");
+  mkdirSync(legacy, { recursive: true });
+  writeFileSync(join(legacy, "verify-tests.status"), "PASS\n");
+  const result = detectLegacySpecState(root, "001-one");
+  assert.equal(result.version, 1);
+  assert.deepEqual(result.entries, ["verify-tests.status"]);
+  assert.match(result.message, /read-only.*regenerate/);
+  assert.equal(readFileSync(join(legacy, "verify-tests.status"), "utf8"), "PASS\n");
+});
+
+test("workflow version detection is deterministic and fail-closed", () => {
+  const root = mkdtempSync(join(tmpdir(), "harness-version-state-"));
+  const dir = join(root, ".harness", "specs", "001-one");
+  mkdirSync(dir, { recursive: true });
+  assert.equal(detectSpecVersion(root, "001-one").kind, "legacy-v1");
+  writeFileSync(join(dir, "workflow.json"), JSON.stringify({ version: 2 }));
+  assert.equal(detectSpecVersion(root, "001-one").kind, "invalid");
+  writeFileSync(join(dir, "workflow.json"), "not-json");
+  assert.equal(detectSpecVersion(root, "001-one").kind, "invalid");
+  writeFileSync(join(dir, "workflow.json"), JSON.stringify({ version: 99 }));
+  assert.equal(detectSpecVersion(root, "001-one").kind, "invalid");
+});
+
+function workflowRoot() {
+  const root = mkdtempSync(join(tmpdir(), "harness-workflow-"));
+  const spec = "001-one";
+  mkdirSync(join(root, ".harness", "specs", spec), { recursive: true });
+  writeFileSync(join(root, ".harness", "specs", spec, "spec.md"), "# Spec\n");
+  writeFileSync(join(root, ".harness", "specs", spec, "plan.md"), "# Plan\n");
+  writeFileSync(join(root, ".harness", "specs", "INDEX.md"), "# Spec Index\n\n| ID | Slug | Phase | Updated |\n|---|---|---|---|\n| 001 | one | brainstorming | today |\n");
+  return { root, spec };
+}
+
+const approval = (kind) => ({ kind, reference: `explicit ${kind} approval`, recordedAt: "2026-07-18T00:00:00.000Z" });
+const cleanReview = { recordedAt: "2026-07-18T00:00:00.000Z", blockersOpen: 0, dimensions: { coverage: "pass", ordering: "pass", risk: "pass", verifyQuality: "pass" } };
+
+test("workflow transitions require explicit approvals and a clean current plan review", () => {
+  const { root, spec } = workflowRoot();
+  initializeWorkflow(root, spec, { timestamp: "2026-07-18T00:00:00.000Z" });
+  assert.throws(() => transitionWorkflow(root, spec, "approve-spec", { expectedRevision: 0 }), /explicit spec approval/);
+  let state = transitionWorkflow(root, spec, "approve-spec", { expectedRevision: 0, approval: approval("spec") });
+  assert.equal(state.phase, "planning");
+  assert.throws(() => transitionWorkflow(root, spec, "approve-plan", { expectedRevision: 1, approval: approval("plan") }), /clean plan review/);
+  state = transitionWorkflow(root, spec, "record-plan-review", { expectedRevision: 1, planReview: cleanReview });
+  state = transitionWorkflow(root, spec, "approve-plan", { expectedRevision: 2, approval: approval("plan") });
+  assert.equal(state.phase, "building");
+  assert.equal(state.revision, 3);
+  assert.equal(loadWorkflow(root, spec).approvals.plan.reference, "explicit plan approval");
+});
+
+test("workflow rejects stale, out-of-order, and locked transitions without mutation", () => {
+  const { root, spec } = workflowRoot();
+  initializeWorkflow(root, spec);
+  const workflow = specPaths(root, spec).workflow;
+  const index = join(root, ".harness", "specs", "INDEX.md");
+  const beforeWorkflow = readFileSync(workflow, "utf8"); const beforeIndex = readFileSync(index, "utf8");
+  assert.throws(() => transitionWorkflow(root, spec, "approve-plan", { expectedRevision: 0, approval: approval("plan") }), /not allowed/);
+  assert.equal(readFileSync(workflow, "utf8"), beforeWorkflow); assert.equal(readFileSync(index, "utf8"), beforeIndex);
+  mkdirSync(join(root, ".harness", "state", "specs", spec, ".workflow-transition.lock"), { recursive: true });
+  assert.throws(() => transitionWorkflow(root, spec, "approve-spec", { expectedRevision: 0, approval: approval("spec") }), /already in progress/);
+  assert.equal(readFileSync(workflow, "utf8"), beforeWorkflow);
 });

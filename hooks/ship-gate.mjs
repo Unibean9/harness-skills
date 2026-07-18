@@ -9,8 +9,6 @@
 import { loadSettings, projectPath, readStdinJson, block, allow, isShipCommand, extractCommand } from "./lib/common.mjs";
 import { evaluateReadiness } from "../scripts/readiness.mjs";
 
-const STATUS_FILE = ".harness/state/verify-all.status";
-
 const call = await readStdinJson();
 if (call.__malformedPayload) block("Blocked by shipGate: malformed hook payload.");
 const settings = loadSettings(call);
@@ -24,7 +22,7 @@ if (!isShipCommand(command)) allow();
 
 if (!evaluateReadiness(projectPath(call)).ready) {
   block(
-    `Blocked by shipGate: ${STATUS_FILE} lacks a valid attestation for this spec and worktree. Run hs-verify, then hs-ship, before shipping.`
+    "Blocked by shipGate: this spec lacks a valid v2 attestation, resolved review, or explicit ship approval. Run hs-verify, hs-review, then hs-ship."
   );
 }
 

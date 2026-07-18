@@ -1,0 +1,4 @@
+interface:
+  display_name: "Harness Ship"
+  short_description: "Ship only an explicitly approved verified spec"
+  default_prompt: "Use $hs-ship to check readiness and request ship approval."

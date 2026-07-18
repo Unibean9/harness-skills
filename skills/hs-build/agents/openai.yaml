@@ -1,0 +1,4 @@
+interface:
+  display_name: "Harness Build"
+  short_description: "Implement one approved task at a time"
+  default_prompt: "Use $hs-build to implement the next approved task."

@@ -1,5 +1,9 @@
 {
+  "name": "harness-skills",
+  "version": "2.0.0",
   "private": true,
   "engines": { "node": ">=22" },
-  "scripts": { "test": "node --test tests/compatibility/*.test.mjs" }
+  "bin": { "hs": "bin/hs.mjs" },
+  "files": ["bin", "scripts", "skills", "hooks", "docs", "AGENTS.md", "README.md"],
+  "scripts": { "test": "node --test tests/compatibility/*.test.mjs", "validate:skills": "node scripts/validate-skills.mjs" }
 }

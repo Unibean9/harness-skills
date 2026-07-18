@@ -1,10 +1,11 @@
 ---
 name: hs-review
 description: Get an independent, structured review of the verified diff — correctness, security, performance, quality, and test coverage — before it ships. Use this once hs-verify has produced a valid attestation and right before hs-ship, or any time a user asks for a second opinion on a diff. Advisory, not a gate — hs-ship does not require this phase to have run.
-compatibility: bundled scripts are Node-native (`node scripts/*.mjs`) — Node.js 22+ on `PATH` is the only requirement, no POSIX shell needed
 ---
 
 # hs-review
+
+Use the project-local runtime as `npm exec -- hs`; review the recorded changeset, not an inferred commit baseline.
 
 ## Why this phase exists
 

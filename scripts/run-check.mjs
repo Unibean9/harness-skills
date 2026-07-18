@@ -1,56 +1,65 @@
 #!/usr/bin/env node
-import { existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
+import { existsSync, mkdirSync, writeFileSync } from "node:fs";
 import { spawnSync } from "node:child_process";
-import { dirname, join } from "node:path";
-import { resolveCheckStateDir } from "./state.mjs";
+import { dirname, join, resolve } from "node:path";
+import { fileURLToPath } from "node:url";
+import { manifestDigest, checksForStage, loadVerifyManifestV2 } from "./verify-manifest.mjs";
+import { specRuntimePaths } from "./paths.mjs";
 import { fingerprintWorktree } from "./worktree.mjs";
 
-const [label, separator, ...command] = process.argv.slice(2);
-if (!label || !/^[a-z0-9]+(?:-[a-z0-9]+)*$/.test(label) || separator !== "--" || !command.length) {
-  console.error("usage: node scripts/run-check.mjs <label> -- <command...>");
-  process.exit(2);
-}
-const root = process.cwd();
-const current = join(root, ".harness", "state", "current-spec");
-const spec = existsSync(current) ? readFileSync(current, "utf8").trim() : null;
-const state = resolveCheckStateDir(root);
-mkdirSync(state, { recursive: true });
-const startedAt = new Date().toISOString();
-let fingerprintBefore = null;
-let fingerprintAfter = null;
-let fingerprintError = null;
-if (spec) {
-  try {
-    fingerprintBefore = fingerprintWorktree(root);
-  } catch (error) {
-    fingerprintError = error.message;
+const labelPattern = /^[a-z0-9]+(?:-[a-z0-9]+)*$/;
+const timestampValid = (value) => Number.isFinite(Date.parse(value)) && Math.abs(Date.now() - Date.parse(value)) <= 5 * 60 * 1000;
+
+function execute(argv, root) {
+  let executable = argv[0];
+  let arguments_ = argv.slice(1);
+  if (process.platform === "win32" && argv[0] === "npm") {
+    const npmCli = join(dirname(process.execPath), "node_modules", "npm", "bin", "npm-cli.js");
+    if (existsSync(npmCli)) {
+      executable = process.execPath;
+      arguments_ = [npmCli, ...arguments_];
+    }
   }
+  return spawnSync(executable, arguments_, { cwd: root, encoding: "utf8", shell: false });
 }
 
-let executable = command[0];
-let arguments_ = command.slice(1);
-if (process.platform === "win32" && command[0] === "npm") {
-  const npmCli = join(dirname(process.execPath), "node_modules", "npm", "bin", "npm-cli.js");
-  if (existsSync(npmCli)) {
-    executable = process.execPath;
-    arguments_ = [npmCli, ...arguments_];
-  }
+export function runCheck(root = process.cwd(), { spec, stage, label } = {}) {
+  if (!spec || !stage || !labelPattern.test(label || "")) throw new Error("spec, stage, and kebab-case label are required");
+  const manifest = loadVerifyManifestV2(root, spec);
+  const check = checksForStage(manifest, stage).find((candidate) => candidate.label === label);
+  if (!check || check.kind !== "machine") throw new Error("label must name a machine check declared for this manifest stage");
+  const runtime = specRuntimePaths(root, spec);
+  mkdirSync(runtime.checks, { recursive: true });
+  const startedAt = new Date().toISOString();
+  const fingerprintBefore = fingerprintWorktree(root);
+  const result = execute(check.argv, root);
+  const fingerprintAfter = fingerprintWorktree(root);
+  const finishedAt = new Date().toISOString();
+  const worktreeChanged = fingerprintBefore !== fingerprintAfter;
+  const pass = !result.error && result.status === 0 && !worktreeChanged && timestampValid(startedAt) && timestampValid(finishedAt);
+  const evidence = {
+    version: 2, spec, stage, label: check.label, kind: check.kind, argv: check.argv, covers: check.covers,
+    manifestDigest: manifestDigest(manifest), startedAt, finishedAt, fingerprintBefore, fingerprintAfter,
+    exitCode: result.status ?? null, pass, worktreeChanged, error: result.error?.message || null,
+  };
+  const base = join(runtime.checks, `${stage}-${label}`);
+  writeFileSync(`${base}.log`, `${result.stdout || ""}${result.stderr || ""}`);
+  writeFileSync(`${base}.json`, `${JSON.stringify(evidence)}\n`);
+  writeFileSync(`${base}.status`, pass ? "PASS\n" : "FAIL\n");
+  return evidence;
 }
-const result = spawnSync(executable, arguments_, { encoding: "utf8", shell: false });
 
-if (spec && !fingerprintError) {
+if (process.argv[1] && fileURLToPath(import.meta.url) === resolve(process.argv[1])) {
+  const [specFlag, spec, stageFlag, stage, labelFlag, label] = process.argv.slice(2);
   try {
-    fingerprintAfter = fingerprintWorktree(root);
+    if (specFlag !== "--spec" || stageFlag !== "--stage" || labelFlag !== "--label" || process.argv.length !== 8) {
+      throw new Error("usage: run-check.mjs --spec <id> --stage <baseline|final> --label <label>");
+    }
+    const evidence = runCheck(process.cwd(), { spec, stage, label });
+    process.stdout.write(`---- ${label} (${evidence.pass ? "PASS" : "FAIL"}) ----\n`);
+    if (!evidence.pass) process.exitCode = evidence.exitCode || 1;
   } catch (error) {
-    fingerprintError = error.message;
+    console.error(error.message);
+    process.exitCode = 1;
   }
 }
-const output = `${result.stdout || ""}${result.stderr || ""}`;
-const worktreeChanged = spec ? fingerprintBefore !== fingerprintAfter : false;
-const pass = !result.error && result.status === 0 && !fingerprintError && !worktreeChanged;
-const finishedAt = new Date().toISOString();
-writeFileSync(join(state, `${label}.log`), output);
-writeFileSync(join(state, `${label}.status`), pass ? "PASS\n" : "FAIL\n");
-writeFileSync(join(state, `${label}.json`), `${JSON.stringify({ version: 1, spec, label, argv: command, exitCode: result.status ?? null, pass, startedAt, finishedAt, fingerprintBefore, fingerprintAfter, worktreeChanged, fingerprintError })}\n`);
-process.stdout.write(`---- ${label} (${pass ? "PASS" : "FAIL"}) ----\n${output.split("\n").slice(-40).join("\n")}\n`);
-process.exit(pass ? 0 : result.status || 1);

@@ -1,10 +1,11 @@
 ---
 name: hs-verify
 description: Run the project's full test/lint/build suite as one deterministic pass and record a pass/fail verdict on disk — the sensor that decides whether a change is actually done, independent of what any individual task claimed along the way. Use this after all tasks in the active spec's plan are implemented, before `hs-review` or `hs-ship`, or any time a user asks "is this actually working," "did the tests pass," or "are we done."
-compatibility: bundled scripts are Node-native (`node scripts/*.mjs`) — Node.js 22+ on `PATH` is the only requirement, no POSIX shell needed
 ---
 
 # hs-verify
+
+Use the project-local runtime as `npm exec -- hs`; execute the manifest rather than rediscovering commands.
 
 ## Why this phase exists
 

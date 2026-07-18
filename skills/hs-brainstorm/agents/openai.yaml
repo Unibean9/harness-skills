@@ -1,0 +1,4 @@
+interface:
+  display_name: "Harness Brainstorm"
+  short_description: "Turn a request into an approved spec"
+  default_prompt: "Use $hs-brainstorm to draft a testable spec for this change."

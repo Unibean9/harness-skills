@@ -1,7 +1,7 @@
 {
   "name": "harness-skills",
   "displayName": "Harness Skills",
-  "description": "A five-phase spec-driven development harness (brainstorm -> plan -> build -> verify -> ship) for coding agents, with real evidence gates instead of self-reported \"done\"",
+  "description": "A six-phase spec-driven development harness (brainstorm -> plan -> build -> verify -> review -> ship) with evidence gates.",
   "version": "1.0.0",
   "author": {
     "name": "danielleit241"

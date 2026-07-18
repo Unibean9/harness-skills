@@ -1,0 +1,4 @@
+interface:
+  display_name: "Harness Plan"
+  short_description: "Plan approved work into verified tasks"
+  default_prompt: "Use $hs-plan to create and review an implementation plan."

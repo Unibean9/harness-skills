@@ -59,8 +59,12 @@ npx skills add Unibean9/harness-skills --list   # preview the 6 skills first
 npx skills add Unibean9/harness-skills          # install, prompts for which agents
 ```
 
-That's the whole workflow, no hooks or subagents — enough to try it. For the
-guardrails (hooks, subagents), install natively instead:
+Skills-only installs the instructions, not the executable runtime. In every
+project that uses the workflow, also install this package locally (for example
+`npm install --save-dev harness-skills`) so the skills can run `npm exec -- hs`
+from any working directory. Runtime evidence lives in `.harness/state/`; durable
+specs live in `.harness/specs/`. Legacy v1 evidence is readable but never used
+as fresh v2 proof. For hooks/subagents, install natively instead:
 
 | Agent           | Skills-only command                                     | Native plugin (adds hooks/subagents where wired)                                                                                                                     |
 | --------------- | ------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------- |

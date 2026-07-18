@@ -12,7 +12,7 @@ branch the model chooses to invoke.
 `hs.settings.json` at the repo root is the actual config each hook reads —
 but deliberately minimal: an `enabled` switch per hook, plus only the couple
 of fields that genuinely vary per project (`privacyBlock.denyList`/`allowList`,
-`shipGate.blockCommands`). Where a path or a required value would otherwise be
+`shipGate.blockCommands`, `monitoring.retention`). Where a path or a required value would otherwise be
 a config field, it's a fixed harness convention baked into the script instead
 (e.g. the verify verdict always lives at `.harness/state/verify-all.status`,
 the audit log always at `.harness/state/audit.log`) — one less thing to get
@@ -28,7 +28,7 @@ own top-level key out of `hs.settings.json`:
 | `privacy-block.mjs` | `PreToolUse` | `privacyBlock` | Blocks reading/referencing a path matching `denyList` unless it's also in `allowList` (e.g. blocks `.env`, allows `.env.example`). |
 | `ship-gate.mjs` | `PreToolUse` | `shipGate` | Blocks `git commit`/`git push`/`gh pr create`-style commands (from `blockCommands`) unless a valid, spec-and-worktree-bound attestation exists (see `scripts/attestation.mjs`) — a hand-edited `.harness/state/verify-all.status` string alone is not enough. |
 | `session-state.mjs` | `SessionStart` | `sessionState` | Reads `.harness/state/current-spec` to find the active spec, digests its `spec.md`/`plan.md`/`progress.md`/`implement-notes.md`, and writes/injects that digest — so a fresh session doesn't miss what a prior one already established. |
-| `monitoring.mjs` | `PreToolUse` / `PostToolUse` | `monitoring` | Appends one line per tool call to `.harness/state/audit.log` — an audit trail independent of what any transcript claims happened. |
+| `monitoring.mjs` | `PreToolUse` / `PostToolUse` | `monitoring` | Appends one line per tool call to `.harness/state/audit.log`, tagged with a fixed `category` (`ship`/`shell`/`file-write`/`file-read`/`other`) — an audit trail independent of what any transcript claims happened. Also trims the log to `monitoring.retention` (`maxLines`, default 5000; `maxAgeDays`, default 30) so it stays a bounded operational record instead of growing forever. |
 
 They're separate files on purpose: turning one off, changing its trigger
 event, or replacing its logic doesn't touch the other three, and a new

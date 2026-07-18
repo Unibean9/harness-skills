@@ -1,10 +1,11 @@
 ---
 name: hs-ship
 description: Run final readiness checks (every task done, verify green, diff matches the spec's scope) and only then prepare a commit, PR, or push — always with explicit human confirmation, never automatically. Use this when a user says the work looks done, asks to commit/ship/open a PR, or when every task in the active spec's plan.md is checked off. This is a hard gate — it does not relax even when every automated check is green.
-compatibility: bundled script is Node-native (`node scripts/check-ship-ready.mjs`) and needs `git` on `PATH` — Node.js 22+ is the only shell requirement, no POSIX shell needed
 ---
 
 # hs-ship
+
+Use the project-local runtime as `npm exec -- hs`; ship only after canonical readiness and explicit human approval.
 
 ## Why this phase exists
 

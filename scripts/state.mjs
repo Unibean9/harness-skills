@@ -2,30 +2,29 @@
 import { existsSync, mkdirSync, readFileSync, readdirSync, renameSync, rmSync, writeFileSync } from "node:fs";
 import { join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
+import { detectLegacySpecState, detectSpecVersion, harnessPaths, readActiveSpec, resolveSpecIdentity, specPaths, specRuntimePaths, validateSpecId } from "./paths.mjs";
+export { initializeWorkflow, loadWorkflow, transitionWorkflow, validateWorkflow, workflowRoute } from "./workflow-state.mjs";
 
-const identityPattern = /^\d{3,}-[a-z0-9]+(?:-[a-z0-9]+)*$/;
 const slugPattern = /^[a-z0-9]+(?:-[a-z0-9]+)*$/;
 
-function paths(root) {
-  const state = join(root, ".harness", "state");
-  return { specs: join(root, ".harness", "specs"), state, current: join(state, "current-spec"), lock: join(state, ".active-spec.lock") };
+// Per-check logs (baseline, task-N, verify-*) live under the active spec's own
+// v1 state directory until its callers migrate in Task 5. New v2 callers must
+// pass an explicit spec to resolveSpecRuntimeDir instead of using selection as
+// an execution identity.
+export function resolveCheckStateDir(root = process.cwd()) {
+  const { state } = harnessPaths(root);
+  const active = readActiveSpec(root);
+  if (!active) return state;
+  return harnessPaths(root, active).legacySpecStateDir;
 }
 
-// Per-check logs (baseline, task-N, verify-*) live under the active spec's own
-// state directory when one is selected, so two specs in flight at once don't
-// clobber each other's task logs. Falls back to the shared .harness/state/
-// when no spec is selected yet (e.g. tooling smoke tests).
-export function resolveCheckStateDir(root = process.cwd()) {
-  const { state, current } = paths(root);
-  if (!existsSync(current)) return state;
-  const active = readFileSync(current, "utf8").trim();
-  if (!active) return state;
-  return join(root, ".harness", "specs", active, "state");
+export function resolveSpecRuntimeDir(root = process.cwd(), explicitSpec) {
+  return specRuntimePaths(root, explicitSpec).dir;
 }
 
 export function reserveSpec(slug, root = process.cwd()) {
   if (!slugPattern.test(slug)) throw new Error("spec slug must be kebab-case");
-  const { specs } = paths(root);
+  const { specs } = harnessPaths(root);
   mkdirSync(specs, { recursive: true });
   for (;;) {
     const max = readdirSync(specs, { withFileTypes: true }).filter((entry) => entry.isDirectory()).reduce((value, entry) => Math.max(value, Number(/^\d+/.exec(entry.name)?.[0] || 0)), 0);
@@ -40,12 +39,12 @@ export function reserveSpec(slug, root = process.cwd()) {
 }
 
 export function selectActiveSpec(identity, root = process.cwd(), { replace = false } = {}) {
-  if (!identityPattern.test(identity)) throw new Error("invalid spec identity");
-  const { specs, state, current, lock } = paths(root);
+  validateSpecId(identity);
+  const { specs, state, current, selectionLock } = harnessPaths(root);
   if (!existsSync(join(specs, identity))) throw new Error(`reserved spec does not exist: ${identity}`);
   mkdirSync(state, { recursive: true });
   try {
-    mkdirSync(lock);
+    mkdirSync(selectionLock);
   } catch (error) {
     if (error?.code === "EEXIST") throw new Error("active spec selection is already in progress");
     throw error;
@@ -57,9 +56,11 @@ export function selectActiveSpec(identity, root = process.cwd(), { replace = fal
     writeFileSync(temporary, `${identity}\n`);
     renameSync(temporary, current);
   } finally {
-    rmSync(lock, { recursive: true, force: true });
+    rmSync(selectionLock, { recursive: true, force: true });
   }
 }
+
+export { detectLegacySpecState, detectSpecVersion, harnessPaths, readActiveSpec, resolveSpecIdentity, specPaths, specRuntimePaths, validateSpecId };
 
 if (process.argv[1] && fileURLToPath(import.meta.url) === resolve(process.argv[1])) {
   const [action, value, option] = process.argv.slice(2);
