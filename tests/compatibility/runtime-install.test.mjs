@@ -7,9 +7,15 @@ import { fileURLToPath } from "node:url";
 import test from "node:test";
 
 const repo = fileURLToPath(new URL("../..", import.meta.url));
-const npmCli = join(dirname(process.execPath), "node_modules", "npm", "bin", "npm-cli.js");
+// npm-cli.js lives next to node.exe on Windows but under <prefix>/lib on
+// Unix -- probe both layouts instead of assuming one platform's.
+const npmCli = [
+  join(dirname(process.execPath), "node_modules", "npm", "bin", "npm-cli.js"),
+  join(dirname(process.execPath), "..", "lib", "node_modules", "npm", "bin", "npm-cli.js"),
+].find((candidate) => existsSync(candidate));
 
 test("packed runtime installs without network and hs resolves from a nested project directory", () => {
+  assert.ok(npmCli, "could not locate npm-cli.js next to the node binary");
   const packDir = mkdtempSync(join(tmpdir(), "harness-pack-"));
   const project = mkdtempSync(join(tmpdir(), "harness-install-")); const nested = join(project, "nested", "cwd"); mkdirSync(nested, { recursive: true });
   writeFileSync(join(project, "package.json"), "{\"private\":true}\n");
