@@ -57,16 +57,16 @@ export function runDoctor(root = process.cwd()) {
   // agents/ at the project root (this repo's own bundled dev-mode copy) --
   // either one means the subagents are actually wired.
   const subagentLocations = {
-    "Claude Code": { dirs: [".claude/agents", "agents"], files: ["hs-scout.md", "hs-reviewer.md"] },
-    "Codex CLI": { dirs: [".codex/agents"], files: ["hs-scout.toml", "hs-reviewer.toml"] },
-    "Cursor (tier 2)": { dirs: [".cursor/agents"], files: ["hs-scout.md", "hs-reviewer.md"] },
-    "Antigravity CLI (tier 2)": { dirs: [".agents/agents"], files: ["hs-scout.md", "hs-reviewer.md"] },
+    "Claude Code": { dirs: [".claude/agents", "agents"], files: ["hs-scout.md", "hs-reviewer.md", "hs-shipper.md"] },
+    "Codex CLI": { dirs: [".codex/agents"], files: ["hs-scout.toml", "hs-reviewer.toml", "hs-shipper.toml"] },
+    "Cursor (tier 2)": { dirs: [".cursor/agents"], files: ["hs-scout.md", "hs-reviewer.md", "hs-shipper.md"] },
+    "Antigravity CLI (tier 2)": { dirs: [".agents/agents"], files: ["hs-scout.md", "hs-reviewer.md", "hs-shipper.md"] },
   };
   for (const [agent, { dirs, files }] of Object.entries(subagentLocations)) {
     checks.push(check(`${agent} subagents`, () => {
       for (const dir of dirs) {
         const present = files.filter((name) => existsSync(join(root, dir, name)));
-        if (present.length === files.length) return `hs-scout + hs-reviewer present (${dir}/)`;
+        if (present.length === files.length) return `hs-scout + hs-reviewer + hs-shipper present (${dir}/)`;
       }
       const partial = dirs.flatMap((dir) => files.filter((name) => existsSync(join(root, dir, name))).map((name) => `${dir}/${name}`));
       return partial.length ? `partial: ${partial.join(", ")}` : null;

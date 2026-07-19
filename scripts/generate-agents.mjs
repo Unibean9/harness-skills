@@ -28,6 +28,12 @@ const SUBAGENTS = {
     lightweight: false,
     claudeModel: null,
   },
+  "hs-shipper": {
+    description: "Ship-readiness subagent for the harness — reports uncommitted changes, check results, and a drafted commit message; never commits, pushes, or talks to the user.",
+    claudeTools: "Read, Grep, Glob, Bash",
+    lightweight: true,
+    claudeModel: "haiku",
+  },
 };
 
 const LIGHTWEIGHT_NOTE = "pick your CLI's cheapest model that can still read and summarize; hs-scout is retrieval-only";

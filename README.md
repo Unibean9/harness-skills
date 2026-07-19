@@ -81,7 +81,7 @@ This repo supports four agents, split into two tiers of coverage:
 | 2 — Experimental | Antigravity CLI | skills + subagents (confirmed paths); hooks NOT wired, config path unconfirmed         |
 
 `hs setup` accepts `--target claude|codex|cursor|antigravity` and produces
-portable skills plus generated `hs-scout`/`hs-reviewer` subagents. Add
+portable skills plus generated `hs-scout`/`hs-reviewer`/`hs-shipper` subagents. Add
 `--with-hooks` only when the user opts into the companion enforcement plugin
 and the target has a confirmed adapter (Claude: `.claude/settings.json`; Codex:
 `.codex/hooks.json`; Cursor: `.cursor/hooks.json`, wiring `ship-gate`/
@@ -115,14 +115,15 @@ add ./` from the repo root, no build step.
 
 ## Subagents
 
-Two narrow jobs are worth delegating to a separate subagent rather than
-doing inline with the main model — see `docs/agents.md` for both roles and
-per-agent wiring:
+Three narrow jobs are worth delegating to a separate subagent rather than
+doing inline with the main model — see `docs/agents.md` for all three roles
+and per-agent wiring:
 
 | Subagent                             | Role                                                                                              | Use when                                                                               |
 | ------------------------------------ | ------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------- |
 | [hs-scout](agents/hs-scout.md)       | Delegates broad reading — existing code, docs, an external API — to a cheap/fast subagent         | Before each phase, when the phase needs context the main model doesn't have loaded yet |
 | [hs-reviewer](agents/hs-reviewer.md) | Reviews the verified diff from a context-independent subagent, not the same context that wrote it | `hs-review`, before shipping                                                           |
+| [hs-shipper](agents/hs-shipper.md)   | Reports uncommitted changes, check results, and a drafted commit message — never commits, pushes, or talks to the user | `hs-ship`, before the main agent asks for commit/push/PR approval |
 
 All four supported agents have a native (or expected-native, for
 Antigravity — see `docs/antigravity-setup.md`) subagent mechanism. Generate
@@ -134,16 +135,16 @@ hs agents                   # all four targets in one pass
 hs agents --target codex    # just one
 ```
 
-| Agent           | Where it's written                                              | Format                                                                                                                                  |
-| --------------- | --------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------- |
-| Claude Code     | `.claude/agents/hs-scout.md`, `.claude/agents/hs-reviewer.md`   | Markdown + YAML frontmatter                                                                                                             |
-| Codex CLI       | `.codex/agents/hs-scout.toml`, `.codex/agents/hs-reviewer.toml` | TOML — `name`/`description`/`developer_instructions`                                                                                    |
-| Cursor          | `.cursor/agents/hs-scout.md`, `.cursor/agents/hs-reviewer.md`   | Same shape as Claude Code — and Cursor reads `.claude/agents/` directly, so no separate file is needed if that's already in the project |
-| Antigravity CLI | `.agents/agents/hs-scout.md`, `.agents/agents/hs-reviewer.md`   | Same Markdown + YAML frontmatter shape as Cursor's — path unconfirmed, see `docs/antigravity-setup.md`                                  |
+| Agent           | Where it's written                                                                        | Format                                                                                                                                  |
+| --------------- | ------------------------------------------------------------------------------------------ | --------------------------------------------------------------------------------------------------------------------------------------- |
+| Claude Code     | `.claude/agents/hs-scout.md`, `hs-reviewer.md`, `hs-shipper.md`                             | Markdown + YAML frontmatter                                                                                                             |
+| Codex CLI       | `.codex/agents/hs-scout.toml`, `hs-reviewer.toml`, `hs-shipper.toml`                        | TOML — `name`/`description`/`developer_instructions`                                                                                    |
+| Cursor          | `.cursor/agents/hs-scout.md`, `hs-reviewer.md`, `hs-shipper.md`                             | Same shape as Claude Code — and Cursor reads `.claude/agents/` directly, so no separate file is needed if that's already in the project |
+| Antigravity CLI | `.agents/agents/hs-scout.md`, `hs-reviewer.md`, `hs-shipper.md`                             | Same Markdown + YAML frontmatter shape as Cursor's — path unconfirmed, see `docs/antigravity-setup.md`                                  |
 
 This repo's own bundled Claude Code copy lives at `agents/hs-scout.md` /
-`agents/hs-reviewer.md` at the repo root (`hs agents --target
-claude --out agents` regenerates it after editing `docs/agents.md`). See
+`agents/hs-reviewer.md` / `agents/hs-shipper.md` at the repo root (`hs agents
+--target claude --out agents` regenerates it after editing `docs/agents.md`). See
 `docs/agents.md` for the source content behind every generated file. No
 subagent mechanism at all on your agent? Do the same work inline instead —
 scouting is still worth doing cheaply; review is still worth doing with a
@@ -229,7 +230,7 @@ is wired and what is missing.
 
 | Agent           | Tier | Instruction / skills                                         | Agent's native hooks                                                                                                  | Agent's native subagents                                           | This repo's wiring                                                                                                                                                                                                                                                                  |
 | --------------- | ---- | ------------------------------------------------------------ | --------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------ | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Claude Code     | 1    | Root `skills/` auto-discovery                                | Yes — `.claude/settings.json` / plugin `hooks.json`                                                                   | Yes — `.claude/agents/*.md`                                        | Full: `hooks/hooks.json` auto-wires on install; `hs agents --target claude` generates `hs-scout`/`hs-reviewer`.                                                                                                                                                                     |
+| Claude Code     | 1    | Root `skills/` auto-discovery                                | Yes — `.claude/settings.json` / plugin `hooks.json`                                                                   | Yes — `.claude/agents/*.md`                                        | Full: `hooks/hooks.json` auto-wires on install; `hs agents --target claude` generates `hs-scout`/`hs-reviewer`/`hs-shipper`.                                                                                                                                                                     |
 | Codex CLI       | 1    | `skills/` via `.codex-plugin/plugin.json`                    | Yes, since ~v0.124.0 — `.codex/hooks.json` or `config.toml`                                                           | Yes, since ~v0.115.0 — `.codex/agents/*.toml`                      | Hooks: merge `hooks/codex/hooks.json.snippet`. Subagents: `hs agents --target codex` generates both TOML files.                                                                                                                                                                     |
 | Cursor          | 2    | `.cursor-plugin/plugin.json` declares `skills: "./skills/"`  | Yes — `.cursor/hooks.json`, own event/payload shape                                                                   | Yes — `.cursor/agents/*.md`; also reads `.claude/agents/` directly | Partial: `ship-gate`/`privacy-block` wired to `beforeShellExecution`/`beforeReadFile` (see `hooks/cursor/hooks.json.snippet`); `session-state`/`monitoring` not yet. Subagents: `hs agents --target cursor` generates both files (or rely on `.claude/agents/` if already present). |
 | Antigravity CLI | 2    | No native manifest for this repo yet — `npx skills add` only | Expected yes, inherited from Gemini CLI's engine per Google's transition announcement (unconfirmed exact config path) | Expected yes, same inheritance                                     | Hooks not wired — no confirmed config path yet. Subagents: `hs agents --target antigravity` generates both files (see `docs/antigravity-setup.md` for what's confirmed vs. guessed).                                                                                                |

@@ -13,7 +13,7 @@ Codex from trying to auto-load Claude Code's `hooks/hooks.json`.
 npm exec -- hs setup --target codex --with-hooks
 ```
 
-Writes `.codex/skills/`, `.codex/agents/hs-scout.toml`/`hs-reviewer.toml`,
+Writes `.codex/skills/`, `.codex/agents/hs-scout.toml`/`hs-reviewer.toml`/`hs-shipper.toml`,
 `.codex/hooks/` (+ the runtime scripts they import), and `.codex/hooks.json`
 pointing at them. Requires the package installed locally
 (`npm i -D github:Unibean9/harness-skills`).
@@ -57,18 +57,19 @@ changed hooks — Codex's own trust model, not something this repo can bypass.
 
 Codex CLI has native subagents (TOML files, one per agent, at
 `.codex/agents/` project-level or `~/.codex/agents/` personal). Generate
-`hs-scout` and `hs-reviewer` for Codex with one command, from the project
-root:
+`hs-scout`, `hs-reviewer`, and `hs-shipper` for Codex with one command, from
+the project root:
 
 ```bash
 npm exec -- hs agents --target codex
 ```
 
-This writes `.codex/agents/hs-scout.toml` and `.codex/agents/hs-reviewer.toml`
-from `docs/agents.md`'s source content — `name`, `description`, and
-`developer_instructions` for each role (`hs-scout` gets a lightweight
-`model`; `hs-reviewer` stays at Codex's default reasoning tier, since
-independence matters more than cost there). See `docs/agents.md`'s
+This writes `.codex/agents/hs-scout.toml`, `.codex/agents/hs-reviewer.toml`,
+and `.codex/agents/hs-shipper.toml` from `docs/agents.md`'s source content —
+`name`, `description`, and `developer_instructions` for each role (`hs-scout`
+and `hs-shipper` get a lightweight `model`; `hs-reviewer` stays at Codex's
+default reasoning tier, since independence matters more than cost there). See
+`docs/agents.md`'s
 "Per-agent wiring" for the specifics of each role. Codex ships three
 built-in agents (`default`/`worker`/`explorer`) that these don't replace.
 

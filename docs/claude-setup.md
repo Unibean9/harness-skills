@@ -12,7 +12,7 @@ root. No files get copied into your project; the plugin loads `skills/`,
 npm exec -- hs setup --target claude --with-hooks
 ```
 
-Writes `.claude/skills/`, `.claude/agents/hs-scout.md`/`hs-reviewer.md`,
+Writes `.claude/skills/`, `.claude/agents/hs-scout.md`/`hs-reviewer.md`/`hs-shipper.md`,
 `.claude/hooks/` (+ the runtime scripts they import), and a
 `.claude/settings.json` wiring the four hooks. Requires the package installed
 locally (`npm i -D github:Unibean9/harness-skills`).
@@ -24,7 +24,7 @@ npx skills add Unibean9/harness-skills -a claude-code
 ```
 
 Places the six `hs-*` skills into `.claude/skills/`. It does not wire
-`hooks/hooks.json` or the `hs-scout`/`hs-reviewer` subagents — for those you
+`hooks/hooks.json` or the `hs-scout`/`hs-reviewer`/`hs-shipper` subagents — for those you
 need the plugin install below. Fine for a quick trial of the workflow itself.
 
 **Plugin install (skills + hooks + subagents):**
@@ -36,7 +36,7 @@ need the plugin install below. Fine for a quick trial of the workflow itself.
 
 `.claude-plugin/plugin.json` intentionally declares no `skills`/`hooks`
 fields — Claude Code auto-discovers the root `skills/`, `hooks/hooks.json`,
-and `agents/hs-scout.md`/`agents/hs-reviewer.md` by convention once the
+and `agents/hs-scout.md`/`agents/hs-reviewer.md`/`agents/hs-shipper.md` by convention once the
 plugin is installed.
 
 Local development (iterating on this repo itself, no publishing):
@@ -67,7 +67,7 @@ out. From there the installed phase skills take over.
   (`privacyBlock`/`shipGate`/`sessionState`/`monitoring`) via
   `${CLAUDE_PLUGIN_ROOT}`-relative commands on `SessionStart`, `PreToolUse`,
   `PostToolUse`. No manual settings merge needed once installed as a plugin.
-- `agents/hs-scout.md`, `agents/hs-reviewer.md` — real Claude Code subagents,
+- `agents/hs-scout.md`, `agents/hs-reviewer.md`, `agents/hs-shipper.md` — real Claude Code subagents,
   generated from `docs/agents.md` (`npm exec -- hs agents --target claude
   --out agents`). Invoke them with the Agent tool like any other subagent.
 - `skills/<name>/SKILL.md` — the six harness skills, unchanged across agents.

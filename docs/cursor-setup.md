@@ -96,18 +96,18 @@ Cursor has native subagents: Markdown files with YAML frontmatter (`name`,
 `description`, `model`, `readonly`, `is_background`) at `.cursor/agents/`
 (project) or `~/.cursor/agents/` (user), plus three built-in agents
 (`explore`, `bash`, `browser`). Notably, Cursor also reads `.claude/agents/`
-directly — if `.claude/agents/hs-scout.md`/`hs-reviewer.md` are already
-present in the same project (see `docs/claude-setup.md`), Cursor picks them
-up without a separate copy. Otherwise, generate the Cursor-specific files
-with one command, from the project root:
+directly — if `.claude/agents/hs-scout.md`/`hs-reviewer.md`/`hs-shipper.md`
+are already present in the same project (see `docs/claude-setup.md`), Cursor
+picks them up without a separate copy. Otherwise, generate the Cursor-specific
+files with one command, from the project root:
 
 ```bash
 npm exec -- hs agents --target cursor
 ```
 
-This writes `.cursor/agents/hs-scout.md` and `.cursor/agents/hs-reviewer.md`
-from `docs/agents.md`'s source content — see that file's "Per-agent wiring"
-for each role's responsibilities.
+This writes `.cursor/agents/hs-scout.md`, `.cursor/agents/hs-reviewer.md`,
+and `.cursor/agents/hs-shipper.md` from `docs/agents.md`'s source content —
+see that file's "Per-agent wiring" for each role's responsibilities.
 
 ## How it works
 
@@ -126,5 +126,5 @@ for each role's responsibilities.
 | Skills not found | Confirm Cursor is reading `.cursor-plugin/plugin.json`'s `skills` field, or fall back to pointing it at `skills/*/SKILL.md` directly. |
 | Ship-gate/privacy-block don't fire | Confirm `.cursor/hooks.json` exists and Cursor picked it up (re-run `npm exec -- hs setup --target cursor --with-hooks` if it predates this wiring); on Windows, confirm the `$CURSOR_PROJECT_DIR`-based command string actually resolves in your shell — that path is unconfirmed. |
 | session-state/monitoring don't fire | Expected — not wired for Cursor yet, see "Hooks" above. |
-| Expecting `hs-scout`/`hs-reviewer` to just work | Check whether `.claude/agents/` is present in the project (Cursor reads it directly); otherwise run `npm exec -- hs agents --target cursor` per "Subagents" above. |
+| Expecting `hs-scout`/`hs-reviewer`/`hs-shipper` to just work | Check whether `.claude/agents/` is present in the project (Cursor reads it directly); otherwise run `npm exec -- hs agents --target cursor` per "Subagents" above. |
 | A skill's behavior differs from Claude Code's | It shouldn't — `skills/*/SKILL.md` is the one canonical source every agent reads unmodified. If it does differ, that's a bug worth reporting, not an intentional per-agent variation. |

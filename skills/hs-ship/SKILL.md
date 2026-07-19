@@ -12,16 +12,25 @@ remain usable without them.
 
 ## Process
 
-1. Inspect `git status`, the diff, and the verification summary. Confirm the
-   change matches user scope and disclose skipped checks or known limitations.
-2. Choose the smallest appropriate handoff: summary, commit, PR, push, release
+1. Delegate ship-readiness legwork to the `hs-shipper` subagent (see
+   `docs/agents.md`): uncommitted-changes summary (`git status`/`git diff`,
+   flagging anything unrelated to the current change), relevant check results
+   (PASS/FAIL/skipped), and a drafted commit message following the project's
+   convention. If no subagent mechanism is available, do this inline instead.
+2. Review hs-shipper's report yourself — it hands back evidence, not a
+   decision. Confirm the change matches user scope and disclose skipped
+   checks or known limitations; don't treat its report as authorization to
+   proceed.
+3. Choose the smallest appropriate handoff: summary, commit, PR, push, release
    preparation, or no external action yet.
-3. Ask for explicit approval before committing, opening a PR, pushing, tagging,
+4. Ask for explicit approval before committing, opening a PR, pushing, tagging,
    publishing, or triggering other side effects—unless the user already gave
-   unambiguous authority for that exact action.
-4. Execute only the approved action and report its identifier or link. If an
-   opt-in hook blocks it, show the policy result and gather missing evidence;
-   do not bypass it.
+   unambiguous authority for that exact action. hs-shipper never asks the user
+   or executes these itself; that stays the main agent's job.
+5. Execute only the approved action (using hs-shipper's drafted commit message
+   as a starting point, not verbatim if it doesn't fit) and report its
+   identifier or link. If an opt-in hook blocks it, show the policy result and
+   gather missing evidence; do not bypass it.
 
 ## Exit condition
 
@@ -34,3 +43,5 @@ remain usable without them.
 - Committing unrelated generated files or another task's changes.
 - Treating an old verification result as proof after meaningful edits.
 - Assuming a request to “finish” authorizes a push or release.
+- Treating hs-shipper's report as if it were the user's approval to commit,
+  push, or open a PR — it is evidence for you to review, not a green light.

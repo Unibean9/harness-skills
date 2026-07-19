@@ -36,7 +36,7 @@ npm exec -- hs setup --target antigravity
 ```
 
 Writes `.agents/skills/hs-*` and `.agents/agents/hs-scout.md`,
-`hs-reviewer.md`. Requires the package installed locally
+`hs-reviewer.md`, `hs-shipper.md`. Requires the package installed locally
 (`npm i -D github:Unibean9/harness-skills`).
 
 **Skills only:**
@@ -48,7 +48,7 @@ npx skills add Unibean9/harness-skills -a antigravity
 **Subagents on their own:**
 
 ```bash
-npm exec -- hs agents --target antigravity   # writes .agents/agents/hs-scout.md, hs-reviewer.md
+npm exec -- hs agents --target antigravity   # writes .agents/agents/hs-scout.md, hs-reviewer.md, hs-shipper.md
 ```
 
 **Native plugin:** `agy plugin install <this-repo-url-or-local-path>` should
@@ -76,4 +76,4 @@ approval, `hs attest` before shipping) as the enforcement layer here.
 | Unsure if you're on Gemini CLI or Antigravity CLI | Check which binary/package is actually installed — Gemini CLI and Antigravity CLI are separate, actively-developed products during this transition. |
 | Skills not found | Confirm `.agents/skills/hs-*` landed where your Antigravity build actually looks — `agy inspect` (if your build has it) reports which config files it loaded. |
 | Hooks don't fire | Expected — see "Hooks (not wired)" above. Rely on the workflow's own approval gates for this agent until a confirmed hook path exists. |
-| Subagents don't route automatically | The `.agents/agents/` subagent folder name is the least-confirmed part of this setup — if it doesn't work, try invoking hs-scout/hs-reviewer's role inline instead, or check whether your build expects `.subagents/` instead. |
+| Subagents don't route automatically | The `.agents/agents/` subagent folder name is the least-confirmed part of this setup — if it doesn't work, try invoking hs-scout/hs-reviewer/hs-shipper's role inline instead, or check whether your build expects `.subagents/` instead. |

@@ -60,7 +60,7 @@ function extractSection(doc, heading) {
   return doc.slice(startIdx + 1, nextIdx === -1 ? undefined : nextIdx).trim();
 }
 
-for (const name of ["hs-scout", "hs-reviewer"]) {
+for (const name of ["hs-scout", "hs-reviewer", "hs-shipper"]) {
   test(`the Claude ${name} adapter is generated from docs/agents.md's ${name} section`, () => {
     const generator = read("scripts/generate-agents.mjs");
     const adapter = read(`agents/${name}.md`);
