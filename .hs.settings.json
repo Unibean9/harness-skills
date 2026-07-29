@@ -1,0 +1,25 @@
+{
+  "guardrails": {
+    "hooks": {
+      "privacy": {
+        "enabled": true
+      },
+      "scout": {
+        "enabled": false,
+        "allowlist": []
+      },
+      "devRulesReminder": {
+        "enabled": true
+      }
+    }
+  },
+  "artifacts": {
+    "plans": {
+      "directory": "plans",
+      "archiveDirectory": "plans/archive"
+    },
+    "journals": {
+      "directory": "docs/journals"
+    }
+  }
+}

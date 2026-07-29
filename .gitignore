@@ -1,10 +1,6 @@
-# Runtime state of whatever project installs this harness -- never belongs
-# in the harness's own source repo.
-.harness/
-
-# OS cruft
-.DS_Store
-Thumbs.db
-
-# Temp
-temp/
+﻿.claude/
+.codex/
+plans/
+docs/
+!docs/journal/
+.hs.json
