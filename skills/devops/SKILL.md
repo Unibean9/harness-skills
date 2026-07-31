@@ -1,42 +1,42 @@
 ---
 name: hs:devops
-description: High-level map of DevOps domains — infrastructure as code / cloud provisioning, CI/CD pipelines, containers & orchestration, observability — pointing to focused references for each. Use when provisioning cloud infrastructure (e.g. writing Terraform for Azure), designing a deployment/CI pipeline, containerizing a service, or setting up monitoring, even if the user only says "set up infra", "write terraform for X", or "deploy this" without naming DevOps explicitly.
+description: DevOps domain skill covering infrastructure as code / cloud provisioning (Terraform on Azure) and CI/CD pipeline design (GitHub Actions with shift-left security), pointing to focused references for each. Use when provisioning cloud infrastructure, designing a deployment/CI pipeline, or adding security scanning to a pipeline, even if the user only says "set up infra", "write terraform for X", "add a github actions workflow", or "deploy this" without naming DevOps explicitly.
 license: MIT
 metadata:
   author: harness-skills
-  version: "1.0.0"
+  version: "1.2.0"
 ---
 
 # DevOps Skill
 
-A high-level map of DevOps domains, not a full reference. It's meant to
-route you to the right focused workflow instead of trying to cover every
-domain in one file — DevOps spans infrastructure as code, CI/CD,
-containers/orchestration, and observability, and each deserves its own
-depth.
+A high-level map of DevOps domains, not a full reference. Each fully-fleshed
+domain below is an interactive, gated workflow rather than a code
+generator — infra and pipeline changes are expensive to reverse, so the
+value is in the front-loaded decision interview and confirmation checkpoint.
 
 <HARD-GATE>
-See `../_shared/hard-gate.md` for the shared gate shape (`{scope}` = "a plan
-exists or the user has explicitly requested implementation"). Additionally:
-never run destructive infra operations (`terraform apply`, `terraform
-destroy`, cluster deletes, production deploys) without explicit user
-confirmation — see the relevant reference file for domain-specific gates
-(e.g. the Terraform architect workflow's own confirmation checkpoint).
+See `../_shared/hard-gate.md` for the shared gate shape (`{scope}` = the
+domain's own confirmation checkpoint has been explicitly approved by the
+user). Additionally: never run destructive infra operations (`terraform
+apply`, `terraform destroy`, cluster deletes, production deploys) without
+explicit user confirmation — see the relevant reference file for
+domain-specific gate mechanics.
 </HARD-GATE>
 
 ## When to Use
 
 - Provisioning cloud infrastructure with IaC (e.g. Terraform on Azure)
-- Designing or reviewing a CI/CD pipeline
-- Containerizing a service or choosing a container orchestration target
-- Setting up monitoring, logging, or alerting for a service
+- Designing or reviewing a CI/CD pipeline (e.g. GitHub Actions)
+- Adding shift-left security scanning (secret/SAST/SCA/IaC/container) to a pipeline
+- Choosing an auth strategy (OIDC vs long-lived secrets) for cloud deploys
+- Containerizing a service or setting up monitoring (no dedicated reference yet — see "Make it yours")
 
 ## Domain Starting Points (examples, not an exhaustive list)
 
 | Domain | One example | Another example |
 | --- | --- | --- |
 | IaC / cloud provisioning | Terraform on Azure (CAF-compliant) | - |
-| CI/CD | GitHub Actions | Azure Pipelines |
+| CI/CD | GitHub Actions (shift-left DevSecOps) | Azure Pipelines |
 | Containers & orchestration | Docker + Kubernetes | Azure Container Apps |
 | Observability | Azure Monitor / Log Analytics | Prometheus + Grafana |
 
@@ -48,8 +48,12 @@ whatever fits the platform the user is already on.
 - `references/azure-terraform-iac.md` - interactive 6-phase Azure Terraform
   architect workflow: env selection (DEV/STAGING/PROD), service selection,
   FinOps guardrails, CAF naming/tagging/security standards, code generation,
-  and a plan-style validation report. This is the only fully-fleshed-out
-  domain today.
+  and a plan-style validation report.
+- `references/github-actions-cicd.md` - interactive 6-phase shift-left
+  GitHub Actions workflow: scope/target selection, security tool stack,
+  OIDC auth strategy, a pipeline lock confirmation checkpoint, YAML
+  generation with least-privilege permissions and SHA-pinned actions, and a
+  security/FinOps posture report.
 
 ## Make it yours
 

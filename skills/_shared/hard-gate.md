@@ -24,6 +24,7 @@ privacy, or confirmation guard.
 | `hs:backend-development`, `hs:frontend-development` | "a plan exists or the user has explicitly requested implementation" |
 | `hs:brainstorm` | "a direction has been chosen and written down" |
 | `hs:build` | "a plan exists and has been reviewed" |
+| `hs:devops` | "the domain's own confirmation checkpoint has been explicitly approved by the user" (e.g. Terraform Architecture Lock, Pipeline Lock) |
 
 `hs:plan` and `hs:code-review` don't use this gate - `hs:plan` only ever
 produces plan documents, and `hs:code-review` is read-only by default.
