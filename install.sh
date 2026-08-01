@@ -137,14 +137,37 @@ cleanup_temp_dirs() {
 }
 trap cleanup_temp_dirs EXIT
 
-declare -A RUNTIME_TEMP_DIR
+# Runtime name -> its generated scratch dir. A plain associative array
+# (declare -A) needs bash 4+, which macOS's default /bin/bash (3.2) doesn't
+# have, so this is done with a case-based lookup instead - portable back to
+# bash 3.2.
+set_runtime_temp_dir() {
+    case "$1" in
+        cursor) TEMP_DIR_cursor="$2" ;;
+        codex) TEMP_DIR_codex="$2" ;;
+        antigravity) TEMP_DIR_antigravity="$2" ;;
+        kiro) TEMP_DIR_kiro="$2" ;;
+        copilot) TEMP_DIR_copilot="$2" ;;
+    esac
+}
+
+get_runtime_temp_dir() {
+    case "$1" in
+        cursor) echo "$TEMP_DIR_cursor" ;;
+        codex) echo "$TEMP_DIR_codex" ;;
+        antigravity) echo "$TEMP_DIR_antigravity" ;;
+        kiro) echo "$TEMP_DIR_kiro" ;;
+        copilot) echo "$TEMP_DIR_copilot" ;;
+    esac
+}
+
 for runtime_name in $OTHER_RUNTIMES; do
     temp_dir="$(mktemp -d "${TMPDIR:-/tmp}/hs-skills-$runtime_name-XXXXXX")"
     if ! node "$GENERATOR_SCRIPT" --runtime "$runtime_name" --source "$SOURCE_ROOT" --target "$temp_dir"; then
         echo "generate-runtime.mjs failed for '$runtime_name' - refusing to install any runtime." >&2
         exit 1
     fi
-    RUNTIME_TEMP_DIR["$runtime_name"]="$temp_dir"
+    set_runtime_temp_dir "$runtime_name" "$temp_dir"
     TEMP_DIRS="$TEMP_DIRS $temp_dir"
 done
 
@@ -188,8 +211,8 @@ check_platform_wiring() {
 }
 
 for runtime_name in $OTHER_RUNTIMES; do
-    check_path_containment "$runtime_name" "${RUNTIME_TEMP_DIR[$runtime_name]}"
-    check_platform_wiring "$runtime_name" "${RUNTIME_TEMP_DIR[$runtime_name]}"
+    check_path_containment "$runtime_name" "$(get_runtime_temp_dir "$runtime_name")"
+    check_platform_wiring "$runtime_name" "$(get_runtime_temp_dir "$runtime_name")"
 done
 
 # --- Claude: same behavior as install.ps1's --claude branch.
@@ -230,7 +253,7 @@ INSTALLED_RUNTIMES=""
 
 install_runtime() {
     runtime_name="$1"
-    runtime_root="${RUNTIME_TEMP_DIR[$runtime_name]}"
+    runtime_root="$(get_runtime_temp_dir "$runtime_name")"
     dot_folder="$(runtime_dot_folder "$runtime_name")"
     kit_hooks_relative="$dot_folder/kit-hooks"
 
