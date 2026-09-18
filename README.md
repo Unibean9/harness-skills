@@ -1,20 +1,13 @@
 # Harness Skills
 
-A plugin toolkit for learning the basic building blocks of "harness
-engineering" in agentic coding. It provides 7 reusable skills, 5 specialist
-subagents, and 2 guard-rail hooks, installable into 6 agent runtimes: Claude
+It provides 9 reusable skills, 5 specialist
+subagents, and 4 hooks, installable into 6 agent runtimes: Claude
 Code, Cursor, OpenAI Codex CLI, GitHub Copilot, Kiro, and Google Antigravity.
-Read `CONCEPTS.md` first to understand the underlying model.
+No runtime gets a slash-command layer - every runtime invokes a skill by
+matching the task to its description, the same way Claude Code does
+natively. Read `CONCEPTS.md` first to understand the underlying model.
 
-```
- BRAINSTORM     PLAN         BUILD        REVIEW       SHIP
-┌──────────┐ ┌──────────┐ ┌──────────┐ ┌──────────┐ ┌──────────┐
-│  Clarify │ │ Approach │ │  Change  │ │  Fresh   │ │  Human   │
-│  intent  │ │ + checks │ │ + checks │ │  review  │ │ control  │
-└──────────┘ └──────────┘ └──────────┘ └──────────┘ └──────────┘
-hs:brainstorm   hs:plan     hs:build   hs:code-review  hs:ship
-                                                       (advisory)
-```
+![Agent workflow](workflow.png)
 
 ## Install
 
@@ -57,7 +50,7 @@ accept literal `--name`.
 Run the installer from the root of the target project. It downloads this
 repository into a temporary directory (`git clone` if available, otherwise
 a tarball/zip download), generates the selected runtime's on-disk content
-from `agents/`, `commands/hs/`, `skills/`, and `hooks/`, copies it into the
+from `agents/`, `skills/`, and `hooks/`, copies it into the
 current project, and removes the temporary files. A pre-existing file at
 the destination is skipped and reported, never overwritten - except each
 runtime's own `<dot-folder>/kit-hooks/*.mjs` copy, which is always
@@ -77,21 +70,25 @@ source folders already sitting next to it.
 
 ## Skills
 
-| Skill                     | Purpose                                                      |
-| ------------------------- | ------------------------------------------------------------ |
-| `hs:brainstorm`           | Weigh approaches before committing to a direction            |
-| `hs:plan`                 | Turn a chosen approach into concrete steps                   |
-| `hs:build`                | Execute a plan into real code                                |
-| `hs:code-review`          | Find bugs/gaps before calling something done                 |
-| `hs:ship`                 | Commit -> push -> pull request, 3 separately confirmed steps |
-| `hs:backend-development`  | RESTful APIs, 3-layer architecture, microservices            |
-| `hs:frontend-development` | Component architecture, design tokens, responsive/a11y       |
+| Skill                     | Purpose                                                       |
+| ------------------------- | -------------------------------------------------------------- |
+| `hs-brainstorm`           | Clarify requirements, weigh approaches, optionally write a PRD  |
+| `hs-plan`                 | Break a direction into phases and tasks (optionally -> one GitHub issue per phase) |
+| `hs-build`                | Implement task by task: test, commit, and mark plan/issue progress |
+| `hs-test`                 | Run the smallest relevant suite, with real pass/fail evidence   |
+| `hs-code-review`          | Find bugs/gaps before calling something done                    |
+| `hs-ship`                 | Push -> PR -> review -> CI green -> merge -> confirm issues closed |
+| `hs-backend-development`  | RESTful APIs, 3-layer architecture, microservices               |
+| `hs-frontend-development` | Component architecture, design tokens, responsive/a11y          |
+| `hs-devops`               | Design/provision a CI/CD pipeline or cloud infra (not a per-PR gate) |
 
-The first 5 are the workflow skills that carry the harness itself; the last
-2 are technical-content maps, not workflow gates. You don't need to
-memorize their names - describe your goal and the agent reaches for the
-relevant one on its own. Each runtime maps these skills (plus agents and
-hooks) into its own on-disk format differently.
+The first 6 are the workflow skills that carry the harness itself, in
+pipeline order; the last 3 are technical-content maps, not workflow gates -
+each still carries its own HARD-GATE, but none sit on the linear
+brainstorm-to-ship path. You don't need to memorize their names - describe
+your goal and the agent reaches for the relevant one on its own. Each
+runtime maps these skills (plus agents and hooks) into its own on-disk
+format differently.
 
 ## Subagents
 
@@ -109,32 +106,47 @@ about cost/capability trade-offs per task.
 
 ## Hooks
 
-Two guard-rail hooks are wired by default (script logic authored once in
+Four hooks are wired by default (script logic authored once in
 `hooks/*.mjs`, copied into each selected runtime's own
 `<dot-folder>/kit-hooks/` at install time rather than shared from one
-folder):
+folder). They are standalone ports of the AgentKit hooks of the same name,
+with no library dependencies:
 
-- **`guard-rails.mjs`** (`PreToolUse`) - three checks in one script:
-  a **privacy guard** that blocks reading/writing likely secret files
-  (`.env`, `.pem`, credentials, private keys); a **scout guard** that blocks
-  broad scans of generated/dependency directories and overly broad
-  recursive globs; and a **config guard** that blocks every agent write to
-  `.hs.json` (and, on platforms without an interactive prompt, any command
-  that even mentions it) so the guard rails can't be relaxed unattended.
-  Follows an exit-code contract (`0` = allow, `2` = block, `1` = the hook
-  itself errored and the tool proceeds): a transport failure fails open,
-  but a crash while judging a specific tool call fails closed. Only Claude
-  Code's own interactive `ask()` prompt is honored for a soft decision -
-  every other platform's guard-rail decisions resolve to a hard deny, and
-  an unrecognized `--platform` value fails closed rather than falling
-  through.
-- **`dev-rules-reminder.mjs`** (`UserPromptSubmit`) - periodically
-  re-injects the kit's core working rules into the session rather than
-  relying on them being read once at the start.
+- **`privacy-block.mjs`** (`PreToolUse`) - stops the agent reading or
+  writing likely secret files (`.env*`, `.pem`/`.key`, `credentials*`,
+  `id_rsa`, `.npmrc`) without approval; `.example`/`.sample`/`.template`
+  files are exempt. It also guards `.hs.json` itself: every agent write,
+  and any shell command that mentions it, needs approval, so the guard
+  rails can't be relaxed unattended.
+- **`scout-block.mjs`** (`PreToolUse`) - keeps generated and dependency
+  directories (`node_modules`, `dist`, `build`, `.git`, `.venv`, ...),
+  archived plans, and repository-wide globs (`**/*.ts` from the root) out
+  of context. Build, test, and tool commands (`npm run build`, `cargo test`,
+  `docker build`) pass even when they touch those directories.
+- **`descriptive-name.mjs`** (`PreToolUse` on `Write`) - adds file-naming
+  guidance (kebab-case for JS/TS/Python/shell, language conventions
+  elsewhere) as context. It never blocks.
+- **`session-init.mjs`** (`SessionStart`) - injects a short orientation:
+  project root, branch and uncommitted count, detected stack, and the most
+  recent plan. After a context compaction it also tells the agent to
+  re-confirm any pending approval and re-read the active plan.
 
-`.hs.settings.json` at the repo root turns each guard on/off per project
+Both gates follow an exit-code contract (`0` = allow, `2` = block, `1` =
+the hook itself errored and the tool proceeds): unreadable input fails
+open, but a crash while judging a specific tool call fails closed. On
+Claude Code a gate decision is an interactive permission prompt; every
+other platform gets a hard block, and an unrecognized `--platform` value
+fails closed. Only Claude Code and Codex get all four hooks - the other
+runtimes have no confirmed context-injection event, so they get the two
+gates only.
+
+`.hs.json` at the repo root turns each hook on/off per project
 (`guardrails.hooks.privacy`, `guardrails.hooks.scout`,
-`guardrails.hooks.devRulesReminder`); the installer copies it to
+`guardrails.hooks.descriptiveName`, `guardrails.hooks.sessionInit`, each
+`{ "enabled": bool }` and defaulting to on when absent; the `.hs.json`
+guard is always on). `guardrails.hooks.scout.allowlist` clears specific
+directories for the scout guard, and `artifacts.plans.archiveDirectory`
+tells it which folder holds archived plans. The installer copies it to
 `.hs.json` in the target project (skipped if one already exists).
 
 ## Why
@@ -148,16 +160,20 @@ it works behind a large plugin surface.
 
 ## Out of scope
 
-This kit does not replace project architecture, CI, access controls, or
-human code review. It does not store credentials, grant access to external
-services, or guarantee that every task can be completed autonomously.
-Non-Claude runtimes are _generated_ from `agents/`, `commands/hs/`,
-`skills/`, and `hooks/` at install time (`install/lib/generate-runtime.mjs`)
-rather than hand-mirrored, so there's no separate per-runtime copy to drift
-out of sync - but there's also no automated CI check yet confirming a
-skill edit regenerates correctly across all 6 runtimes; that's a manual
-check today. Command support for Codex CLI, Kiro, and Antigravity is not
-ported rather than shipped as an approximated stand-in.
+This kit does not run CI/CD or infrastructure for you, replace project
+architecture or access controls, or substitute for human code review.
+`hs-devops` helps design a pipeline and `hs-ship` waits for it to go green,
+but you still own the actual runners, environments, and access controls. It
+does not store credentials, grant access to external services, or
+guarantee that every task can be completed autonomously. Non-Claude
+runtimes are _generated_ from `agents/`, `skills/`, and `hooks/` at install
+time (`install/lib/generate-runtime.mjs`) rather than hand-mirrored, so
+there's no separate per-runtime copy to drift out of sync - but there's
+also no automated CI check yet confirming a skill edit regenerates
+correctly across all 6 runtimes; that's a manual check today. No runtime
+gets a slash-command layer - this was a deliberate cut, not a partial port:
+every runtime invokes a skill directly by matching the task to its
+description.
 
 Review changes before merging, keep secrets out of prompts and
 repositories, and adapt the guard rails to your own project's needs.

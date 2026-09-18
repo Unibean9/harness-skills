@@ -17,14 +17,22 @@ privacy, or confirmation guard.
 </HARD-GATE>
 ```
 
-## Known `{scope}` values in use
+## Writing the gate in a skill
 
-| Skill | `{scope}` |
-|---|---|
-| `hs:backend-development`, `hs:frontend-development` | "a plan exists or the user has explicitly requested implementation" |
-| `hs:brainstorm` | "a direction has been chosen and written down" |
-| `hs:build` | "a plan exists and has been reviewed" |
-| `hs:devops` | "the domain's own confirmation checkpoint has been explicitly approved by the user" (e.g. Terraform Architecture Lock, Pipeline Lock) |
+Keep the link sentence on one line, with `{scope}` in double quotes, exactly
+as the existing skills do:
 
-`hs:plan` and `hs:code-review` don't use this gate - `hs:plan` only ever
-produces plan documents, and `hs:code-review` is read-only by default.
+```
+<HARD-GATE>
+See `../_shared/hard-gate.md` for the shared gate shape (`{scope}` = "a plan exists and has been reviewed"). Optional extra clause.
+</HARD-GATE>
+```
+
+`install/lib/generate-runtime.mjs` matches that exact shape to inline the
+gate into every generated runtime, so the gate reads correctly in the ported
+skill file on its own even though `_shared/` is installed alongside it. A
+wrapped or unquoted scope is left un-inlined and ships as a bare link.
+
+`hs-plan`, `hs-test`, `hs-code-review`, and `hs-ship` don't carry this gate:
+they produce plans, evidence, findings, or git/GitHub actions that already
+need their own user confirmation, not implementation code.
