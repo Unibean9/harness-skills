@@ -4,18 +4,22 @@
 # flags are additive, and no flags passed defaults to --claude only (matches
 # install.ps1's default-to-claude behavior).
 #
-# --claude copies the 4 flat source folders (agents/ commands/ hooks/ skills/)
-# into <target-path>/.claude/{agents,commands,hooks,skills}, and copies this
-# repo's .hs.settings.json to <target-path>/.hs.json (skipped if the target
+# --claude copies the 3 flat source folders (agents/ hooks/ skills/) into
+# <target-path>/.claude/{agents,hooks,skills}, and copies this repo's
+# .hs.json to <target-path>/.hs.json (skipped if the target
 # already has one).
 #
 # Every other selected runtime's content is GENERATED, not copied from a
-# static mirror: agents/, commands/hs/, skills/, and hooks/ stay the single
-# source of truth, and install/lib/generate-runtime.mjs maps them into that
-# runtime's own shape (see docs/RUNTIME-MAPPING.md) into a scratch directory,
-# which is then copied into <target-path>/ the same safe way --claude already
-# was. hooks/*.mjs are additionally copied into that runtime's own
+# static mirror: agents/, skills/, and hooks/ stay the single source of
+# truth, and install/lib/generate-runtime.mjs maps them into that runtime's
+# own shape (see docs/RUNTIME-MAPPING.md) into a scratch directory, which is
+# then copied into <target-path>/ the same safe way --claude already was.
+# hooks/*.mjs are additionally copied into that runtime's own
 # `<dot-folder>/kit-hooks/` subfolder - never into a single shared folder.
+#
+# This kit does not ship slash-commands for any runtime: every runtime
+# invokes a skill directly by matching the task to its SKILL.md description,
+# the same way Claude Code does natively - no separate command-wrapper layer.
 #
 # Prerequisites: Node.js 18+ (to run the .mjs hooks and the generator), bash.
 # Invoke as: bash install.sh [--claude] [--cursor] [--codex] [--anti] [--kiro] [--copilot] [--target-path DIR]
@@ -25,8 +29,8 @@
 # script bootstraps itself: downloads the full repo into a scratch
 # directory and re-invokes the real install.sh from there, forwarding every
 # argument. This is necessary because the installer's own sibling folders
-# (agents/, commands/, hooks/, skills/, install/lib/) are not carried along
-# by a bare `curl | bash` pipe - only this one file is.
+# (agents/, hooks/, skills/, install/lib/) are not carried along by a bare
+# `curl | bash` pipe - only this one file is.
 
 set -euo pipefail
 
@@ -41,7 +45,7 @@ else
 fi
 
 if [ -z "$SOURCE_ROOT" ] || [ ! -f "$SOURCE_ROOT/$GENERATOR_MARKER" ]; then
-    echo "This script's source folders (agents/, commands/, hooks/, skills/) aren't next to it - downloading $REPO_URL ..." >&2
+    echo "This script's source folders (agents/, hooks/, skills/) aren't next to it - downloading $REPO_URL ..." >&2
     BOOTSTRAP_DIR="$(mktemp -d "${TMPDIR:-/tmp}/hs-skills-bootstrap-XXXXXX")"
     trap 'rm -rf "$BOOTSTRAP_DIR"' EXIT
     if command -v git >/dev/null 2>&1; then
@@ -195,7 +199,7 @@ done
 # --- Claude: same behavior as install.ps1's --claude branch.
 
 if [ "$SEL_CLAUDE" -eq 1 ]; then
-    for folder in agents commands hooks skills; do
+    for folder in agents hooks skills; do
         src="$SOURCE_ROOT/$folder"
         if [ ! -d "$src" ]; then
             echo "WARNING: Skipping '$folder': not found at '$src'." >&2
@@ -207,13 +211,13 @@ if [ "$SEL_CLAUDE" -eq 1 ]; then
         echo "Copied $folder -> $dst"
     done
 
-    source_config="$SOURCE_ROOT/.hs.settings.json"
+    source_config="$SOURCE_ROOT/.hs.json"
     target_config="$TARGET_PATH/.hs.json"
     if [ -f "$target_config" ]; then
         echo "Skipped .hs.json: already exists at target ($target_config), not overwriting."
     elif [ -f "$source_config" ]; then
         cp "$source_config" "$target_config"
-        echo "Copied .hs.settings.json -> $target_config"
+        echo "Copied .hs.json -> $target_config"
     else
         echo "WARNING: Source config not found at '$source_config'." >&2
     fi

@@ -1,26 +1,43 @@
 {
     "hooks": {
+        "SessionStart": [
+            {
+                "matcher": "startup|resume|clear|compact",
+                "hooks": [
+                    {
+                        "type": "command",
+                        "command": "node \"$CLAUDE_PROJECT_DIR/.claude/hooks/session-init.mjs\"",
+                        "timeout": 10,
+                        "statusMessage": "Loading harness-skills session context"
+                    }
+                ]
+            }
+        ],
         "PreToolUse": [
             {
                 "matcher": ".*",
                 "hooks": [
                     {
                         "type": "command",
-                        "command": "node \"$CLAUDE_PROJECT_DIR/.claude/hooks/guard-rails.mjs\" --platform claude",
+                        "command": "node \"$CLAUDE_PROJECT_DIR/.claude/hooks/privacy-block.mjs\" --platform claude",
                         "timeout": 10,
-                        "statusMessage": "Checking harness-skills guard rails"
+                        "statusMessage": "Checking harness-skills privacy guard"
+                    },
+                    {
+                        "type": "command",
+                        "command": "node \"$CLAUDE_PROJECT_DIR/.claude/hooks/scout-block.mjs\" --platform claude",
+                        "timeout": 10,
+                        "statusMessage": "Checking harness-skills scout guard"
                     }
                 ]
-            }
-        ],
-        "UserPromptSubmit": [
+            },
             {
+                "matcher": "Write",
                 "hooks": [
                     {
                         "type": "command",
-                        "command": "node \"$CLAUDE_PROJECT_DIR/.claude/hooks/dev-rules-reminder.mjs\"",
-                        "timeout": 10,
-                        "statusMessage": "Refreshing harness-skills session rules"
+                        "command": "node \"$CLAUDE_PROJECT_DIR/.claude/hooks/descriptive-name.mjs\"",
+                        "timeout": 10
                     }
                 ]
             }

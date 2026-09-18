@@ -5,18 +5,22 @@ runtimes via switch flags (-Claude -Cursor -Codex -Anti -Kiro -Copilot);
 flags are additive, and no flags passed defaults to -Claude only (unchanged
 prior behavior).
 
--Claude copies the 4 flat source folders (agents/ commands/ hooks/ skills/)
-into <TargetPath>/.claude/{agents,commands,hooks,skills}, and copies this
-repo's .hs.settings.json to <TargetPath>/.hs.json (skipped if the target
-already has one) - exactly as before this script gained other runtimes.
+-Claude copies the 3 flat source folders (agents/ hooks/ skills/) into
+<TargetPath>/.claude/{agents,hooks,skills}, and copies this repo's
+.hs.json to <TargetPath>/.hs.json (skipped if the target already
+has one) - exactly as before this script gained other runtimes.
 
 Every other selected runtime's content is GENERATED, not copied from a
-static mirror: agents/, commands/hs/, skills/, and hooks/ stay the single
-source of truth, and install/lib/generate-runtime.mjs maps them into that
-runtime's own shape (see docs/RUNTIME-MAPPING.md) into a scratch directory,
-which is then copied into <TargetPath>/ the same safe way -Claude already
-was. hooks/*.mjs are additionally copied into that runtime's own
+static mirror: agents/, skills/, and hooks/ stay the single source of
+truth, and install/lib/generate-runtime.mjs maps them into that runtime's
+own shape (see docs/RUNTIME-MAPPING.md) into a scratch directory, which is
+then copied into <TargetPath>/ the same safe way -Claude already was.
+hooks/*.mjs are additionally copied into that runtime's own
 `<dot-folder>/kit-hooks/` subfolder - never into a single shared folder.
+
+This kit does not ship slash-commands for any runtime: every runtime
+invokes a skill directly by matching the task to its SKILL.md description,
+the same way Claude Code does natively - no separate command-wrapper layer.
 
 Prerequisites: Node.js 18+ (to run the .mjs hooks and the generator), PowerShell 7+.
 
@@ -25,8 +29,8 @@ from a copy that isn't sitting next to this repo's other source folders,
 this script bootstraps itself: downloads the full repo into a scratch
 directory and re-invokes the real install.ps1 from there, forwarding every
 bound parameter. This is necessary because the installer's own sibling
-folders (agents/, commands/, hooks/, skills/, install/lib/) are not carried
-along by a bare `irm | iex` pipe - only the scriptblock text is.
+folders (agents/, hooks/, skills/, install/lib/) are not carried along by a
+bare `irm | iex` pipe - only the scriptblock text is.
 #>
 param(
     [switch]$Claude,
@@ -48,7 +52,7 @@ $sourceRoot = if ($scriptPath) { Split-Path -Parent $scriptPath } else { $null }
 $generatorAtSource = if ($sourceRoot) { Join-Path $sourceRoot $GeneratorMarker } else { $null }
 
 if (-not $sourceRoot -or -not (Test-Path $generatorAtSource)) {
-    Write-Host "This script's source folders (agents/, commands/, hooks/, skills/) aren't next to it - downloading $RepoUrl ..."
+    Write-Host "This script's source folders (agents/, hooks/, skills/) aren't next to it - downloading $RepoUrl ..."
     $bootstrapDir = Join-Path ([System.IO.Path]::GetTempPath()) ("hs-skills-bootstrap-" + [guid]::NewGuid().ToString('N'))
     New-Item -ItemType Directory -Force -Path $bootstrapDir | Out-Null
     try {
@@ -159,7 +163,7 @@ try {
     # --- Claude: unchanged from before this script gained other runtimes.
 
     if ($selected -contains 'claude') {
-        $folders = @('agents', 'commands', 'hooks', 'skills')
+        $folders = @('agents', 'hooks', 'skills')
         foreach ($folder in $folders) {
             $src = Join-Path $sourceRoot $folder
             if (-not (Test-Path $src)) {
@@ -172,13 +176,13 @@ try {
             Write-Host "Copied $folder -> $dst"
         }
 
-        $sourceConfig = Join-Path $sourceRoot '.hs.settings.json'
+        $sourceConfig = Join-Path $sourceRoot '.hs.json'
         $targetConfig = Join-Path $TargetPath '.hs.json'
         if (Test-Path $targetConfig) {
             Write-Host "Skipped .hs.json: already exists at target ($targetConfig), not overwriting."
         } elseif (Test-Path $sourceConfig) {
             Copy-Item -Path $sourceConfig -Destination $targetConfig -Force
-            Write-Host "Copied .hs.settings.json -> $targetConfig"
+            Write-Host "Copied .hs.json -> $targetConfig"
         } else {
             Write-Warning "Source config not found at '$sourceConfig'."
         }

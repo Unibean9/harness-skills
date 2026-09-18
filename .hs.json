@@ -1,0 +1,25 @@
+{
+  "guardrails": {
+    "hooks": {
+      "privacy": {
+        "enabled": true
+      },
+      "scout": {
+        "enabled": true,
+        "allowlist": []
+      },
+      "descriptiveName": {
+        "enabled": true
+      },
+      "sessionInit": {
+        "enabled": true
+      }
+    }
+  },
+  "artifacts": {
+    "plans": {
+      "directory": "plans",
+      "archiveDirectory": "plans/archive"
+    }
+  }
+}
