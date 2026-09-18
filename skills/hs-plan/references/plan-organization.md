@@ -28,10 +28,10 @@ dependencies if any.
 ```markdown
 ## Phases
 
-| Phase | Name | Status | Issue |
-|-------|------|--------|-------|
-| 1 | [Set up schema](./phase-01-schema.md) | Pending | #42 |
-| 2 | [Build the API](./phase-02-api.md) | Pending | - |
+| Phase | Name | Status |
+|-------|------|--------|
+| 1 | [Set up schema](./phase-01-schema.md) | Pending |
+| 2 | [Build the API](./phase-02-api.md) | Pending |
 ```
 
 - **Link text is the human-readable phase name, never the filename** -
@@ -40,10 +40,48 @@ dependencies if any.
   should understand the plan without opening every file.
 - **Status** moves `Pending` -> `In Progress` -> `Done`; `hs-build` updates
   it as tasks land and `hs-ship` sets `Done` at merge.
-- **Issue** holds the issue link once the phase is published (see
-  `../../_shared/github-issues-playbook.md`), or `-` when it isn't. In
-  offline mode, put the local issue file path here and replace it with the
-  real link once the issue is created; keep the local file as a record.
+
+This table is for a plan that is being worked from locally. A phase is a
+grouping in the plan, not a GitHub object, so it has no issue column: one
+phase can become several issues, and one issue can cover a few tasks. Under
+`--gh` the plan is published, verified, and archived, and the issues carry
+the tasks and their progress from then on (see
+`../../_shared/github-playbook.md`).
+
+## Header and publication ledger
+
+The first lines of `plan.md` state the mode and status, so any skill can
+tell how the plan is being executed without guessing:
+
+```markdown
+Mode: local | github
+Status: active | publishing | archived | superseded by <link>
+```
+
+A plan with no `Mode` line is a local, active plan. A `github` plan in
+`publishing` is not being executed by anyone: `hs-build` refuses it until
+the publish is reconciled (`plan-lifecycle.md`).
+
+Under `--gh`, `plan.md` also carries a ledger of the issues it intends to
+create, updated as each one is created and verified:
+
+```markdown
+## Publication
+
+| Key | Issue title | Tasks covered | Issue | State |
+|-----|-------------|---------------|-------|-------|
+| I1 | Add OrderRepository.create | 1.1, 1.2 | #41 | verified |
+| I2 | Expose orders API | 2.1 | - | planned |
+```
+
+`State` moves `planned` -> `created` -> `verified`, or `failed`. A row that
+is not `verified` is what reconciling picks up. Issues don't link back to the
+plan path; the ledger points one way, from the plan to the issues.
+
+The plan is temporary. Once it is completed or superseded it moves to the
+archive directory, and anything that should outlive the implementation is
+promoted to the repository's docs first (see
+`../../_shared/hs-json-artifacts-convention.md`).
 
 ## Phase file shape
 

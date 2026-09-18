@@ -1,7 +1,9 @@
 # Self-Review Checklist
 
-Run this before treating a plan (or issue set) as ready to build. The point
-is to check the plan against the codebase, not just against itself.
+Run this on the draft before showing it to the user, and again after each
+revision, so what they review is already consistent. Nothing is written yet,
+so the checks apply to the draft in the conversation. The point is to check
+the plan against the codebase, not just against itself.
 
 ## Scope questions
 
@@ -19,6 +21,11 @@ Check each of the Core planning rules in `SKILL.md`, plus:
 
 - **Disjoint ownership** (only if multiple people/agents will work the plan
   in parallel) - each phase/issue names files no other phase touches.
+- **Issue mapping** (`--gh`) - every task is covered by exactly one issue,
+  each issue is one logical PR, and no issue exists just because a phase does.
+- **Blockers** (`--gh`) - each `blocked-by` has a written reason the
+  downstream work can't start or finish without the prerequisite. Remove any
+  that only reflect phase order.
 
 ## Verification pass
 
@@ -43,16 +50,18 @@ onto an obvious change just adds ceremony.
 
 ## Whole-plan sweep
 
-After any late change (a validation answer that alters scope, a step added
-mid-review), re-read every file in the plan (or every issue in the batch)
-once more and check for staleness: renamed things not updated everywhere,
-a decision recorded in one place but contradicted in another. Resolve or
-flag every contradiction before calling the plan ready - don't hand off
-something that disagrees with itself.
+After any late change (a validation answer that alters scope, a task moved
+during feedback), re-read the whole draft (every phase, and every proposed
+issue in the batch) once more and check for staleness: renamed things not
+updated everywhere, a decision recorded in one place but contradicted in
+another. Resolve or flag every contradiction before asking for approval -
+don't present something that disagrees with itself.
 
-## Before handoff
+## Before asking for approval
 
-- Every claim in the plan/issues that could be checked has been checked.
-- No unresolved contradiction remains between files/issues.
-- The user has confirmed the plan/issues (implicitly, by not objecting, is
-  enough for a small change; explicitly for anything with real risk).
+- Every claim in the draft that could be checked has been checked.
+- No unresolved contradiction remains inside the draft.
+- The manifest lists everything approval will cause.
+
+Approval itself is never implied: the user has to approve explicitly, even
+for a small plan (`plan-lifecycle.md`, Approval).

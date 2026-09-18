@@ -1,12 +1,12 @@
 ---
 name: hs-brainstorm
-description: Clarify requirements and compare approaches before committing to a direction, optionally writing a PRD that hs-plan turns into phases, tasks, and issues. Use for a new feature idea, fuzzy requirements, a request for a PRD or requirements doc, or a design or architecture choice worth weighing before code. Not for splitting agreed work into phases or GitHub issues (hs-plan) or writing code (hs-build).
+description: Clarify requirements and compare approaches before committing to a direction, optionally writing a PRD that hs-plan turns into phases and tasks (and issues, with --gh). Use for a new feature idea, fuzzy requirements, a request for a PRD or requirements doc, or a design or architecture choice worth weighing before code. Not for splitting agreed work into phases or GitHub issues (hs-plan) or writing code (hs-build).
 license: MIT
 category: workflow
 keywords: [brainstorm, requirements, prd, tradeoffs, decisions, architecture]
 metadata:
   author: harness-skills
-  version: "1.5.0"
+  version: "1.5.1"
   workflow:
     precedes: [plan, build]
 ---
@@ -88,6 +88,10 @@ enough that `hs-plan` will need the reasoning later:
    `../_shared/hs-json-artifacts-convention.md`; otherwise
    `plans/reports/`), named `brainstorm-{date}-{slug}.md`.
 
+A PRD saved there is a working draft. Once the decision is settled and
+should outlive the implementation, promote it to the repository's docs (see
+the lifecycle rule in `../_shared/hs-json-artifacts-convention.md`).
+
 Skip this entirely for small or obvious decisions - it's optional
 structure, not a required output of every brainstorm.
 
@@ -97,7 +101,8 @@ Pass the four contract fields (or the PRD path), the chosen direction, and
 any unresolved risks to whatever comes next:
 
 - implementation-ready work: `hs-plan`, which breaks it into phases and
-  tasks and, if the team tracks work on GitHub, publishes them as issues;
+  tasks and, when invoked with `--gh` for a team that tracks work on GitHub,
+  publishes them as issues;
 - a diagnosed bug: straight to the fix, per Bug routing above;
 - exploration only: state the recommendation and stop.
 
