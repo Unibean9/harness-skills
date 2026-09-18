@@ -7,15 +7,7 @@ No runtime gets a slash-command layer - every runtime invokes a skill by
 matching the task to its description, the same way Claude Code does
 natively. Read `CONCEPTS.md` first to understand the underlying model.
 
-```
- BRAINSTORM          PLAN                BUILD                        SHIP
-┌────────────┐   ┌──────────────┐   ┌────────────────────────┐   ┌──────────────┐
-│Requirements│ → │Phases → Tasks│ → │Implement → Test →      │ → │PR → Review → │ → Done
-│   + PRD    │   │→ GitHub issue│   │Commit → Mark → Review  │   │CI → Merge    │
-└────────────┘   └──────────────┘   └────────────────────────┘   └──────────────┘
-hs-brainstorm       hs-plan          hs-build + hs-test            hs-ship
-                                     + hs-code-review
-```
+![Agent workflow](workflow.png)
 
 ## Install
 
