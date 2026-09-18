@@ -73,11 +73,11 @@ source folders already sitting next to it.
 | Skill                     | Purpose                                                       |
 | ------------------------- | -------------------------------------------------------------- |
 | `hs-brainstorm`           | Clarify requirements, weigh approaches, optionally write a PRD  |
-| `hs-plan`                 | Break a direction into phases and tasks (optionally -> one GitHub issue per phase) |
+| `hs-plan`                 | Draft and revise a plan with you, then write it only after you approve it (`--gh` publishes it as GitHub issues instead, one per verifiable unit of work) |
 | `hs-build`                | Implement task by task: test, commit, and mark plan/issue progress |
 | `hs-test`                 | Run the smallest relevant suite, with real pass/fail evidence   |
 | `hs-code-review`          | Find bugs/gaps before calling something done                    |
-| `hs-ship`                 | Push -> PR -> review -> CI green -> merge -> confirm issues closed |
+| `hs-ship`                 | Push -> PR -> review -> CI green -> merge -> confirm issues closed -> clean up |
 | `hs-backend-development`  | RESTful APIs, 3-layer architecture, microservices               |
 | `hs-frontend-development` | Component architecture, design tokens, responsive/a11y          |
 | `hs-devops`               | Design/provision a CI/CD pipeline or cloud infra (not a per-PR gate) |

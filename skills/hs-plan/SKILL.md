@@ -1,12 +1,12 @@
 ---
 name: hs-plan
-description: Break an agreed direction or PRD into phases and tasks with acceptance criteria in plan.md, and optionally publish each phase as a GitHub issue. Use before implementing anything beyond a trivial fix, or when asked to plan, split work into phases or tasks, or create GitHub issues from a PRD. Not for choosing between approaches (hs-brainstorm) or implementing (hs-build).
+description: Break an agreed direction or PRD into phases and tasks with acceptance criteria. Drafts and revises the plan with you in conversation, and writes nothing until you explicitly approve it; then saves it as a local plan, or with --gh publishes it as GitHub issues (one per task or tightly coupled task group that fits one PR, never one per phase) and archives the local plan. Use before implementing anything beyond a trivial fix, or when asked to plan, split work into phases or tasks, or track the work as GitHub issues. Not for choosing between approaches (hs-brainstorm) or implementing (hs-build).
 license: MIT
 category: workflow
 keywords: [plan, phases, tasks, roadmap, github-issues]
 metadata:
   author: harness-skills
-  version: "1.5.0"
+  version: "2.0.0"
   workflow:
     follows: [brainstorm]
     precedes: [build]
@@ -40,8 +40,7 @@ A small plan is one `plan.md` with:
 
 Split into `phase-NN-<name>.md` files only once tasks genuinely group into
 ordered, separately verifiable chunks - see `references/plan-organization.md`.
-No fixed frontmatter schema and no required phases; add structure only when
-the task's size calls for it.
+No required phases; add structure only when the task's size calls for it.
 
 ## Core planning rules
 
@@ -56,48 +55,93 @@ the task's size calls for it.
 - **Security & data safety** - no task commits secrets, tokens, or
   credentials.
 
-## Publishing as GitHub issues (optional)
+## Lifecycle: draft, approve, then materialize
 
-The `plan.md` is always the source. When a team tracks the work on GitHub,
-publish it: **one issue per phase**, with that phase's tasks as a checkbox
-list and its acceptance criteria copied over, then write each issue URL
-into the plan's phase table. `hs-build` ticks those checkboxes as tasks
-land and `hs-ship` closes the issue at merge.
+`Draft -> Feedback -> Revise -> Explicit approval -> Materialize`
 
-Follow `../_shared/github-issues-playbook.md` for the mechanics: the
-phase-to-issue mapping, GitHub-native issue templates, labels,
-local-vs-cloud mode (offline files vs. live `gh issue create`), and
-optional Project tracking. Don't create a separate "Epic" issue unless the
-user wants one; linked sibling issues already make the set discoverable.
-Skip publishing for solo or untracked work.
+**Planning is a feedback loop; publishing is a side effect.** While the user
+is still shaping the plan, everything stays in the conversation: phases and
+tasks, splitting and reordering, the issue mapping, dependencies. Don't
+write plan files, create issues, Project items, milestones, or
+relationships, and don't archive or delete the current plan. Revising a chat
+draft leaves nothing behind to clean up, which is why the loop happens
+before any write.
+
+Materialize only after the user explicitly approves the draft you showed.
+Silence, "looks good", or a bare "ok" is not approval; the approval prompt
+names the mode and exactly what will be created, and the user replies to it.
+
+Two modes, chosen at invocation and shown in every draft:
+
+- **Local (default, no flag).** After approval, write `plans/<plan>/`. That
+  plan is the active execution record: `hs-build` works from it and
+  `hs-ship` archives it once the work has shipped. Nothing is published to
+  GitHub.
+- **GitHub (`--gh` only).** Planning is identical until approval. Then the
+  work is published as issues and verified, and GitHub becomes the
+  execution tracker; the local plan is archived as a snapshot, not deleted.
+  Don't enter this mode without the flag, and don't fall back to local if it
+  can't run; stop and tell the user.
+
+An **issue** is one task, or a few tightly coupled tasks with one logical
+outcome that fit in one PR: `Phase -> task or task group -> issue -> PR`.
+Split when work can ship or be reviewed independently, has its own
+acceptance criteria, or would make one PR hard to follow. A small phase
+that is already independently verifiable can be one issue. Never assume one
+issue per phase or per checkbox.
+
+**Dependencies** are `blocked-by` links, recorded only when downstream work
+truly can't start or finish correctly without the prerequisite. Phase order
+is ordering, not dependency.
+
+A partial publish is not a success: report what was created and what
+failed, keep the plan `publishing`, and reconcile instead of duplicating.
+A plan is never deleted unless the user asks. A replacement plan leaves the
+current one untouched until the replacement is materialized and verified.
+
+The full state model, approval rules, draft format, materialize and
+reconcile steps, and what is the source of truth in each state are in
+`references/plan-lifecycle.md`. Read it before drafting a `--gh` plan or
+replacing an existing plan. GitHub mechanics (issue writing, dedup,
+blockers, verification checklist, Projects) are in
+`../_shared/github-playbook.md`.
 
 ## Planning pipeline
 
 1. **Intake & scope** - take the brainstorm contract or PRD as input instead
-   of re-deriving scope; state what's in and what's explicitly out.
-2. **Draft** - write `plan.md` (and phase files if needed) with tasks and
-   acceptance criteria. For a large plan, the `planner` subagent can draft
-   it from a scoped brief.
-3. **Self-review** - run `references/validate-checklist.md`: scope questions,
-   grounded claims checked against the code, no placeholders, the
-   whole-plan sweep after any late change, and questions to the user only
-   where a real decision remains.
-4. **Publish** (optional) - create the issues per the section above.
+   of re-deriving scope; state what's in and what's explicitly out. Under
+   `--gh`, run the read-only preflight now so a missing `gh` login fails
+   before anyone spends time on the draft.
+2. **Draft** - in the conversation, with tasks and acceptance criteria. For a
+   large plan, the `planner` subagent can draft it from a scoped brief; ask
+   it to return text, not files.
+3. **Self-review** - run `references/validate-checklist.md` before showing the
+   draft: scope questions, grounded claims checked against the code, no
+   placeholders, the whole-plan sweep, and questions to the user only where
+   a real decision remains.
+4. **Feedback and revise** - repeat 2-3 as many times as the user wants.
+5. **Approve** - end with the approval prompt (mode plus manifest).
+6. **Materialize** - per mode, following `references/plan-lifecycle.md`.
 
 ## Handoff
 
-Report the plan path, the created issue URLs (or local issue files), and
-the next step: `hs-build`, starting with the first phase.
+Report the plan path, or with `--gh` the created issue URLs (with the tasks
+each covers and any blockers), the Project if one was used, what was
+promoted to docs, and where the plan was archived. If a publish was partial,
+say so and list what is missing. Then give the next step: `hs-build`,
+starting with the first task or issue.
 
 ## References
 
-- `references/plan-organization.md` - multi-file phase layout, phase file
-  shape, and the phase table with its Issue column.
+- `references/plan-lifecycle.md` - state model, approval gate, draft format,
+  materialize and reconcile, replacing and archiving plans.
+- `references/plan-organization.md` - multi-file phase layout, the
+  `Mode/Status` header, the phase table, and the publication ledger.
 - `references/validate-checklist.md` - scope questions and self-review
-  checklist before handoff.
-- `../_shared/github-issues-playbook.md` - publishing and tracking issues.
+  checklist before showing the draft.
+- `../_shared/github-playbook.md` - publishing and tracking issues.
 - `../_shared/hs-json-artifacts-convention.md` - where plan output is
-  written.
+  written, and how plans are promoted and archived.
 
 ## Make it yours
 

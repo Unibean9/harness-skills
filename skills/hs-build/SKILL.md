@@ -6,7 +6,7 @@ category: workflow
 keywords: [build, implement, code, commit, branch, worktree, github-issue]
 metadata:
   author: harness-skills
-  version: "1.4.0"
+  version: "1.5.0"
   workflow:
     follows: [plan, brainstorm]
     precedes: [test, code-review]
@@ -28,7 +28,8 @@ See `../_shared/hard-gate.md` for the shared gate shape (`{scope}` = "a plan exi
   record it in the implementation notes), don't silently diverge.
 - Write a test for logic whose correct behavior isn't obvious from reading
   it.
-- Never claim "done" without having actually run a check that proves it.
+- Never claim "done" without evidence from a check you actually ran; the
+  rule is in `../_shared/evidence-policy.md`.
 
 You can split a task into smaller sub-steps yourself if that helps, as long
 as the end result still matches the plan.
@@ -37,8 +38,8 @@ as the end result still matches the plan.
 
 | Source | Use when | Mechanics |
 |---|---|---|
-| **Local plan** (default) | `hs-plan` produced a `plan.md` (or phase files) | Work through its tasks with the loop below |
-| **GitHub issue** | The phase was published as an issue, or picked from the backlog | `references/github-issue-workflow.md` - pull the issue, claim it, then the same loop plus issue marking |
+| **Local plan** (default) | `hs-plan` produced a `plan.md` (or phase files) with `Status: active` (a plan with no `Mode` line counts as local) | Work through its tasks with the loop below. A plan with `Status: publishing` is a half-finished `--gh` publish: don't build from it, tell the user to reconcile it with `hs-plan --gh` first. |
+| **GitHub issue** | The work was published as an issue, or picked from the backlog | `references/github-issue-workflow.md` - pull the issue, check its blockers, claim it, then the same loop plus issue marking |
 
 ## Branch and worktree (only on request)
 
@@ -76,11 +77,12 @@ For each task:
 3. **Commit** only the paths this task changed, with a conventional message
    (`type(scope): summary`) and `Refs #<n>` when there's an issue. Never
    commit a secret, credential, or generated file.
-4. **Mark** progress: tick the task's checkbox (in the phase file, and in
-   the issue body when there is one), and on the phase's first task set its
-   `Status` (and the Project item, if the issues live on a board) to
-   `In Progress`. `Done` waits for the merge in `hs-ship`. The mechanics are
-   in `../_shared/github-issues-playbook.md` §5.
+4. **Mark** progress: tick the task's checkbox (in the plan's phase file,
+   or in the issue body when the work is tracked as an issue), and on the
+   first task of a phase or issue set its `Status` (the plan's phase table,
+   or the issue's Project item if it lives on a board) to `In Progress`.
+   `Done` waits for the merge in `hs-ship`. The mechanics are in
+   `../_shared/github-playbook.md` §7.
 
 When the phase's tasks are done, ask for `hs-code-review` on the phase's
 diff before handing off.
@@ -101,8 +103,9 @@ constraint discovered in the code. A later session or a reviewer needs
 these to understand the change without re-deriving them from the diff.
 
 - Write them to `implementation-notes.md` next to the plan's `plan.md`. For
-  work from a GitHub issue with no local plan directory, put them in the
-  issue's progress comment instead (see `references/github-issue-workflow.md`).
+  work from a GitHub issue with no active plan directory (the plan was
+  archived, or never existed), put them in the issue's progress comment
+  instead (see `references/github-issue-workflow.md`).
 - Each entry names the decision, the reason, and the files it affects.
 - Record decisions only. The diff and `git log` already show what changed,
   so a list of edits adds nothing.
@@ -137,7 +140,8 @@ evidence, and the linked issue numbers.
 
 - `references/github-issue-workflow.md` - picking up and marking a GitHub
   issue.
-- `../_shared/github-issues-playbook.md` §5 - progress marking mechanics.
+- `../_shared/github-playbook.md` §7 - progress marking mechanics.
+- `../_shared/evidence-policy.md` - what counts as evidence for a claim.
 
 ## Make it yours
 

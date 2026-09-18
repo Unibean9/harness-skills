@@ -6,7 +6,7 @@ category: workflow
 keywords: [test, unit, integration, e2e, playwright, coverage, evidence]
 metadata:
   author: harness-skills
-  version: "1.5.0"
+  version: "1.6.0"
   workflow:
     follows: [build]
     precedes: [code-review, ship]
@@ -25,7 +25,7 @@ the code reads.
 - Run the smallest relevant suite by default; widen scope only if the
   change touches shared or stateful code.
 - Report the exact command and its real output (or the captured evidence
-  path) - a claim without either isn't a finding, it's a guess.
+  path); see `../_shared/evidence-policy.md` for what counts.
 - Never ignore a failing test to pass the build - fix the root cause, not
   the symptom, and never mock/skip/tweak a test just to turn it green.
 - A failing or skipped check blocks the task's commit in `hs-build` and
