@@ -33,10 +33,13 @@ one on your own (branch naming is in `hs-build`).
 
 ## 2. Pull request
 
-Open a PR with `gh pr create` (or your platform's equivalent), using the
-body shape in `references/pr-template.md` so the reviewer gets the
-evidence without asking. Add `Closes #<n>` for each issue this PR
-finishes, so the merge closes it.
+Check for the repo's own `.github/PULL_REQUEST_TEMPLATE.md` or
+`.github/PULL_REQUEST_TEMPLATE/*` first (`../_shared/github-playbook.md`,
+"the repository's own conventions win"). If it has one, fill that in with
+the evidence below instead of writing a parallel template. Only when the
+repo has none, use the body shape in `references/pr-template.md`. Either
+way, open the PR with `gh pr create` (or your platform's equivalent) and
+add `Closes #<n>` for each issue this PR finishes, so the merge closes it.
 
 ## 3. PR review
 
