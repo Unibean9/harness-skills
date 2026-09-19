@@ -49,7 +49,7 @@ Run the design brief flow ([design-brief.md](design-brief.md)), passing along wh
 
 Present the shape output and stop. Wait for the user to confirm, override, or course-correct before writing code.
 
-If the user already supplied a confirmed brief or ran `hs-brainstorm --fe` separately, use it and skip this step.
+If the user already supplied a confirmed brief or ran `hs-brainstorm` separately, use it and skip this step.
 
 When the original prompt + PRODUCT.md already answer scope, content, and visual direction with no real ambiguity, the shape output can be **compact** (3-5 bullets stating what you're building and the visual lane, ending with one or two specific questions or "confirm or override"). The full 10-section structured brief is reserved for genuinely ambiguous, multi-screen, or stakeholder-heavy tasks. Don't pad a clear brief into a long one to look thorough; equally, don't skip the pause to look efficient.
 

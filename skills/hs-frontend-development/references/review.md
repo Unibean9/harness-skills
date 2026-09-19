@@ -100,7 +100,7 @@ For each issue, tag with **P0-P3 severity** (see [Issue Severity below](#issue-s
 - **[P?] What**: Name the problem clearly
 - **Why it matters**: How this hurts users or undermines goals
 - **Fix**: What to do about it (be concrete)
-- **Suggested command**: Which flow could address this (from: `hs-build --fe` (fix the finding), `hs-build --fe finish` (polish pass), `hs-frontend-development spec`, `hs-frontend-development tokens`, `hs-brainstorm --fe` (re-shape the design), `hs-code-review --fe review` (UX critique))
+- **Suggested command**: Which flow could address this (from: `hs-build` (fix the finding), the `hs-build` finish step (polish pass), `hs-frontend-development spec`, `hs-frontend-development tokens`, `hs-brainstorm` (re-shape the design), `hs-code-review` (UX critique))
 
 #### Persona Red Flags
 > *Consult the [Personas reference](#persona-based-design-testing) below.*
@@ -165,20 +165,20 @@ List recommended commands in priority order, based on the user's answers:
 ...
 
 **Rules for recommendations**:
-- Only recommend flows from: `hs-build --fe` (fix the finding), `hs-build --fe finish` (polish pass), `hs-frontend-development spec`, `hs-frontend-development tokens`, `hs-brainstorm --fe` (re-shape the design), `hs-code-review --fe review` (UX critique)
+- Only recommend flows from: `hs-build` (fix the finding), the `hs-build` finish step (polish pass), `hs-frontend-development spec`, `hs-frontend-development tokens`, `hs-brainstorm` (re-shape the design), `hs-code-review` (UX critique)
 - Order by the user's stated priorities first, then by impact
 - Each item's description should carry enough context that the command knows what to focus on
 - Map each Priority Issue to the appropriate command
 - Skip commands that would address zero issues
 - If the user chose a limited scope, only include items within that scope
 - If the user marked areas as off-limits, exclude commands that would touch those areas
-- End with `hs-build --fe finish` as the final step if any fixes were recommended
+- End with the `hs-build` finish step if any fixes were recommended
 
 After presenting the summary, tell the user:
 
 > You can ask me to run these one at a time, all at once, or in any order you prefer.
 >
-> Re-run `hs-code-review --fe review` after fixes to see your score improve.
+> Re-run `hs-frontend-development review` after fixes to see your score improve.
 
 ---
 

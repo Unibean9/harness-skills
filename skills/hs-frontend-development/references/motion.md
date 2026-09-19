@@ -199,4 +199,4 @@ Test animations thoroughly:
 - **Doesn't block**: Users can interact during/after animations
 - **Adds value**: Makes interface clearer or more delightful
 
-When the motion clarifies state instead of decorating it, hand off to `hs-build --fe finish` for the final pass.
+When the motion clarifies state instead of decorating it, hand off to the `hs-build` finish step for the final pass.

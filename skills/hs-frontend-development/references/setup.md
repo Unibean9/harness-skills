@@ -21,7 +21,7 @@ Decision tree:
 
 Never silently overwrite an existing file. Always confirm first.
 
-If init was invoked as a setup blocker by another command, such as `hs-build --fe` on a landing page, pause that command here. Complete init, then resume the original command. Your own writes are the freshest source; no reload needed. For build, resume into the design brief ([design-brief.md](design-brief.md)) next; init creates project context, but it is not a substitute for the task-specific discovery interview and confirmed design brief.
+If init was invoked as a setup blocker by another command, such as `hs-build` on a landing page, pause that command here. Complete init, then resume the original command. Your own writes are the freshest source; no reload needed. For build, resume into the design brief ([design-brief.md](design-brief.md)) next; init creates project context, but it is not a substitute for the task-specific discovery interview and confirmed design brief.
 
 ## Step 2: Explore the codebase
 
@@ -145,11 +145,11 @@ Summarize tersely:
 
 Then recommend the **best commands to run next**, drawn from what your Step 2 crawl already surfaced. Do not run a fresh analysis here; surface observations you already have. Tailor to register and to what you saw, offer the 2-4 most relevant (not a menu dump), and give the exact command to type. Group by intent:
 
-- **Build something new**: `hs-brainstorm --fe <feature>` (discovery interview and design brief), then `hs-plan --fe` and `hs-build --fe`. Lead with this for empty or early-stage projects.
-- **Improve what's there**: name the specific surface. `hs-code-review --fe review <page>` for a scored UX review; `hs-code-review --fe check <area>` for a11y / perf / responsive checks; `hs-build --fe finish <component>` for a pre-ship pass. When the crawl flagged drift from a shared system (hard-coded values, repeated one-off components), point `hs-frontend-development tokens` at it.
+- **Build something new**: `hs-brainstorm <feature>` (discovery interview and design brief), then `hs-plan` and `hs-build`. Lead with this for empty or early-stage projects.
+- **Improve what's there**: name the specific surface. `hs-frontend-development review <page>` for a scored UX review; `hs-frontend-development check <area>` for a11y / perf / responsive checks; `hs-frontend-development finish <component>` for a pre-ship pass. When the crawl flagged drift from a shared system (hard-coded values, repeated one-off components), point `hs-frontend-development tokens` at it.
 
 The full menu is one bare `hs-frontend-development` away; keep this list short and pointed.
 
-If init was invoked as a blocker by another frontend flow (e.g. the user ran `hs-build --fe finish` with no PRODUCT.md), resume that original task now. Your own writes are the freshest source; no reload needed.
+If init was invoked as a blocker by another frontend flow (e.g. the user ran `hs-frontend-development finish` with no PRODUCT.md), resume that original task now. Your own writes are the freshest source; no reload needed.
 
 Optionally STOP and call the AskUserQuestion tool to clarify. Ask whether they'd like a brief summary of PRODUCT.md appended to CLAUDE.md for easier agent reference. If yes, append a short **Design Context** pointer section there.

@@ -78,15 +78,18 @@ source folders already sitting next to it.
 | `hs-test`                 | Run the smallest relevant suite, with real pass/fail evidence   |
 | `hs-code-review`          | Find bugs/gaps before calling something done                    |
 | `hs-ship`                 | Push -> PR -> review -> CI green -> merge -> confirm issues closed -> clean up |
-| `hs-backend-development`  | RESTful APIs, 3-layer architecture, microservices               |
-| `hs-frontend-development` | PRODUCT.md / DESIGN.md context, design tokens, UX/UI rules; its plan, build, and review flows run through `--fe` on `hs-brainstorm`, `hs-plan`, `hs-build`, `hs-code-review` |
+| `hs-backend-development`  | RESTful APIs, 3-layer architecture, microservices; the workflow skills route to it automatically for backend work |
+| `hs-frontend-development` | PRODUCT.md / DESIGN.md context, design tokens, UX/UI rules; the workflow skills route to it automatically for UI work |
 | `hs-devops`               | Design/provision a CI/CD pipeline or cloud infra (not a per-PR gate) |
 
 The first 6 are the workflow skills that carry the harness itself, in
 pipeline order; the last 3 are technical-content maps, not workflow gates -
 each still carries its own HARD-GATE, but none sit on the linear
 brainstorm-to-ship path. You don't need to memorize their names - describe
-your goal and the agent reaches for the relevant one on its own. Each
+your goal and the agent reaches for the relevant one on its own. The
+workflow skills also pick the domain skill (frontend, backend) for you; see
+`skills/_shared/domain-routing.md`, and use `--domain <name>` only to
+override. Each
 runtime maps these skills (plus agents and hooks) into its own on-disk
 format differently.
 

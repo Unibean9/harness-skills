@@ -140,7 +140,7 @@ Test that colorization improves the experience:
 - **Still accessible**: Do all color combinations meet WCAG standards?
 - **Not overwhelming**: Is color balanced and purposeful?
 
-When the palette earns its place, hand off to `hs-build --fe finish` for the final pass.
+When the palette earns its place, hand off to the `hs-build` finish step for the final pass.
 
 ---
 

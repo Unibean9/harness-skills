@@ -36,7 +36,7 @@ Understand the current state and goals before touching anything:
    - Loading and transition smoothness
    - Information architecture and flow drift (does this feature reveal complexity the way neighboring features do?)
 
-4. **Pull in any prior critique** (optional signal): If `hs-code-review --fe review` has been run on the same target (its report is in this conversation, or the user points you at a saved copy), its priority issues are a useful prior for what to address first. Fold the P0/P1 items into your polish list and tell the user what you read. If there is no prior report, continue without it. The critique is one input among many. Do your own pass either way.
+4. **Pull in any prior critique** (optional signal): If a frontend review (`hs-code-review`, or `hs-frontend-development review`) has been run on the same target (its report is in this conversation, or the user points you at a saved copy), its priority issues are a useful prior for what to address first. Fold the P0/P1 items into your polish list and tell the user what you read. If there is no prior report, continue without it. The critique is one input among many. Do your own pass either way.
 
 5. **Triage cosmetic vs functional**: Classify each issue as **cosmetic** (looks off, doesn't impede the user) or **functional** (breaks, blocks, or confuses the experience). When polish time is tight, functional issues ship first; cosmetic ones can land in a follow-up. Quality should be consistent; never perfect one corner while leaving another rough.
 

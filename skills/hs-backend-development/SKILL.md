@@ -6,7 +6,7 @@ category: domain
 keywords: [backend, rest-api, architecture, auth, security, performance, debugging]
 metadata:
   author: harness-skills
-  version: "2.1.0"
+  version: "2.2.0"
 ---
 
 # Backend Development Skill
@@ -32,6 +32,28 @@ See `../_shared/hard-gate.md` for the shared gate shape (`{scope}` = "a plan exi
 - Validating input and hardening an endpoint
 - Finding why a query or endpoint is slow, or why a backend bug happens
 - Choosing a language, framework, or database for a new backend
+
+## Capabilities
+
+The workflow skills call these on their own (`../_shared/domain-routing.md`):
+the user picks `hs-brainstorm`, `hs-plan`, `hs-build`, `hs-code-review`, or
+`hs-ship`, and the workflow decides when backend applies. Each capability can
+also be invoked directly, for example `hs-backend-development validate`.
+
+| Capability | Called by | What it does here | Read |
+|---|---|---|---|
+| `discover` | `hs-brainstorm`, for a new endpoint, service, or stack choice | Frame the request as a system, weigh the trade-offs, and decide layering or splitting, the resource contract, and the stack before any code | `references/mindset.md`, `references/architecture.md`, `references/technologies.md`, `references/api-design.md` |
+| `prepare` | `hs-plan` (context only), `hs-build` | Read the project's existing layers, stack, API conventions, error format, and auth approach, then load the guidance for the piece being built | The project's code first, then `references/architecture.md`, `references/api-design.md`, `references/authentication.md` as the task needs |
+| `validate` | `hs-build`, `hs-code-review`, `hs-ship` | Read-only technical check of the changed files: input validation and access control, N+1 queries and missing indexes, negative-path tests, error handling, and what gets logged | `references/security.md`, `references/performance.md`, `references/testing.md`, `references/debugging.md` (what never to log) |
+| `review` | `hs-code-review`, for a change that adds or reshapes an endpoint, auth or permission logic, a schema, or a hot path | Design critique: layering violations, API contract and backward compatibility, the auth model, trade-offs, maintainability | `references/architecture.md`, `references/api-design.md`, `references/authentication.md`, `references/security.md`, `references/code-quality.md`, `references/mindset.md` |
+| on demand | none | Root-causing a bug or slow query, and refactoring | `references/debugging.md`, `references/code-quality.md` |
+
+`validate` and `review` only read and report; running the test suite is
+`hs-test`. Report severity as Critical, High, Medium, or Low, as the
+`code-reviewer` subagent does: Critical (trust-boundary defects, data loss,
+breaking changes) blocks `hs-ship`. The HARD-GATE above still holds under
+routing: no capability runs migrations, backup or restore, deploys, or
+external writes without the user's confirmation.
 
 ## References
 

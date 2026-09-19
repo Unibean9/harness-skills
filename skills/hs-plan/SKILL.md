@@ -1,6 +1,6 @@
 ---
 name: hs-plan
-description: Break an agreed direction or PRD into phases and tasks with acceptance criteria. Drafts and revises the plan with you in conversation, and writes nothing until you explicitly approve it; then saves it as a local plan, or with --gh publishes it as GitHub issues (one per task or tightly coupled task group that fits one PR, never one per phase) and archives the local plan. Use before implementing anything beyond a trivial fix, or when asked to plan, split work into phases or tasks, or track the work as GitHub issues. With --fe, plans a confirmed frontend design brief. Not for choosing between approaches (hs-brainstorm) or implementing (hs-build).
+description: Break an agreed direction or PRD into phases and tasks with acceptance criteria. Drafts and revises the plan with you in conversation, and writes nothing until you explicitly approve it; then saves it as a local plan, or with --gh publishes it as GitHub issues (one per task or tightly coupled task group that fits one PR, never one per phase) and archives the local plan. Use before implementing anything beyond a trivial fix, or when asked to plan, split work into phases or tasks, or track the work as GitHub issues. Not for choosing between approaches (hs-brainstorm) or implementing (hs-build).
 license: MIT
 category: workflow
 keywords: [plan, phases, tasks, roadmap, github-issues]
@@ -123,15 +123,20 @@ blockers, verification checklist, Projects) are in
 5. **Approve** - end with the approval prompt (mode plus manifest).
 6. **Materialize** - per mode, following `references/plan-lifecycle.md`.
 
-## Frontend work (`--fe`)
+## Domain routing
 
-With `--fe`, the input is the confirmed design brief from
-`hs-brainstorm --fe` (see `../hs-frontend-development/references/design-brief.md`), not a generic
-contract. If there is no confirmed brief, or PRODUCT.md is missing, stop and
-run `hs-brainstorm --fe` (or `hs-frontend-development setup`) first; don't
-invent design decisions in the plan.
+Follow `../_shared/domain-routing.md`. For each domain the plan touches, use its `prepare`
+capability for context only, before drafting; don't implement anything. If
+required context is missing (for frontend, PRODUCT.md), stop and run that
+domain's `prepare` first: it has its own confirm-before-write gate, so it
+finishes before the draft starts and doesn't break this skill's "write nothing
+until approved" rule.
 
-Plan the brief, don't re-decide it:
+For a **frontend** plan, the input is the confirmed design brief from
+`hs-brainstorm` (see `../hs-frontend-development/references/design-brief.md`), not a generic
+contract. If a new UI surface has no confirmed brief, go back to
+`hs-brainstorm`; don't invent design decisions in the plan. Plan the brief,
+don't re-decide it:
 
 - Group tasks by surface or component, and name the files each one changes.
 - Carry the brief's Key States (default, empty, loading, error, success, edge
@@ -142,8 +147,15 @@ Plan the brief, don't re-decide it:
 - Give UI tasks an observable check: a screenshot at mobile, tablet, and
   desktop widths, per `hs-test` black-box mode.
 
+For a **backend** plan, `prepare` means reading the project's existing layers,
+stack, API conventions, and error format before drafting (see Capabilities in
+`../hs-backend-development/SKILL.md`). Give each task acceptance criteria a check can settle: the
+endpoint's success and error responses, the negative-path tests, and the
+permission check. Mark any migration or external write as needing the user's
+confirmation when it is built.
+
 Everything else, including the draft, approval, and `--gh` behavior, is
-unchanged; `--fe` and `--gh` combine.
+unchanged.
 
 ## Handoff
 
@@ -162,7 +174,8 @@ starting with the first task or issue.
 - `references/validate-checklist.md` - scope questions and self-review
   checklist before showing the draft.
 - `../_shared/github-playbook.md` - publishing and tracking issues.
-- `../hs-frontend-development/references/design-brief.md` - the design brief that `--fe` plans from.
+- `../_shared/domain-routing.md` - when and how a domain skill is used.
+- `../hs-frontend-development/references/design-brief.md` - the frontend design brief a UI plan is built from.
 - `../_shared/hs-json-artifacts-convention.md` - where plan output is
   written, and how plans are promoted and archived.
 

@@ -172,7 +172,7 @@ Test that copy improvements work:
 - **Consistency**: Does it match terminology elsewhere?
 - **Tone**: Is it appropriate for the situation?
 
-When the copy reads cleanly, hand off to `hs-build --fe finish` for the final pass.
+When the copy reads cleanly, hand off to the `hs-build` finish step for the final pass.
 
 ---
 

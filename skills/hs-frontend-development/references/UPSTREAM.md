@@ -31,10 +31,12 @@ made, so a later sync only needs to re-apply this list.
 | `interaction-design.md` | `interaction-design.md` | No |
 | `../SKILL.md` | `SKILL.md` | Design guidance is upstream's; Setup, flows, and routing are rewritten |
 
-Command names in the ported text follow this kit: `setup`, `spec`, and
-`tokens` are `hs-frontend-development <flow>`; the plan, build, and review
-flows are reached with `--fe` on `hs-brainstorm`, `hs-plan`, `hs-build`, and
-`hs-code-review`.
+Upstream's commands became this kit's capabilities (see `../SKILL.md` and
+`../../_shared/domain-routing.md`): `plan` is `discover`, `setup` and `spec`
+are `prepare`, `check` is `validate`, `review` is `review`, and `finish` is the
+`hs-build` finish step. The workflow skills route to them automatically; each
+can also be invoked directly as `hs-frontend-development <name>`. Command
+names in the ported text follow this.
 
 ## What was left out, and why
 
@@ -89,8 +91,8 @@ References" example list uses the same renamed files as `build.md` Step 2.
 - Step 3's link to `codex.md` became plain text pointing at the kit note.
 
 **`finish.md`**: Step 4 no longer runs `critique-storage.mjs`; it reads a
-prior `hs-code-review --fe review` report from the conversation or a saved
-copy the user points to.
+prior frontend review report from the conversation or a saved copy the user
+points to.
 
 **`check.md`**: the "suggested command" lists and the closing re-run line
 use this kit's flows.
@@ -98,7 +100,7 @@ use this kit's flows.
 **`space.md`, `type.md`, `color.md`, `motion.md`, `responsive.md`,
 `copy.md`**: these were commands upstream; here they are topic references,
 loaded by the build flow or when a task is about that topic.
-- "hand off to `/fk polish`" became `hs-build --fe finish`.
+- "hand off to `/fk polish`" became "hand off to the `hs-build` finish step".
 - `space.md`, `type.md`, and `color.md` lost their "Live-mode signature
   params" sections (variant params for the live mode that is not ported);
   `type.md` also lost a sentence pointing at `bolder.md`.

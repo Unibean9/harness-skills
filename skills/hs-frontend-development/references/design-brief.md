@@ -3,7 +3,7 @@ Shape the UX and UI for a feature before any code is written. This command produ
 
 **Scope**: Design planning only. This command does NOT write code. It produces the thinking that makes code good.
 
-**Output**: A design brief that can be handed off to `hs-plan --fe` and `hs-build --fe`, or directly to `hs-frontend-development` for freeform implementation. When visual direction probes are used, the images are supporting artifacts, not the primary output.
+**Output**: A design brief that can be handed off to `hs-plan` and `hs-build`, or directly to `hs-frontend-development` for freeform implementation. When visual direction probes are used, the images are supporting artifacts, not the primary output.
 
 ## Philosophy
 
@@ -163,4 +163,4 @@ STOP and call the AskUserQuestion tool to clarify. Ask for explicit confirmation
 
 If the user disagrees with any part, revisit the relevant discovery questions. A shape run is incomplete until the user confirms direction.
 
-Once confirmed, the brief is complete. The user can now hand it to `hs-plan --fe`, or use it to guide any other implementation approach. (If the user wants the full brief-then-build flow, `hs-build --fe` runs the brief step first when none exists.)
+Once confirmed, the brief is complete. The user can now hand it to `hs-plan`, or use it to guide any other implementation approach. (If the user wants the full brief-then-build flow, `hs-build` runs the brief step first when none exists.)

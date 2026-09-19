@@ -188,7 +188,7 @@ Test thoroughly across contexts:
 - **Edge cases**: Very small screens (320px), very large screens (4K)
 - **Slow connections**: Test on throttled network
 
-When the adaptation feels native to each context, hand off to `hs-build --fe finish` for the final pass.
+When the adaptation feels native to each context, hand off to the `hs-build` finish step for the final pass.
 
 ---
 

@@ -6,7 +6,7 @@ category: workflow
 keywords: [ship, push, pull-request, pr-review, ci, merge, cleanup]
 metadata:
   author: harness-skills
-  version: "2.3.0"
+  version: "2.4.0"
   workflow:
     follows: [build, test, code-review]
 ---
@@ -23,6 +23,10 @@ Confirm the work is actually ready: `hs-test` has run and passed,
 `hs-code-review` findings worth blocking on are addressed, and every change
 is committed by `hs-build` (`git status` is clean). Shipping known-red or
 unreviewed work just moves the problem downstream.
+
+If the diff touches a domain skill (`../_shared/domain-routing.md`), its `validate` should have passed
+on this exact diff; run it now if it hasn't, or if commits landed after it
+ran. `--skip-check` skips it, and you say so in the PR body.
 
 ## 1. Push
 

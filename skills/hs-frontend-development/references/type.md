@@ -110,7 +110,7 @@ Build a clear type scale:
 - **Performance**: Are web fonts loading efficiently without layout shift?
 - **Accessibility**: Does text meet WCAG contrast ratios? Is it zoomable to 200%?
 
-When the type carries the hierarchy on its own, hand off to `hs-build --fe finish` for the final pass.
+When the type carries the hierarchy on its own, hand off to the `hs-build` finish step for the final pass.
 
 ---
 

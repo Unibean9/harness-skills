@@ -1,6 +1,6 @@
 ---
 name: hs-frontend-development
-description: Design and build production-grade frontend interfaces, context first - capture PRODUCT.md (strategy) and DESIGN.md (visual system), pull reusable tokens into a design system, and apply shared UX/UI rules (color, typography, layout, motion, accessibility, anti-patterns) for brand and product surfaces. Its flows plug into hs-brainstorm, hs-plan, hs-build, and hs-code-review through --fe. Use when the user wants to design, redesign, build, review, or polish a website, landing page, dashboard, app UI, component, form, or design system, even if they only say "make this look better" or "set up design tokens". Not for backend APIs (hs-backend-development) or CI/CD and infrastructure (hs-devops).
+description: Design and build production-grade frontend interfaces, context first - capture PRODUCT.md (strategy) and DESIGN.md (visual system), pull reusable tokens into a design system, and apply shared UX/UI rules (color, typography, layout, motion, accessibility, anti-patterns) for brand and product surfaces. Its capabilities (discover, prepare, validate, review) are routed automatically by hs-brainstorm, hs-plan, hs-build, and hs-code-review, and can also be invoked directly. Use when the user wants to design, redesign, build, review, or polish a website, landing page, dashboard, app UI, component, form, or design system, even if they only say "make this look better" or "set up design tokens". Not for backend APIs (hs-backend-development) or CI/CD and infrastructure (hs-devops).
 license: MIT
 category: domain
 keywords: [frontend, ui, ux, design-system, product-md, design-md, tokens, accessibility, responsive]
@@ -35,7 +35,7 @@ See `../_shared/hard-gate.md` for the shared gate shape (`{scope}` = "a plan exi
 You MUST do these steps before proceeding:
 
 1. Read the project context once per session (skip if you already did in this conversation): PRODUCT.md and DESIGN.md at the project root, or under `.agents/context/` or `docs/` (case-insensitive), with your native file tool. **If PRODUCT.md is missing, stop and follow `references/setup.md` before doing anything else.** A missing DESIGN.md does not block the task; setup and `spec` offer to create it.
-2. If the user invoked one of the flows below (`setup`, `spec`, `tokens`, or a `--fe` flow from another skill), you MUST read its reference next. Non-optional. The reference defines the flow; without it you will skip steps the user expects.
+2. If the user invoked one of the capabilities below directly, or a workflow routed you here, you MUST read the matching reference next. Non-optional. The reference defines the flow; without it you will skip steps the user expects.
 3. Familiarize yourself with any existing design system, conventions, and components in the code. Read at least one project file (CSS / tokens / theme / a representative component or page). **Required even when you've loaded a flow reference in step 2.** Don't reinvent the wheel; use what's there when it works, branch out when the UX wins.
 4. Read the matching register reference. **This is non-optional; skipping it produces generic output.** If the project is marketing, a landing page, a campaign, long-form content, or a portfolio (design IS the product), read `references/brand.md`. If it is app UI, admin, a dashboard, or a tool (design SERVES the product), read `references/product.md`. Pick by first match: (1) task cue ("landing page" vs "dashboard"); (2) surface in focus (the page, file, or route being worked on); (3) `register` field in PRODUCT.md.
 5. **If the project is brand-new (no existing CSS tokens / theme / committed brand colors found in step 3)**, choose the brand seed color deliberately before composing anything: one OKLCH anchor for the primary brand color, then compose the rest of the palette (bg, surface, ink, accent, muted) around it using the Color & Theme rules below. Do not default to the first color the category suggests. **Skip this step if step 3 found committed brand colors in existing tokens; in that case identity-preservation wins.**
@@ -117,43 +117,44 @@ If someone could look at this interface and say "AI made that" without doubt, it
 - **First-order:** if someone could guess the theme + palette from the category alone, it's the first training-data reflex. Rework the scene sentence and color strategy until the answer isn't obvious from the domain.
 - **Second-order:** if someone could guess the aesthetic family from category-plus-anti-references ("AI workflow tool that's not SaaS-cream → editorial-typographic", "fintech that's not navy-and-gold → terminal-native dark mode"), it's the trap one tier deeper. The first reflex was avoided; the second wasn't. Rework until both answers are not obvious. The brand register's reflex-reject aesthetic lanes (`references/brand.md`) list catches the currently-saturated families.
 
-## Flows
+## Capabilities
 
-| Invocation | Category | Description | Reference |
+The workflow skills call these on their own (`../_shared/domain-routing.md`):
+the user picks `hs-brainstorm`, `hs-plan`, `hs-build`, `hs-code-review`, or
+`hs-ship`, and the workflow decides when frontend applies. Each capability can
+also be invoked directly.
+
+| Capability | Called by | Direct invocation | Reference |
 |---|---|---|---|
-| `hs-frontend-development setup` | Build | Set up project context: PRODUCT.md, then DESIGN.md next steps | `references/setup.md` |
-| `hs-frontend-development spec` | Build | Generate DESIGN.md from existing project code (or seed one) | `references/spec.md` |
-| `hs-frontend-development tokens [target]` | Build | Pull reusable tokens and components into the design system | `references/tokens.md` |
-| `hs-brainstorm --fe [feature]` | Plan | Discovery interview, then a confirmed design brief | `references/design-brief.md` |
-| `hs-plan --fe` | Plan | Turn the confirmed brief into phases and tasks | see `hs-plan` |
-| `hs-build --fe [feature]` | Build | Build the feature to the production bar and iterate visually | `references/build.md` |
-| `hs-build --fe finish [target]` | Refine | Final quality pass before shipping | `references/finish.md` |
-| `hs-code-review --fe check [target]` | Evaluate | Technical quality checks (a11y, perf, theming, responsive, anti-patterns) | `references/check.md` |
-| `hs-code-review --fe review [target]` | Evaluate | UX design review with heuristic scoring | `references/review.md` |
+| `discover` | `hs-brainstorm`, for a new UI surface | `hs-frontend-development brief [feature]` | `references/design-brief.md` |
+| `prepare` | `hs-plan` (context), `hs-build` | `setup` writes PRODUCT.md and hands off to `spec` for DESIGN.md; the production bar is loaded by `hs-build` | `references/setup.md`, `references/spec.md`, `references/build.md` |
+| `validate` | `hs-build`, `hs-code-review`, `hs-ship` | `hs-frontend-development check [target]` | `references/check.md` |
+| `review` | `hs-code-review`, for a change that reshapes what users see | `hs-frontend-development review [target]` | `references/review.md` |
+| finish step | `hs-build`, once the phase is otherwise done | `hs-frontend-development finish [target]` | `references/finish.md` |
+| on demand | none | `hs-frontend-development tokens [target]` | `references/tokens.md` |
 
-### Routing rules
+### Direct invocation
 
-1. **No argument**: the user is asking "what should I do?" Read the project context (Setup step 1), then lead with the **2-3 highest-value next flows**, each with a one-line reason: PRODUCT.md missing → `setup`; DESIGN.md missing while code exists → `spec`; a new surface to build → `hs-brainstorm --fe`; existing UI never reviewed → `hs-code-review --fe review <surface>`; drift from a shared system → `tokens`. Follow with the full table above. **Never auto-run a flow; the recommendation is a suggestion the user confirms.**
-2. **First word matches a flow** (`setup`, `spec`, `tokens`): load its reference and follow it. Everything after the flow name is the target.
-3. **First word doesn't match, but the intent clearly maps to one flow** (e.g. "document the design system" → `spec`, "clean up repeated buttons" → `tokens`, "fix the spacing" → `space`, "rewrite this error message" → `copy`): load that flow's or topic reference and proceed as if invoked. If two could fit, ask once which.
-4. **No clear flow match**: general design invocation. Apply the Setup steps, the Design guidance below, and the loaded register reference, using the full argument as context.
+1. **No argument**: the user is asking "what should I do?" Read the project context (Setup step 1), then lead with the **2-3 highest-value next actions**, each with a one-line reason: PRODUCT.md missing → `setup`; DESIGN.md missing while code exists → `spec`; a new surface to build → start `hs-brainstorm`; existing UI never reviewed → `review <surface>`; drift from a shared system → `tokens`. Follow with the table above. **Never auto-run one; the recommendation is a suggestion the user confirms.**
+2. **First word matches an invocation** (`brief`, `setup`, `spec`, `check`, `review`, `finish`, `tokens`): load its reference and follow it. Everything after the name is the target.
+3. **First word doesn't match, but the intent clearly maps to one capability** (e.g. "document the design system" → `spec`, "clean up repeated buttons" → `tokens`, "fix the spacing" → `space`, "rewrite this error message" → `copy`): load that reference and proceed as if invoked. If two could fit, ask once which.
+4. **No clear match**: general design invocation. Apply the Setup steps, the Design guidance above, and the loaded register reference, using the full argument as context.
 
-**Topic references** (`references/space.md`, `type.md`, `motion.md`, `color.md`, `responsive.md`, `copy.md`, `interaction-design.md`) are consulted by the build flow through the brief's "Recommended References", or loaded directly when the task is about that topic. Each ends with a Reference Material section holding the deep guidance, and hands off to `hs-build --fe finish` for the final pass.
+**Topic references** (`references/space.md`, `type.md`, `motion.md`, `color.md`, `responsive.md`, `copy.md`, `interaction-design.md`) are consulted by `prepare` (the build flow) through the brief's "Recommended References", or loaded directly when the task is about that topic. Each ends with a Reference Material section holding the deep guidance, and hands off to the `hs-build` finish step for the final pass.
 
-Setup (context gathering, register) is already loaded by then; flows don't re-run it. If a flow finds PRODUCT.md missing, it runs `setup` first as a blocker, then resumes the original task.
-
+Setup (context gathering, register) is already loaded by then; capabilities don't re-run it. If one finds PRODUCT.md missing, it runs `setup` first as a blocker, then resumes the original task.
 
 ## References
 
-- `references/setup.md` - write PRODUCT.md (register, users, brand personality, anti-references, principles)
-- `references/spec.md` - write DESIGN.md in the Google Stitch format (scan mode and seed mode)
+- `references/setup.md` - `prepare`: write PRODUCT.md (register, users, brand personality, anti-references, principles)
+- `references/spec.md` - `prepare`: write DESIGN.md in the Google Stitch format (scan mode and seed mode)
 - `references/tokens.md` - extract repeated patterns and values into the design system
-- `references/design-brief.md` - discovery interview and the confirmed design brief (used by `hs-brainstorm --fe`)
-- `references/build.md` - build flow and production bar (used by `hs-build --fe`)
-- `references/finish.md` - final polish pass (used by `hs-build --fe finish`)
-- `references/check.md` - technical audit (used by `hs-code-review --fe check`)
-- `references/review.md` - UX critique with heuristics, cognitive load, and personas (used by `hs-code-review --fe review`)
+- `references/design-brief.md` - discovery interview and the confirmed design brief (`discover`)
+- `references/build.md` - build flow and production bar (`prepare`, used by `hs-build`)
+- `references/finish.md` - final polish pass (the `hs-build` finish step)
+- `references/check.md` - technical audit (`validate`)
+- `references/review.md` - UX critique with heuristics, cognitive load, and personas (`review`)
 - `references/space.md`, `references/type.md`, `references/motion.md`, `references/color.md`, `references/responsive.md`, `references/copy.md`, `references/interaction-design.md` - topic references: layout and spacing, typography, motion, color, responsive adaptation, UX copy, interaction design
 - `references/brand.md` - register for surfaces where design IS the product
 - `references/product.md` - register for surfaces where design SERVES the product
-- `references/UPSTREAM.md` - where these flows come from and what differs from upstream
+- `references/UPSTREAM.md` - where these references come from and what differs from upstream

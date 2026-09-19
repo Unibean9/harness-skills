@@ -96,7 +96,7 @@ For each issue, document:
 - **Impact**: How it affects users
 - **WCAG/Standard**: Which standard it violates (if applicable)
 - **Recommendation**: How to fix it
-- **Suggested command**: Which flow to use (prefer: `hs-build --fe` (fix the finding), `hs-build --fe finish` (polish pass), `hs-frontend-development spec`, `hs-frontend-development tokens`, `hs-brainstorm --fe` (re-shape the design), `hs-code-review --fe review` (UX critique))
+- **Suggested command**: Which flow to use (prefer: `hs-build` (fix the finding), the `hs-build` finish step (polish pass), `hs-frontend-development spec`, `hs-frontend-development tokens`, `hs-brainstorm` (re-shape the design), `hs-code-review` (UX critique))
 
 ### Patterns & Systemic Issues
 
@@ -115,13 +115,13 @@ List recommended commands in priority order (P0 first, then P1, then P2):
 1. **[P?] `/command-name`**: Brief description (specific context from audit findings)
 2. **[P?] `/command-name`**: Brief description (specific context)
 
-**Rules**: Only recommend flows from: `hs-build --fe` (fix the finding), `hs-build --fe finish` (polish pass), `hs-frontend-development spec`, `hs-frontend-development tokens`, `hs-brainstorm --fe` (re-shape the design), `hs-code-review --fe review` (UX critique). Map findings to the most appropriate flow. End with `hs-build --fe finish` as the final step if any fixes were recommended.
+**Rules**: Only recommend flows from: `hs-build` (fix the finding), the `hs-build` finish step (polish pass), `hs-frontend-development spec`, `hs-frontend-development tokens`, `hs-brainstorm` (re-shape the design), `hs-code-review` (UX critique). Map findings to the most appropriate flow. End with the `hs-build` finish step if any fixes were recommended.
 
 After presenting the summary, tell the user:
 
 > You can ask me to run these one at a time, all at once, or in any order you prefer.
 >
-> Re-run `hs-code-review --fe check` after fixes to see your score improve.
+> Re-run `hs-frontend-development check` after fixes to see your score improve.
 
 **IMPORTANT**: Be thorough but actionable. Too many P3 issues creates noise. Focus on what actually matters.
 

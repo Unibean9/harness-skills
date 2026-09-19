@@ -1,6 +1,6 @@
 ---
 name: hs-brainstorm
-description: Clarify requirements and compare approaches before committing to a direction, optionally writing a PRD that hs-plan turns into phases and tasks (and issues, with --gh). Use for a new feature idea, fuzzy requirements, a request for a PRD or requirements doc, or a design or architecture choice worth weighing before code. With --fe, UI work gets the frontend discovery interview and a confirmed design brief. Not for splitting agreed work into phases or GitHub issues (hs-plan) or writing code (hs-build).
+description: Clarify requirements and compare approaches before committing to a direction, optionally writing a PRD that hs-plan turns into phases and tasks (and issues, with --gh). Use for a new feature idea, fuzzy requirements, a request for a PRD or requirements doc, or a design or architecture choice worth weighing before code. Not for splitting agreed work into phases or GitHub issues (hs-plan) or writing code (hs-build).
 license: MIT
 category: workflow
 keywords: [brainstorm, requirements, prd, tradeoffs, decisions, architecture]
@@ -95,24 +95,33 @@ the lifecycle rule in `../_shared/hs-json-artifacts-convention.md`).
 Skip this entirely for small or obvious decisions - it's optional
 structure, not a required output of every brainstorm.
 
-## Frontend work (`--fe`)
+## Domain routing
 
-With `--fe` (or when the work is a UI surface), the brainstorm is the design
-discovery in `../hs-frontend-development/references/design-brief.md`: a short interview, then a
-design brief the user confirms. That brief takes the place of the generic
-contract and PRD:
+When the work belongs to a domain skill, follow `../_shared/domain-routing.md`: detect the domain,
+say so in one line, and use its `discover` capability. For a UI surface that is
+the design discovery in `../hs-frontend-development/references/design-brief.md`: a short interview,
+then a design brief the user confirms. That brief takes the place of the
+generic contract and PRD:
 
 - Feature Summary and Primary User Action are the **outcome**.
 - Scope, Constraints, and Anti-Goals cover **constraints and non-goals**.
 - Key States, Interaction Model, and Content Requirements carry the
-  **acceptance criteria** that `hs-plan --fe` will use.
+  **acceptance criteria** that `hs-plan` will use.
 
-Before interviewing, follow the Setup in `../hs-frontend-development/SKILL.md`: read PRODUCT.md
-and DESIGN.md, and if PRODUCT.md is missing run
-`hs-frontend-development setup` first. The brief flow keeps its own stop:
-present the brief and wait for explicit confirmation. Once confirmed, save it
-as a working draft the way a PRD is saved (see PRD above) so `hs-plan --fe`
-can read it. A confirmed brief satisfies this skill's HARD-GATE.
+Before interviewing, follow the Setup in `../hs-frontend-development/SKILL.md`: read PRODUCT.md and
+DESIGN.md, and if PRODUCT.md is missing run `hs-frontend-development setup`
+first. The brief flow keeps its own stop: present the brief and wait for
+explicit confirmation. Once confirmed, save it as a working draft the way a PRD
+is saved (see PRD above) so `hs-plan` can read it. A confirmed brief satisfies
+this skill's HARD-GATE. A small tweak to an existing surface doesn't need a
+brief; use the ordinary contract.
+
+For **backend** (`hs-backend-development`), `discover` feeds the option
+exploration above instead of replacing the contract. Frame the request as a
+system and weigh the trade-offs with `../hs-backend-development/references/mindset.md`, and read
+`../hs-backend-development/references/architecture.md`, `../hs-backend-development/references/technologies.md`, or
+`../hs-backend-development/references/api-design.md` when the choice is layering or splitting, a
+stack, or an API contract.
 
 ## Handoff
 
@@ -121,7 +130,7 @@ any unresolved risks to whatever comes next:
 
 - implementation-ready work: `hs-plan`, which breaks it into phases and
   tasks and, when invoked with `--gh` for a team that tracks work on GitHub,
-  publishes them as issues (`hs-plan --fe` for a confirmed design brief);
+  publishes them as issues;
 - a diagnosed bug: straight to the fix, per Bug routing above;
 - exploration only: state the recommendation and stop.
 
@@ -132,7 +141,8 @@ filling this conversation.
 ## References
 
 - `references/prd-template.md` - PRD shape.
-- `../hs-frontend-development/references/design-brief.md` - discovery interview and design brief for `--fe`.
+- `../_shared/domain-routing.md` - when and how a domain skill is used.
+- `../hs-frontend-development/references/design-brief.md` - frontend `discover`: discovery interview and design brief.
 
 ## Boundaries
 
