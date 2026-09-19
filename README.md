@@ -79,7 +79,7 @@ source folders already sitting next to it.
 | `hs-code-review`          | Find bugs/gaps before calling something done                    |
 | `hs-ship`                 | Push -> PR -> review -> CI green -> merge -> confirm issues closed -> clean up |
 | `hs-backend-development`  | RESTful APIs, 3-layer architecture, microservices               |
-| `hs-frontend-development` | Component architecture, design tokens, responsive/a11y          |
+| `hs-frontend-development` | PRODUCT.md / DESIGN.md context, design tokens, UX/UI rules; its plan, build, and review flows run through `--fe` on `hs-brainstorm`, `hs-plan`, `hs-build`, `hs-code-review` |
 | `hs-devops`               | Design/provision a CI/CD pipeline or cloud infra (not a per-PR gate) |
 
 The first 6 are the workflow skills that carry the harness itself, in

@@ -6,7 +6,7 @@ category: workflow
 keywords: [build, implement, code, commit, branch, worktree, github-issue]
 metadata:
   author: harness-skills
-  version: "1.5.0"
+  version: "1.6.0"
   workflow:
     follows: [plan, brainstorm]
     precedes: [test, code-review]
@@ -92,8 +92,27 @@ diff before handing off.
 When a task touches a specific surface, use the matching domain skill so
 its choices follow one convention instead of being improvised per task:
 `hs-backend-development` for endpoints, layering, and persistence;
-`hs-frontend-development` for components, styling, and accessibility;
+`hs-frontend-development` for UI design context and conventions (PRODUCT.md,
+DESIGN.md, design rules);
 `hs-devops` for pipelines and infrastructure.
+
+## Frontend work (`--fe`)
+
+With `--fe`, each task that touches UI follows `../hs-frontend-development/references/build.md`
+(foundation check, production bar, visual iteration) on top of the task loop
+above; the loop's commit, mark, and evidence rules still apply. Read PRODUCT.md
+and DESIGN.md first (Setup in `../hs-frontend-development/SKILL.md`). The confirmed design brief is
+the design input, so build.md's brief step is already satisfied by the plan.
+
+- **Visual check.** Testing a UI task includes looking at it: run the app and
+  inspect mobile, tablet, and desktop widths in a browser (`hs-test` black-box
+  mode, Playwright MCP) and read the screenshots back. If no browser is
+  available, say so instead of claiming it looks right.
+- **`--fe finish [target]`** runs the polish pass in
+  `../hs-frontend-development/references/finish.md` on work that is already functionally complete.
+  It changes finish quality only; new features go through the plan.
+- Findings from `hs-code-review --fe` come back through the review-fix loop
+  below, with P0 treated as critical.
 
 ## Implementation notes
 
@@ -142,6 +161,7 @@ evidence, and the linked issue numbers.
   issue.
 - `../_shared/github-playbook.md` §7 - progress marking mechanics.
 - `../_shared/evidence-policy.md` - what counts as evidence for a claim.
+- `../hs-frontend-development/references/build.md` and `../hs-frontend-development/references/finish.md` - frontend build flow and polish pass for `--fe`.
 
 ## Make it yours
 

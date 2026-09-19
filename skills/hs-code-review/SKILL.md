@@ -1,12 +1,12 @@
 ---
 name: hs-code-review
-description: Skeptically review a local diff or a pull request for requirement gaps, bugs, security issues, and missing edge cases, using three core questions plus a starter checklist, and report evidence-backed findings without editing code. Use after implementing a phase, before opening or merging a PR, or when asked for a review or second pass. Not for running the test suite (hs-test) or applying fixes (hs-build).
+description: Skeptically review a local diff or a pull request for requirement gaps, bugs, security issues, and missing edge cases, using three core questions plus a starter checklist, and report evidence-backed findings without editing code. Use after implementing a phase, before opening or merging a PR, or when asked for a review or second pass. With --fe, adds the frontend technical check and UX critique. Not for running the test suite (hs-test) or applying fixes (hs-build).
 license: MIT
 category: workflow
 keywords: [code-review, review, pull-request, bugs, security, checklist]
 metadata:
   author: harness-skills
-  version: "1.4.0"
+  version: "1.5.0"
   workflow:
     follows: [test, build]
     precedes: [ship]
@@ -55,6 +55,29 @@ categories that are easy to miss reading top-to-bottom - injection, race
 conditions, auth gaps, correctness gaps. Use it as a prompt, not a
 mechanical pass; skip categories that don't apply to the change.
 
+## Frontend work (`--fe`)
+
+With `--fe` the same three questions apply, through a frontend lens. Question 1
+is judged against the confirmed design brief, PRODUCT.md, and DESIGN.md as well
+as the plan's acceptance criteria. Read `../hs-frontend-development/SKILL.md` (Setup and Design
+guidance) first, then pick a mode:
+
+- **`--fe check [target]`** (the default for a diff): technical audit of
+  accessibility, performance, theming, responsive design, and anti-patterns, in
+  `../hs-frontend-development/references/check.md`. Read-only: it documents findings and doesn't fix
+  them.
+- **`--fe review [target]`**: UX critique of a page or component with heuristic
+  scoring, cognitive load, and personas, in
+  `../hs-frontend-development/references/review.md`. It needs a rendered surface; take screenshots
+  with `hs-test` black-box mode (Playwright MCP) and read them back as
+  evidence. There is no bundled detector, so report "deterministic scan
+  unavailable" rather than implying a clean scan.
+
+Both report severity as P0-P3, defined in review.md. Map them onto the handoff
+below: P0 is critical and blocks `hs-ship`; P1 is fixed before release; P2 and
+P3 are your call. Fixes still go through the `hs-build --fe` review-fix loop,
+and `hs-build --fe finish` is the polish pass for what remains.
+
 ## Handoff
 
 Report findings by severity with `file:line` and the reason each matters,
@@ -65,6 +88,7 @@ review-fix loop; a clean review hands off to `hs-ship`.
 
 - `references/checklist.md` - starter categories for question 2.
 - `../_shared/evidence-policy.md` - what counts as evidence for a claim.
+- `../hs-frontend-development/references/check.md` and `../hs-frontend-development/references/review.md` - frontend technical check and UX critique for `--fe`.
 
 ## Make it yours
 

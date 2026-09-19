@@ -1,12 +1,12 @@
 ---
 name: hs-plan
-description: Break an agreed direction or PRD into phases and tasks with acceptance criteria. Drafts and revises the plan with you in conversation, and writes nothing until you explicitly approve it; then saves it as a local plan, or with --gh publishes it as GitHub issues (one per task or tightly coupled task group that fits one PR, never one per phase) and archives the local plan. Use before implementing anything beyond a trivial fix, or when asked to plan, split work into phases or tasks, or track the work as GitHub issues. Not for choosing between approaches (hs-brainstorm) or implementing (hs-build).
+description: Break an agreed direction or PRD into phases and tasks with acceptance criteria. Drafts and revises the plan with you in conversation, and writes nothing until you explicitly approve it; then saves it as a local plan, or with --gh publishes it as GitHub issues (one per task or tightly coupled task group that fits one PR, never one per phase) and archives the local plan. Use before implementing anything beyond a trivial fix, or when asked to plan, split work into phases or tasks, or track the work as GitHub issues. With --fe, plans a confirmed frontend design brief. Not for choosing between approaches (hs-brainstorm) or implementing (hs-build).
 license: MIT
 category: workflow
 keywords: [plan, phases, tasks, roadmap, github-issues]
 metadata:
   author: harness-skills
-  version: "2.0.0"
+  version: "2.1.0"
   workflow:
     follows: [brainstorm]
     precedes: [build]
@@ -123,6 +123,28 @@ blockers, verification checklist, Projects) are in
 5. **Approve** - end with the approval prompt (mode plus manifest).
 6. **Materialize** - per mode, following `references/plan-lifecycle.md`.
 
+## Frontend work (`--fe`)
+
+With `--fe`, the input is the confirmed design brief from
+`hs-brainstorm --fe` (see `../hs-frontend-development/references/design-brief.md`), not a generic
+contract. If there is no confirmed brief, or PRODUCT.md is missing, stop and
+run `hs-brainstorm --fe` (or `hs-frontend-development setup`) first; don't
+invent design decisions in the plan.
+
+Plan the brief, don't re-decide it:
+
+- Group tasks by surface or component, and name the files each one changes.
+- Carry the brief's Key States (default, empty, loading, error, success, edge
+  cases), Interaction Model, and responsive and accessibility constraints into
+  each task's acceptance criteria.
+- Add a task to align with DESIGN.md, or to extract shared tokens with
+  `hs-frontend-development tokens`, when the brief calls for it.
+- Give UI tasks an observable check: a screenshot at mobile, tablet, and
+  desktop widths, per `hs-test` black-box mode.
+
+Everything else, including the draft, approval, and `--gh` behavior, is
+unchanged; `--fe` and `--gh` combine.
+
 ## Handoff
 
 Report the plan path, or with `--gh` the created issue URLs (with the tasks
@@ -140,6 +162,7 @@ starting with the first task or issue.
 - `references/validate-checklist.md` - scope questions and self-review
   checklist before showing the draft.
 - `../_shared/github-playbook.md` - publishing and tracking issues.
+- `../hs-frontend-development/references/design-brief.md` - the design brief that `--fe` plans from.
 - `../_shared/hs-json-artifacts-convention.md` - where plan output is
   written, and how plans are promoted and archived.
 
