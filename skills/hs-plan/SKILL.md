@@ -6,7 +6,7 @@ category: workflow
 keywords: [plan, phases, tasks, roadmap, github-issues]
 metadata:
   author: harness-skills
-  version: "2.0.0"
+  version: "2.1.0"
   workflow:
     follows: [brainstorm]
     precedes: [build]
@@ -123,6 +123,40 @@ blockers, verification checklist, Projects) are in
 5. **Approve** - end with the approval prompt (mode plus manifest).
 6. **Materialize** - per mode, following `references/plan-lifecycle.md`.
 
+## Domain routing
+
+Follow `../_shared/domain-routing.md`. For each domain the plan touches, use its `prepare`
+capability for context only, before drafting; don't implement anything. If
+required context is missing (for frontend, PRODUCT.md), stop and run that
+domain's `prepare` first: it has its own confirm-before-write gate, so it
+finishes before the draft starts and doesn't break this skill's "write nothing
+until approved" rule.
+
+For a **frontend** plan, the input is the confirmed design brief from
+`hs-brainstorm` (see `../hs-frontend-development/references/design-brief.md`), not a generic
+contract. If a new UI surface has no confirmed brief, go back to
+`hs-brainstorm`; don't invent design decisions in the plan. Plan the brief,
+don't re-decide it:
+
+- Group tasks by surface or component, and name the files each one changes.
+- Carry the brief's Key States (default, empty, loading, error, success, edge
+  cases), Interaction Model, and responsive and accessibility constraints into
+  each task's acceptance criteria.
+- Add a task to align with DESIGN.md, or to extract shared tokens with
+  `hs-frontend-development tokens`, when the brief calls for it.
+- Give UI tasks an observable check: a screenshot at mobile, tablet, and
+  desktop widths, per `hs-test` black-box mode.
+
+For a **backend** plan, `prepare` means reading the project's existing layers,
+stack, API conventions, and error format before drafting (see Capabilities in
+`../hs-backend-development/SKILL.md`). Give each task acceptance criteria a check can settle: the
+endpoint's success and error responses, the negative-path tests, and the
+permission check. Mark any migration or external write as needing the user's
+confirmation when it is built.
+
+Everything else, including the draft, approval, and `--gh` behavior, is
+unchanged.
+
 ## Handoff
 
 Report the plan path, or with `--gh` the created issue URLs (with the tasks
@@ -140,6 +174,8 @@ starting with the first task or issue.
 - `references/validate-checklist.md` - scope questions and self-review
   checklist before showing the draft.
 - `../_shared/github-playbook.md` - publishing and tracking issues.
+- `../_shared/domain-routing.md` - when and how a domain skill is used.
+- `../hs-frontend-development/references/design-brief.md` - the frontend design brief a UI plan is built from.
 - `../_shared/hs-json-artifacts-convention.md` - where plan output is
   written, and how plans are promoted and archived.
 

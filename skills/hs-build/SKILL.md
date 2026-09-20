@@ -6,7 +6,7 @@ category: workflow
 keywords: [build, implement, code, commit, branch, worktree, github-issue]
 metadata:
   author: harness-skills
-  version: "1.5.0"
+  version: "1.6.0"
   workflow:
     follows: [plan, brainstorm]
     precedes: [test, code-review]
@@ -87,13 +87,38 @@ For each task:
 When the phase's tasks are done, ask for `hs-code-review` on the phase's
 diff before handing off.
 
-## Domain guidance
+## Domain routing
 
-When a task touches a specific surface, use the matching domain skill so
-its choices follow one convention instead of being improvised per task:
-`hs-backend-development` for endpoints, layering, and persistence;
-`hs-frontend-development` for components, styling, and accessibility;
-`hs-devops` for pipelines and infrastructure.
+When a task touches a domain skill, follow `../_shared/domain-routing.md`: detect the domain from the
+plan's files and the task, say so in one line, then use its capabilities
+around the task loop - `prepare` before implementing, `validate` after, and the
+domain's finish guidance once the phase is otherwise done. Domain skills own
+the expertise; this skill still owns the order, the commits, and the evidence.
+
+- **Frontend** (`hs-frontend-development`): `prepare` reads PRODUCT.md and
+  DESIGN.md and loads `../hs-frontend-development/references/build.md` (foundation check, production
+  bar, visual iteration). The confirmed design brief is the design input, so
+  build.md's brief step is already satisfied; if a new UI surface has no brief,
+  go back to `hs-brainstorm`. `validate` is `../hs-frontend-development/references/check.md` on the
+  changed files. Testing a UI task includes looking at it: run the app and
+  inspect mobile, tablet, and desktop widths in a browser (`hs-test` black-box
+  mode, Playwright MCP) and read the screenshots back; if no browser is
+  available, say so instead of claiming it looks right. The finish step is
+  `../hs-frontend-development/references/finish.md`, a polish pass on work that is already
+  functionally complete. It changes finish quality only; new features go
+  through the plan.
+- **Backend** (`hs-backend-development`): `prepare` reads the project's existing
+  layers, stack, and API conventions and loads the matching reference before
+  the code is written. `validate` is a read-only check of the changed files
+  (input validation, access control, N+1 queries, negative-path tests, logging);
+  the suite itself still runs through `hs-test`. No migration or external write
+  runs without the user's confirmation, routing or not.
+- **Devops** (`hs-devops`): consult it directly for pipelines and
+  infrastructure. It stays out of routing because its own gates confirm
+  actions that are hard to undo.
+
+Findings from `hs-code-review` come back through the review-fix loop below,
+with a frontend P0 treated as critical.
 
 ## Implementation notes
 
@@ -142,6 +167,8 @@ evidence, and the linked issue numbers.
   issue.
 - `../_shared/github-playbook.md` §7 - progress marking mechanics.
 - `../_shared/evidence-policy.md` - what counts as evidence for a claim.
+- `../_shared/domain-routing.md` - when and how a domain skill is used.
+- `../hs-frontend-development/references/build.md` and `../hs-frontend-development/references/finish.md` - frontend `prepare` (production bar) and the finish pass.
 
 ## Make it yours
 
