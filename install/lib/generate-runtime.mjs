@@ -8,7 +8,7 @@
 // slash-commands for any runtime - every runtime invokes a skill directly
 // by matching the task to its SKILL.md description.
 //
-// CLI: node generate-runtime.mjs --runtime <cursor|codex|copilot|kiro|antigravity> --source <dir> --target <dir>
+// CLI: node generate-runtime.mjs --runtime <cursor|codex|copilot|antigravity> --source <dir> --target <dir>
 
 import fs from 'node:fs';
 import path from 'node:path';
@@ -27,12 +27,6 @@ function splitFrontmatter(rawInput) {
 function frontmatterField(frontmatterText, field) {
     const m = frontmatterText.match(new RegExp(`^${field}:\\s*(.+)$`, 'm'));
     return m ? m[1].trim() : undefined;
-}
-
-function frontmatterListField(frontmatterText, field) {
-    const value = frontmatterField(frontmatterText, field);
-    if (!value) return [];
-    return value.split(',').map((s) => s.trim()).filter(Boolean);
 }
 
 function readNamedMarkdownFiles(dir, { skip = [] } = {}) {
@@ -97,15 +91,16 @@ function transformSkillBody(body) {
     return inlineHardGate(stripSkillSuffix(body));
 }
 
-// Skill bodies and references point at their resources with paths relative to
-// the skill directory (`references/x.md`, `../_shared/y.md`,
-// `../hs-other/references/z.md`). Runtimes that keep a directory per skill
-// (Codex) get those folders copied beside SKILL.md, so the paths work as-is.
-// Runtimes that flatten a skill into one rule/instructions/steering file get
-// the folders copied under a workspace-relative `resourcesRel` instead, and
-// every such path is rewritten to point there.
-const SKILL_RELATIVE_PATH_RE = /`((?:\.\.\/)+[^`\s]+|references\/[^`\s]+)`/g;
-const REFERENCE_RELATIVE_PATH_RE = /`((?:\.\.\/)+[^`\s]+|SKILL\.md)`/g;
+function generateSharedSkills(sourceRoot, targetPath) {
+    const skills = readSkills(sourceRoot);
+    const skillsRoot = path.join(targetPath, '.agents', 'skills');
+
+    for (const skill of skills) {
+        const fm = yamlFrontmatter({ name: skill.name, description: frontmatterField(skill.frontmatterText, 'description') });
+        writeFile(path.join(skillsRoot, skill.name, 'SKILL.md'), fm + transformSkillBody(skill.body));
+    }
+    copySkillResources(sourceRoot, skillsRoot);
+}
 
 function copyDirIfExists(from, to) {
     if (fs.existsSync(from)) fs.cpSync(from, to, { recursive: true });
@@ -116,30 +111,6 @@ function copySkillResources(sourceRoot, skillsTargetDir) {
     copyDirIfExists(path.join(skillsDir, '_shared'), path.join(skillsTargetDir, '_shared'));
     for (const skill of readSkills(sourceRoot)) {
         copyDirIfExists(path.join(skillsDir, skill.name, 'references'), path.join(skillsTargetDir, skill.name, 'references'));
-    }
-}
-
-function rewriteFlatSkillPaths(body, skillName, resourcesRel) {
-    return body.replace(SKILL_RELATIVE_PATH_RE, (_, rel) => `\`${path.posix.join(resourcesRel, skillName, rel)}\``);
-}
-
-// Copies references + _shared under targetPath/resourcesRel and rewrites the
-// copied reference files so their own links resolve from the workspace root.
-// skillFileRel(name) is the flattened skill file a reference's `SKILL.md` means.
-function portFlatSkillResources(sourceRoot, targetPath, resourcesRel, skillFileRel) {
-    const resourcesDir = path.join(targetPath, resourcesRel);
-    copySkillResources(sourceRoot, resourcesDir);
-    for (const skill of readSkills(sourceRoot)) {
-        const refsDir = path.join(resourcesDir, skill.name, 'references');
-        if (!fs.existsSync(refsDir)) continue;
-        const base = path.posix.join(resourcesRel, skill.name, 'references');
-        for (const file of fs.readdirSync(refsDir).filter((f) => f.endsWith('.md'))) {
-            const filePath = path.join(refsDir, file);
-            const raw = fs.readFileSync(filePath, 'utf8');
-            fs.writeFileSync(filePath, raw.replace(REFERENCE_RELATIVE_PATH_RE, (_, rel) => (
-                rel === 'SKILL.md' ? `\`${skillFileRel(skill.name)}\`` : `\`${path.posix.join(base, rel)}\``
-            )));
-        }
     }
 }
 
@@ -219,15 +190,10 @@ ${commandsNote}
 // --- Cursor ---------------------------------------------------------------
 
 function generateCursor(sourceRoot, targetPath) {
-    const skills = readSkills(sourceRoot);
     const agents = readAgents(sourceRoot);
     const cursorRoot = path.join(targetPath, '.cursor');
 
-    for (const skill of skills) {
-        const fm = yamlFrontmatter({ description: frontmatterField(skill.frontmatterText, 'description'), alwaysApply: false });
-        writeFile(path.join(cursorRoot, 'rules', `${skill.name}.mdc`), fm + rewriteFlatSkillPaths(transformSkillBody(skill.body), skill.name, '.cursor/hs-skills'));
-    }
-    portFlatSkillResources(sourceRoot, targetPath, '.cursor/hs-skills', (name) => `.cursor/rules/${name}.mdc`);
+    generateSharedSkills(sourceRoot, targetPath);
     for (const agent of agents) {
         const fm = yamlFrontmatter({ name: agent.name, description: frontmatterField(agent.frontmatterText, 'description'), model: 'inherit' });
         writeFile(path.join(cursorRoot, 'agents', `${agent.name}.md`), fm + agent.body);
@@ -251,14 +217,9 @@ function generateCursor(sourceRoot, targetPath) {
 // --- Codex CLI --------------------------------------------------------------
 
 function generateCodex(sourceRoot, targetPath) {
-    const skills = readSkills(sourceRoot);
     const agents = readAgents(sourceRoot);
 
-    for (const skill of skills) {
-        const fm = yamlFrontmatter({ name: skill.name, description: frontmatterField(skill.frontmatterText, 'description') });
-        writeFile(path.join(targetPath, '.agents', 'skills', skill.name, 'SKILL.md'), fm + transformSkillBody(skill.body));
-    }
-    copySkillResources(sourceRoot, path.join(targetPath, '.agents', 'skills'));
+    generateSharedSkills(sourceRoot, targetPath);
     for (const agent of agents) {
         const description = frontmatterField(agent.frontmatterText, 'description');
         const toml = toToml({ name: agent.name, description, developer_instructions: agent.body.trim() });
@@ -292,90 +253,39 @@ function generateCopilot(sourceRoot, targetPath) {
 
     writeFile(path.join(githubRoot, 'copilot-instructions.md'), renderOverview({
         skills, agents,
-        skillsNote: '`.github/instructions/*.instructions.md`',
+        skillsNote: '`.agents/skills/<name>/SKILL.md`',
         agentsNote: '`.github/agents/*.agent.md`',
-        hookNote: '**2 hooks** (`.github/hooks/*.json` + `.github/kit-hooks/*.mjs`, confirmed for Copilot cloud agent + Copilot CLI - VS Code Chat hook support is NOT confirmed by official docs, see `docs/RUNTIME-MAPPING.md` in the source kit repo): `privacy-block` and `scout-block` on `preToolUse`. `session-init` and `descriptive-name` are not wired - Copilot hooks are not confirmed to inject context.',
-        commandsNote: 'No prompt files are shipped - this kit has no slash-command layer for any runtime. Copilot Chat picks up each skill from `.github/instructions/*.instructions.md` by matching the task to its description, the same way Claude Code does natively.',
+        hookNote: '**2 hooks** (`.github/hooks/*.json` + `.github/kit-hooks/*.mjs`, confirmed for Copilot cloud agent + Copilot CLI - VS Code Chat hook support is NOT confirmed by official docs): `privacy-block` and `scout-block` on `preToolUse`. `session-init` and `descriptive-name` are not wired - Copilot hooks are not confirmed to inject context.',
+        commandsNote: 'No prompt files are shipped - this kit has no slash-command layer for any runtime. Copilot loads the shared Agent Skills bundle from `.agents/skills/<name>/SKILL.md` when relevant.',
     }));
 
-    for (const skill of skills) {
-        const fm = yamlFrontmatter({ applyTo: '"**"', description: frontmatterField(skill.frontmatterText, 'description') });
-        writeFile(path.join(githubRoot, 'instructions', `${skill.name}.instructions.md`), fm + rewriteFlatSkillPaths(transformSkillBody(skill.body), skill.name, '.github/hs-skills'));
-    }
-    portFlatSkillResources(sourceRoot, targetPath, '.github/hs-skills', (name) => `.github/instructions/${name}.instructions.md`);
+    generateSharedSkills(sourceRoot, targetPath);
     for (const agent of agents) {
         const fm = yamlFrontmatter({ name: agent.name, description: frontmatterField(agent.frontmatterText, 'description') });
         writeFile(path.join(githubRoot, 'agents', `${agent.name}.agent.md`), fm + agent.body);
     }
     writeJson(path.join(githubRoot, 'hooks', 'hooks.json'), {
-        preToolUse: [
-            { matcher: '.*', command: 'node "$(git rev-parse --show-toplevel)/.github/kit-hooks/privacy-block.mjs" --platform copilot', timeout: 10 },
-            { matcher: '.*', command: 'node "$(git rev-parse --show-toplevel)/.github/kit-hooks/scout-block.mjs" --platform copilot', timeout: 10 },
-        ],
+        version: 1,
+        hooks: {
+            preToolUse: [
+                {
+                    type: 'command',
+                    matcher: '.*',
+                    bash: 'node "$(git rev-parse --show-toplevel)/.github/kit-hooks/privacy-block.mjs" --platform copilot',
+                    powershell: 'node "$(git rev-parse --show-toplevel)/.github/kit-hooks/privacy-block.mjs" --platform copilot',
+                    timeoutSec: 10,
+                },
+                {
+                    type: 'command',
+                    matcher: '.*',
+                    bash: 'node "$(git rev-parse --show-toplevel)/.github/kit-hooks/scout-block.mjs" --platform copilot',
+                    powershell: 'node "$(git rev-parse --show-toplevel)/.github/kit-hooks/scout-block.mjs" --platform copilot',
+                    timeoutSec: 10,
+                },
+            ],
+        },
     });
     copyKitHooks(sourceRoot, path.join(githubRoot, 'kit-hooks'));
-}
-
-// --- Kiro --------------------------------------------------------------
-
-// Confirmed via kiro.dev/docs/chat/subagents/ - Kiro's own tools vocabulary,
-// distinct from Claude's (Read/Bash/Write/Edit/...). Mapping many Claude
-// tool names onto one Kiro category is expected (e.g. Read/Glob/Grep all
-// mean "read").
-const CLAUDE_TOOL_TO_KIRO = { Read: 'read', Glob: 'read', Grep: 'read', Bash: 'shell', Write: 'write', Edit: 'write' };
-
-function kiroToolsField(frontmatterText) {
-    const tools = frontmatterListField(frontmatterText, 'tools');
-    if (tools.length === 0) return undefined;
-    return [...new Set(tools.map((t) => CLAUDE_TOOL_TO_KIRO[t] ?? 'read'))];
-}
-
-function kiroHookFile(name, description, trigger, command) {
-    return {
-        version: 'v1',
-        hooks: [{
-            name,
-            description,
-            trigger,
-            ...(trigger === 'PreToolUse' ? { matcher: '.*' } : {}),
-            action: { type: 'command', command },
-            timeout: 10,
-            enabled: true,
-        }],
-    };
-}
-
-function generateKiro(sourceRoot, targetPath) {
-    const skills = readSkills(sourceRoot);
-    const agents = readAgents(sourceRoot);
-    const kiroRoot = path.join(targetPath, '.kiro');
-
-    for (const skill of skills) {
-        const fm = yamlFrontmatter({ inclusion: 'manual', description: frontmatterField(skill.frontmatterText, 'description') });
-        writeFile(path.join(kiroRoot, 'steering', `${skill.name}.md`), fm + rewriteFlatSkillPaths(transformSkillBody(skill.body), skill.name, '.kiro/hs-skills'));
-    }
-    portFlatSkillResources(sourceRoot, targetPath, '.kiro/hs-skills', (name) => `.kiro/steering/${name}.md`);
-    for (const agent of agents) {
-        const fm = yamlFrontmatter({
-            name: agent.name,
-            description: frontmatterField(agent.frontmatterText, 'description'),
-            tools: kiroToolsField(agent.frontmatterText),
-        });
-        writeFile(path.join(kiroRoot, 'agents', `${agent.name}.md`), fm + agent.body);
-    }
-    writeJson(path.join(kiroRoot, 'hooks', 'privacy-block.kiro.hook'), kiroHookFile(
-        'privacy-block',
-        'Blocks reads/writes of sensitive files and protects .hs.json from unattended edits.',
-        'PreToolUse',
-        'node "$(git rev-parse --show-toplevel)/.kiro/kit-hooks/privacy-block.mjs" --platform kiro',
-    ));
-    writeJson(path.join(kiroRoot, 'hooks', 'scout-block.kiro.hook'), kiroHookFile(
-        'scout-block',
-        'Blocks scans of generated/dependency directories, archived plans, and repository-wide globs.',
-        'PreToolUse',
-        'node "$(git rev-parse --show-toplevel)/.kiro/kit-hooks/scout-block.mjs" --platform kiro',
-    ));
-    copyKitHooks(sourceRoot, path.join(kiroRoot, 'kit-hooks'));
 }
 
 // --- Antigravity --------------------------------------------------------------
@@ -387,17 +297,13 @@ function generateAntigravity(sourceRoot, targetPath) {
 
     writeFile(path.join(agentsRoot, 'rules', 'kit-overview.md'), renderOverview({
         skills, agents,
-        skillsNote: '`.agents/skills/*.md`',
+        skillsNote: '`.agents/skills/<name>/SKILL.md`',
         agentsNote: '`.agents/agents/*.md`, `subagent: true`',
         hookNote: '**2 hooks** (`.agents/hooks.json` + `.agents/kit-hooks/*.mjs`) on `PreToolUse`: `privacy-block` blocks reading/writing sensitive files like `.env`, `.pem`, `credentials*` and protects `.hs.json` from unattended edits; `scout-block` blocks scans of generated/dependency directories and repository-wide globs. `session-init` and `descriptive-name` are **not wired** - Antigravity has no confirmed context-injection hook event.',
         commandsNote: 'Commands are not ported in this pass - Antigravity\'s workflow file path under `.agents/` is not confirmed by official docs beyond UI-driven creation, so no workflow files are shipped rather than guessing a path.',
     }));
 
-    for (const skill of skills) {
-        const fm = yamlFrontmatter({ name: skill.name, description: frontmatterField(skill.frontmatterText, 'description') });
-        writeFile(path.join(agentsRoot, 'skills', `${skill.name}.md`), fm + rewriteFlatSkillPaths(transformSkillBody(skill.body), skill.name, '.agents/hs-skills'));
-    }
-    portFlatSkillResources(sourceRoot, targetPath, '.agents/hs-skills', (name) => `.agents/skills/${name}.md`);
+    generateSharedSkills(sourceRoot, targetPath);
     for (const agent of agents) {
         const fm = yamlFrontmatter({ name: agent.name, description: frontmatterField(agent.frontmatterText, 'description'), subagent: true });
         writeFile(path.join(agentsRoot, 'agents', `${agent.name}.md`), fm + agent.body);
@@ -419,7 +325,6 @@ const GENERATORS = {
     cursor: generateCursor,
     codex: generateCodex,
     copilot: generateCopilot,
-    kiro: generateKiro,
     antigravity: generateAntigravity,
 };
 
@@ -440,7 +345,7 @@ export function generate(runtime, sourceRoot, targetPath) {
 function main() {
     const { runtime, source, target } = parseArgs(process.argv.slice(2));
     if (!runtime || !source || !target) {
-        process.stderr.write('Usage: generate-runtime.mjs --runtime <cursor|codex|copilot|kiro|antigravity> --source <dir> --target <dir>\n');
+        process.stderr.write('Usage: generate-runtime.mjs --runtime <cursor|codex|copilot|antigravity> --source <dir> --target <dir>\n');
         return 1;
     }
     try {

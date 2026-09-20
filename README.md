@@ -1,8 +1,8 @@
 # Harness Skills
 
 It provides 9 reusable skills, 5 specialist
-subagents, and 4 hooks, installable into 6 agent runtimes: Claude
-Code, Cursor, OpenAI Codex CLI, GitHub Copilot, Kiro, and Google Antigravity.
+subagents, and 4 hooks, installable into 5 agent runtimes: Claude
+Code, Cursor, OpenAI Codex CLI, GitHub Copilot, and Google Antigravity.
 No runtime gets a slash-command layer - every runtime invokes a skill by
 matching the task to its description, the same way Claude Code does
 natively. Read `CONCEPTS.md` first to understand the underlying model.
@@ -26,20 +26,19 @@ curl -fsSL https://raw.githubusercontent.com/Unibean9/harness-skills/main/instal
 To install a specific runtime (or several), pass its flag through:
 
 ```powershell
-& ([scriptblock]::Create((irm https://raw.githubusercontent.com/Unibean9/harness-skills/main/install.ps1))) -Cursor -Kiro
+& ([scriptblock]::Create((irm https://raw.githubusercontent.com/Unibean9/harness-skills/main/install.ps1))) -Cursor -Copilot
 ```
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/Unibean9/harness-skills/main/install.sh | bash -s -- --cursor --kiro
+curl -fsSL https://raw.githubusercontent.com/Unibean9/harness-skills/main/install.sh | bash -s -- --cursor --copilot
 ```
 
 | Runtime        | `install.ps1`                  | `install.sh`         | Lands in                      |
 | -------------- | ------------------------------ | -------------------- | ----------------------------- |
 | Claude Code    | `-Claude` (default if no flag) | `--claude` (default) | `.claude/`                    |
-| Cursor         | `-Cursor`                      | `--cursor`           | `.cursor/`                    |
+| Cursor         | `-Cursor`                      | `--cursor`           | `.cursor/` + `.agents/skills/` |
 | Codex CLI      | `-Codex`                       | `--codex`            | `.codex/` + `.agents/skills/` |
-| GitHub Copilot | `-Copilot`                     | `--copilot`          | `.github/`                    |
-| Kiro           | `-Kiro`                        | `--kiro`             | `.kiro/`                      |
+| GitHub Copilot | `-Copilot`                     | `--copilot`          | `.github/` + `.agents/skills/` |
 | Antigravity    | `-Anti`                        | `--anti`             | `.agents/`                    |
 
 Flags are additive - pass several to install into several runtimes in one
@@ -54,12 +53,13 @@ from `agents/`, `skills/`, and `hooks/`, copies it into the
 current project, and removes the temporary files. A pre-existing file at
 the destination is skipped and reported, never overwritten - except each
 runtime's own `<dot-folder>/kit-hooks/*.mjs` copy, which is always
-refreshed. No existing `.hs.json` is ever overwritten either.
+refreshed. No existing `.hs.json` or `.claude/settings.json` is ever
+overwritten either.
 
 > Security note: this executes code fetched from GitHub. Review
 > [`install.ps1`](install.ps1)/[`install.sh`](install.sh) and
 > [`install/lib/generate-runtime.mjs`](install/lib/generate-runtime.mjs)
-> before running them, especially given the quick path now spans 6 runtime
+> before running them, especially given the quick path now spans 5 runtime
 > surfaces instead of 1.
 
 **Prefer working from a local copy?** Clone or download the repo yourself,
@@ -89,9 +89,11 @@ brainstorm-to-ship path. You don't need to memorize their names - describe
 your goal and the agent reaches for the relevant one on its own. The
 workflow skills also pick the domain skill (frontend, backend) for you; see
 `skills/_shared/domain-routing.md`, and use `--domain <name>` only to
-override. Each
-runtime maps these skills (plus agents and hooks) into its own on-disk
-format differently.
+override. Each runtime maps these skills (plus agents and hooks) into its own
+on-disk format: Codex, Cursor, GitHub Copilot, and Antigravity share the
+native `.agents/skills/<name>/SKILL.md` deployment format, while Claude Code
+receives the canonical skills under `.claude/skills/<name>/SKILL.md` and keeps
+agents and hooks as runtime-specific adapters.
 
 ## Subagents
 
@@ -173,7 +175,7 @@ runtimes are _generated_ from `agents/`, `skills/`, and `hooks/` at install
 time (`install/lib/generate-runtime.mjs`) rather than hand-mirrored, so
 there's no separate per-runtime copy to drift out of sync - but there's
 also no automated CI check yet confirming a skill edit regenerates
-correctly across all 6 runtimes; that's a manual check today. No runtime
+correctly across all 5 runtimes; that's a manual check today. No runtime
 gets a slash-command layer - this was a deliberate cut, not a partial port:
 every runtime invokes a skill directly by matching the task to its
 description.
