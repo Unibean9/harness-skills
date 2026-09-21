@@ -1,90 +1,43 @@
-# Containerizing a Backend Service (Docker)
+# Container Build and Runtime Guidance
 
-A reference, not a gated workflow. Writing a Dockerfile is safe to iterate
-on locally. Pushing images to a shared registry or deploying them is not,
-and still needs the user's confirmation (see the HARD-GATE in `SKILL.md`).
+Read the repository's build system, base-image policy, runtime user, health
+signals, and deployment target before changing a Dockerfile or Compose file.
 
-## Multi-stage Dockerfile
+## Build
 
-Build with everything the build needs, then ship only what runtime needs.
-The result is a smaller image, faster deploys, and less for an attacker to
-use.
+- Use multi-stage builds when they reduce the runtime image and keep build
+  tools out of production.
+- Keep `.dockerignore` aligned with the repository and exclude credentials,
+  local state, caches, and unrelated source.
+- Keep only the runtime files and dependencies needed by the service.
+- If a build needs a private dependency credential, use BuildKit secret or SSH
+  mounts. Do not pass it through `ARG`, `ENV`, or copied files.
+- Pin base images according to repository policy and pair immutable pins with
+  a controlled update mechanism so security fixes are not delayed forever.
 
-```dockerfile
-# --- build stage: full toolchain + dev dependencies ---
-FROM node:22-alpine AS builder
-WORKDIR /app
-COPY package*.json ./
-RUN npm ci                      # dev deps are needed to compile
-COPY . .
-RUN npm run build && npm prune --omit=dev
+## Runtime
 
-# --- runtime stage: compiled output + production deps only ---
-FROM node:22-alpine
-WORKDIR /app
-ENV NODE_ENV=production
-COPY --from=builder /app/package.json ./
-COPY --from=builder /app/node_modules ./node_modules
-COPY --from=builder /app/dist ./dist
-USER node                       # never run as root
-EXPOSE 3000
-HEALTHCHECK CMD wget -qO- http://localhost:3000/health/liveness || exit 1
-CMD ["node", "dist/main.js"]
-```
+Run with the least privilege practical for the service and emit logs to the
+platform's standard output/error. A single concern or service per container is
+useful guidance; one process is a rule of thumb, not a defect when a worker or
+server intentionally manages child processes.
 
-The same shape works for other stacks: Python builds wheels in the first
-stage and installs them into a slim image; Go compiles a static binary and
-copies it into `distroless` or `scratch`.
+Use the platform's health-check conventions. A health probe should distinguish
+startup, liveness, and readiness when those concepts matter, and should not
+restart a process merely because a temporary downstream dependency is down.
 
-Rules that matter more than the exact base image:
+## Local Compose
 
-- **Copy the lockfile and install before `COPY . .`** so dependency layers
-  stay cached when only source code changes.
-- **Add a `.dockerignore`** covering `node_modules`, `.git`, `.env*`, test
-  output, and local data. A stray `.env` copied into an image leaks with
-  every pull.
-- **Run as a non-root user**, and pin the base image to a specific
-  version tag (a digest is stricter still), never `latest`.
-- **Never bake secrets into the image**, not even in a build stage, since
-  layers keep them. Pass them at runtime (see
-  `observability-and-secrets.md`).
-- **One process per container**, logging to stdout/stderr and not to files
-  inside the container.
+Compose is for local development and test dependencies. Keep credentials local
+through the repository's approved mechanism, use health conditions only for
+actual readiness, and do not infer production topology from a development
+file.
 
-## Docker Compose for local development
+## Review checklist
 
-Run the service with its real dependencies, so integration tests and local
-debugging hit the same kind of database as production:
-
-```yaml
-services:
-  api:
-    build: .
-    ports: ["3000:3000"]
-    env_file: .env.local          # git-ignored; local-only values
-    depends_on:
-      db: { condition: service_healthy }
-  db:
-    image: postgres:16-alpine
-    environment:
-      POSTGRES_DB: myapp
-      POSTGRES_PASSWORD: localdev   # local only, never a real credential
-    volumes: [pgdata:/var/lib/postgresql/data]
-    healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U postgres"]
-      interval: 5s
-  redis:
-    image: redis:7-alpine
-volumes:
-  pgdata:
-```
-
-## Checklist
-
-- [ ] Multi-stage build; the runtime image has no compilers or dev
-      dependencies.
-- [ ] `.dockerignore` excludes secrets, VCS data, and build artifacts.
-- [ ] The container runs as non-root, on a pinned base image.
-- [ ] No secrets in the image or its layers.
-- [ ] A health check is defined, and the app logs to stdout.
-- [ ] `docker compose up` gives a working local stack.
+- The image excludes secrets, source that is not needed, and build tooling
+  where practical.
+- The runtime user and filesystem permissions fit the service.
+- Base-image pinning and updates follow project policy.
+- Build credentials use ephemeral secret/SSH mounts.
+- Health behavior matches the deployment platform and failure semantics.

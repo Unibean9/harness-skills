@@ -1,90 +1,43 @@
-# Observability and Secrets for a Backend Service
+# Observability, Health, and Secrets
 
-A reference, not a gated workflow. What a running service has to expose
-so you can tell whether it's healthy, and how it should receive
-credentials. Pipeline-level secret handling (OIDC, CI secrets) lives in
-`github-actions-cicd.md`.
+Read the platform and framework conventions before choosing endpoints, metric
+names, attributes, or secret delivery. Prefer existing OpenTelemetry and
+platform semantic conventions over a parallel taxonomy.
 
-## Health checks
+## Health signals
 
-Expose two endpoints; orchestrators (Kubernetes, Container Apps, load
-balancers) use them differently:
+Use the concepts that the deployment platform supports:
 
-- **Liveness** (`/health/liveness`) answers "is the process alive?". Keep it
-  trivial, with no dependency checks, or a database blip will restart
-  every instance at once.
-- **Readiness** (`/health/readiness`) answers "can it serve traffic right
-  now?". It checks the dependencies the service can't work without and
-  returns `503` while they're down, so traffic is routed elsewhere.
+- **Startup:** initialization has completed and the process can be evaluated.
+- **Liveness:** restarting is likely to help the process recover.
+- **Readiness:** the instance should receive traffic now.
 
-```typescript
-app.get('/health/liveness', (_req, res) => res.json({ status: 'ok' }));
+Do not require literal `/health/liveness` or `/health/readiness` paths across
+all platforms. A liveness check should not fail merely because a temporary
+downstream dependency is unavailable, or restart storms can amplify an
+incident. Readiness may reflect dependencies when that is the platform's
+traffic-management contract.
 
-app.get('/health/readiness', async (_req, res) => {
-  const checks = { database: await ping(db), cache: await ping(redis) };
-  const ready = Object.values(checks).every(Boolean);
-  res.status(ready ? 200 : 503).json({ status: ready ? 'ready' : 'not ready', checks });
-});
-```
+## Operational signals
 
-## The three signals
+Use logs, metrics, and traces to answer actual operational questions. Favor
+request or operation identifiers, useful error context, latency, traffic,
+errors, and saturation signals. Instrument only what the service and its
+operators need. Use current OpenTelemetry semantic conventions for HTTP,
+database, messaging, cloud, and resource attributes when they apply.
 
-| Signal | Answers | Typical tools |
-|---|---|---|
-| **Metrics** | How much, how fast, how often it fails, over time | Prometheus + Grafana, Azure Monitor |
-| **Logs** | What happened in one specific request | Structured JSON to stdout, collected by Loki, ELK, or Log Analytics |
-| **Traces** | Where the time went across services | OpenTelemetry SDK, exported over OTLP to Jaeger, Tempo, or App Insights |
+Alerts should represent symptoms and actionable failure modes rather than
+every internal event. A health check or alert is evidence about a running
+system, not proof that the system is correct.
 
-- **Metrics - start with RED per endpoint**: **R**ate (requests per
-  second), **E**rrors (5xx ratio), and **D**uration (a latency histogram,
-  so you can read p95/p99). Keep label values low-cardinality (route
-  template, method, status class), never user IDs or raw URLs.
-- **Logs** - structured, with a request ID on every line; see
-  `hs-backend-development`'s `debugging.md` for levels and what never to
-  log.
-- **Traces** - instrument with OpenTelemetry once and pick the backend
-  through configuration. Auto-instrumentation covers HTTP and most DB
-  clients. Propagate the trace context across service calls.
+## Runtime secrets and identity
 
-Alert on symptoms users feel (error rate, latency, saturation), not on
-every individual log error.
+Prefer managed or workload identity and short-lived credentials over static
+secrets. Deliver unavoidable secrets through the platform's approved secret
+manager or runtime injection path, not source, images, logs, command lines, or
+workflow output. Keep local `.env` files ignored and provide only a safe
+example file when the repository convention calls for one.
 
-## Secrets at runtime
-
-- The application reads secrets from **environment variables or a mounted
-  file** at startup and fails fast with a clear message when one is
-  missing. It never reads them from the repo.
-- Where they come from depends on the platform: a secret manager (Azure Key
-  Vault, AWS Secrets Manager, HashiCorp Vault) injected by the platform, or
-  Kubernetes `Secret`s referenced from the deployment:
-
-  ```yaml
-  env:
-    - name: DATABASE_URL
-      valueFrom:
-        secretKeyRef: { name: db-secret, key: url }
-  ```
-
-  Kubernetes Secrets are only base64-encoded, not encrypted, so enable
-  encryption at rest or sync them from a real secret manager.
-- **Prefer identity over keys**: managed identity or workload identity lets
-  the service reach the database or vault with no stored credential at
-  all.
-- Keep `.env` files local only and git-ignored; commit a `.env.example`
-  with the variable names and no values.
-- **Rotate** secrets on a schedule and immediately after any suspected
-  leak. A secret that was ever committed is compromised, even after the
-  commit is removed.
-
-## Checklist
-
-- [ ] Liveness and readiness endpoints are separate, and liveness has no
-      dependency checks.
-- [ ] RED metrics per endpoint, with low-cardinality labels.
-- [ ] Structured logs to stdout with request IDs, and no secrets or
-      personal data.
-- [ ] OpenTelemetry traces propagate across service calls.
-- [ ] Alerts on user-facing symptoms.
-- [ ] Secrets come from the platform or a secret manager at runtime, never
-      from the image or repo.
-- [ ] Missing configuration fails fast at startup.
+If static secrets remain, rotate and revoke them according to organization or
+provider policy, and rotate immediately after suspected compromise. Do not
+invent a universal schedule.

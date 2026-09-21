@@ -7,8 +7,8 @@ process (see "White-box vs black-box" in `SKILL.md`).
 
 ## Procedure
 
-1. Navigate to the affected page/flow and reproduce the happy path, then
-   each failure/boundary case identified from the requirement.
+1. Navigate to the affected page or flow and reproduce the happy path, then
+   the failure and boundary cases that matter to the accepted behavior.
 2. Capture evidence as you go, not just the final state:
    - a screenshot at each meaningful state (before/after an action, an
      error state);
@@ -28,7 +28,7 @@ process (see "White-box vs black-box" in `SKILL.md`).
 
 ## What this is not
 
-Capture is for verification, not a replacement for a checked-in e2e suite.
-If a flow is worth verifying once this way, it's usually worth a durable
-test too - flag that to the user rather than deciding alone whether to add
-one.
+Capture is evidence for the current verification task, not an automatic
+mandate to add a permanent end-to-end suite. Recommend a durable test when
+the workflow is business-critical, regression-prone, stable enough to
+maintain, and lower-level probes cannot protect it.
