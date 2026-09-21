@@ -4,8 +4,9 @@
 # flags are additive, and no flags passed defaults to --claude only (matches
 # install.ps1's default-to-claude behavior).
 #
-# --claude copies the 3 flat source folders (agents/ hooks/ skills/) into
-# <target-path>/.claude/{agents,hooks,skills}, and copies this repo's
+# --claude copies agents/, hook scripts, and skills/ into
+# <target-path>/.claude/{agents,hooks,skills}; Claude hook wiring lives only in
+# <target-path>/.claude/settings.json, and copies this repo's
 # .hs.json to <target-path>/.hs.json (skipped if the target
 # already has one).
 #
@@ -146,7 +147,6 @@ set_runtime_temp_dir() {
         cursor) TEMP_DIR_cursor="$2" ;;
         codex) TEMP_DIR_codex="$2" ;;
         antigravity) TEMP_DIR_antigravity="$2" ;;
-        kiro) TEMP_DIR_kiro="$2" ;;
         copilot) TEMP_DIR_copilot="$2" ;;
     esac
 }
@@ -156,7 +156,6 @@ get_runtime_temp_dir() {
         cursor) echo "$TEMP_DIR_cursor" ;;
         codex) echo "$TEMP_DIR_codex" ;;
         antigravity) echo "$TEMP_DIR_antigravity" ;;
-        kiro) echo "$TEMP_DIR_kiro" ;;
         copilot) echo "$TEMP_DIR_copilot" ;;
     esac
 }
@@ -232,6 +231,12 @@ if [ "$SEL_CLAUDE" -eq 1 ]; then
         mkdir -p "$dst"
         while IFS= read -r -d '' file; do
             relative_path="${file#"$src"/}"
+            if [ "$folder" = "hooks" ]; then
+                case "$relative_path" in
+                    *.mjs|*.js|*.cjs|*.ps1|*.sh) ;;
+                    *) continue ;;
+                esac
+            fi
             dest_path="$dst/$relative_path"
             if [ -e "$dest_path" ]; then
                 if ! cmp -s "$file" "$dest_path"; then
@@ -332,5 +337,5 @@ if [ -n "$SKIPPED_EXISTING" ]; then
     echo "Skipped (already existed, not overwritten):$SKIPPED_EXISTING"
 fi
 echo "Note: non-Claude hook wiring files (hooks.json) are references only - merge"
-echo "them into that runtime's own settings surface where required. Claude hook"
-echo "settings are created only when the target has no existing .claude/settings.json."
+echo "them into that runtime's own settings surface where required. Claude keeps"
+echo "hook wiring only in .claude/settings.json; .claude/hooks contains scripts."

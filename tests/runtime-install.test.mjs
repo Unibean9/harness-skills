@@ -18,6 +18,12 @@ const skills = readdirSync(join(repo, 'skills'), { withFileTypes: true })
 test('all non-Claude runtimes receive the shared native Agent Skills layout', () => {
     const root = mkdtempSync(join(tmpdir(), 'harness-runtime-layout-'));
     try {
+        for (const skill of skills) {
+            const canonical = readFileSync(join(source, 'skills', skill, 'SKILL.md'), 'utf8');
+            assert.doesNotMatch(canonical, /^category:/m, `${skill}: category must not be top-level`);
+            assert.match(canonical, /^metadata:\n  category: (?:domain|workflow)$/m, `${skill}: missing metadata.category`);
+        }
+
         for (const runtime of runtimes) {
             const target = join(root, runtime);
             execFileSync(process.execPath, [generator, '--runtime', runtime, '--source', source, '--target', target], {
@@ -34,6 +40,10 @@ test('all non-Claude runtimes receive the shared native Agent Skills layout', ()
         assert.ok(!existsSync(join(root, 'copilot', '.github', 'instructions')));
         assert.ok(!existsSync(join(root, 'antigravity', '.agents', 'hs-skills')));
 
+        const sharedPlan = readFileSync(join(root, 'codex', '.agents', 'skills', 'hs-plan', 'SKILL.md'), 'utf8');
+        assert.doesNotMatch(sharedPlan, /^category:/m);
+        assert.match(sharedPlan, /^metadata:\n  category: workflow$/m);
+
         const copilotHooks = JSON.parse(readFileSync(join(root, 'copilot', '.github', 'hooks', 'hooks.json'), 'utf8'));
         assert.equal(copilotHooks.version, 1);
         assert.ok(Array.isArray(copilotHooks.hooks.preToolUse));
@@ -41,8 +51,14 @@ test('all non-Claude runtimes receive the shared native Agent Skills layout', ()
             assert.equal(hook.type, 'command');
             assert.equal(typeof hook.bash, 'string');
             assert.equal(typeof hook.powershell, 'string');
+            assert.doesNotMatch(hook.powershell, /\$\(git /);
             assert.equal(hook.timeoutSec, 10);
         }
+
+        const antigravityOverview = readFileSync(join(root, 'antigravity', '.agents', 'rules', 'kit-overview.md'), 'utf8');
+        assert.match(antigravityOverview, /SessionStart.*session-init.*unsupported/i);
+        const antigravityHooks = JSON.parse(readFileSync(join(root, 'antigravity', '.agents', 'hooks.json'), 'utf8'));
+        assert.equal(antigravityHooks.SessionStart, undefined);
     } finally {
         rmSync(root, { recursive: true, force: true });
     }
@@ -55,4 +71,25 @@ test('the removed Kiro runtime is rejected by the generator', () => {
     });
     assert.notEqual(result.status, 0);
     assert.match(result.stderr, /Unknown runtime|failed/);
+});
+
+test('Claude keeps hook wiring in settings.json only', { skip: process.platform !== 'win32' }, () => {
+    const root = mkdtempSync(join(tmpdir(), 'harness-claude-layout-'));
+    try {
+        execFileSync('powershell.exe', [
+            '-NoProfile',
+            '-ExecutionPolicy', 'Bypass',
+            '-File', join(repo, 'install.ps1'),
+            '-Claude',
+            '-TargetPath', root,
+        ], { cwd: repo, stdio: 'pipe' });
+
+        assert.ok(existsSync(join(root, '.claude', 'settings.json')));
+        assert.ok(existsSync(join(root, '.claude', 'hooks', 'session-init.mjs')));
+        assert.equal(existsSync(join(root, '.claude', 'hooks', 'hooks.json')), false);
+        const claudeHookFiles = readdirSync(join(root, '.claude', 'hooks'));
+        assert.ok(claudeHookFiles.every((name) => /\.(?:mjs|js|cjs|ps1|sh)$/.test(name)));
+    } finally {
+        rmSync(root, { recursive: true, force: true });
+    }
 });

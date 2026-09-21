@@ -11,19 +11,7 @@ natively. Read `CONCEPTS.md` first to understand the underlying model.
 
 ## Install
 
-Install directly from GitHub - no manual clone required.
-
-```powershell
-# Windows - installs Claude Code by default
-irm https://raw.githubusercontent.com/Unibean9/harness-skills/main/install.ps1 | iex
-```
-
-```bash
-# macOS/Linux - installs Claude Code by default
-curl -fsSL https://raw.githubusercontent.com/Unibean9/harness-skills/main/install.sh | bash
-```
-
-To install a specific runtime (or several), pass its flag through:
+To install a specific runtime, pass its flag through:
 
 ```powershell
 & ([scriptblock]::Create((irm https://raw.githubusercontent.com/Unibean9/harness-skills/main/install.ps1))) -Cursor -Copilot
@@ -35,7 +23,7 @@ curl -fsSL https://raw.githubusercontent.com/Unibean9/harness-skills/main/instal
 
 | Runtime        | `install.ps1`                  | `install.sh`         | Lands in                      |
 | -------------- | ------------------------------ | -------------------- | ----------------------------- |
-| Claude Code    | `-Claude` (default if no flag) | `--claude` (default) | `.claude/`                    |
+| Claude Code    | `-Claude` | `--claude`  | `.claude/`                    |
 | Cursor         | `-Cursor`                      | `--cursor`           | `.cursor/` + `.agents/skills/` |
 | Codex CLI      | `-Codex`                       | `--codex`            | `.codex/` + `.agents/skills/` |
 | GitHub Copilot | `-Copilot`                     | `--copilot`          | `.github/` + `.agents/skills/` |
@@ -52,7 +40,8 @@ a tarball/zip download), generates the selected runtime's on-disk content
 from `agents/`, `skills/`, and `hooks/`, copies it into the
 current project, and removes the temporary files. A pre-existing file at
 the destination is skipped and reported, never overwritten - except each
-runtime's own `<dot-folder>/kit-hooks/*.mjs` copy, which is always
+runtime's managed hook scripts (`.claude/hooks/*.mjs` for Claude and
+`<dot-folder>/kit-hooks/*.mjs` for the other runtimes), which are always
 refreshed. No existing `.hs.json` or `.claude/settings.json` is ever
 overwritten either.
 
@@ -111,11 +100,12 @@ about cost/capability trade-offs per task.
 
 ## Hooks
 
-Four hooks are wired by default (script logic authored once in
-`hooks/*.mjs`, copied into each selected runtime's own
-`<dot-folder>/kit-hooks/` at install time rather than shared from one
-folder). They are standalone ports of the AgentKit hooks of the same name,
-with no library dependencies:
+Four hooks are authored once in `hooks/*.mjs` and adapted to each runtime at
+install time rather than shared from one folder. Claude keeps hook scripts in
+`.claude/hooks/` and wires them only through `.claude/settings.json`; the
+other runtimes receive their own `<dot-folder>/kit-hooks/` copy. They are
+standalone ports of the AgentKit hooks of the same name, with no library
+dependencies:
 
 - **`privacy-block.mjs`** (`PreToolUse`) - stops the agent reading or
   writing likely secret files (`.env*`, `.pem`/`.key`, `credentials*`,
@@ -137,13 +127,15 @@ with no library dependencies:
   re-confirm any pending approval and re-read the active plan.
 
 Both gates follow an exit-code contract (`0` = allow, `2` = block, `1` =
-the hook itself errored and the tool proceeds): unreadable input fails
-open, but a crash while judging a specific tool call fails closed. On
-Claude Code a gate decision is an interactive permission prompt; every
-other platform gets a hard block, and an unrecognized `--platform` value
-fails closed. Only Claude Code and Codex get all four hooks - the other
-runtimes have no confirmed context-injection event, so they get the two
-gates only.
+the hook itself errored and the tool proceeds): unreadable input fails open,
+but a crash while judging a specific tool call fails closed. On Claude Code a
+gate decision is an interactive permission prompt; every other platform gets
+a hard block, and an unrecognized `--platform` value fails closed.
+
+Only Claude Code and Codex wire all four hooks. Cursor, Copilot, and
+Antigravity wire the two deterministic gates; Antigravity's
+`SessionStart`/`session-init` hook is unsupported because no semantically
+equivalent context-injection event is confirmed.
 
 `.hs.json` at the repo root turns each hook on/off per project
 (`guardrails.hooks.privacy`, `guardrails.hooks.scout`,
@@ -162,23 +154,3 @@ This kit is a small, readable starting point for the counterweights that
 help - clear intent, a real plan, evidence before "done," and a few
 guard rails outside the model's own discretion - without hiding how any of
 it works behind a large plugin surface.
-
-## Out of scope
-
-This kit does not run CI/CD or infrastructure for you, replace project
-architecture or access controls, or substitute for human code review.
-`hs-devops` helps design a pipeline and `hs-ship` waits for it to go green,
-but you still own the actual runners, environments, and access controls. It
-does not store credentials, grant access to external services, or
-guarantee that every task can be completed autonomously. Non-Claude
-runtimes are _generated_ from `agents/`, `skills/`, and `hooks/` at install
-time (`install/lib/generate-runtime.mjs`) rather than hand-mirrored, so
-there's no separate per-runtime copy to drift out of sync - but there's
-also no automated CI check yet confirming a skill edit regenerates
-correctly across all 5 runtimes; that's a manual check today. No runtime
-gets a slash-command layer - this was a deliberate cut, not a partial port:
-every runtime invokes a skill directly by matching the task to its
-description.
-
-Review changes before merging, keep secrets out of prompts and
-repositories, and adapt the guard rails to your own project's needs.

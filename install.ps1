@@ -5,8 +5,9 @@ runtimes via switch flags (-Claude -Cursor -Codex -Anti -Copilot);
 flags are additive, and no flags passed defaults to -Claude only (unchanged
 prior behavior).
 
--Claude copies the 3 flat source folders (agents/ hooks/ skills/) into
-<TargetPath>/.claude/{agents,hooks,skills}, and copies this repo's
+-Claude copies agents/, hook scripts, and skills/ into
+<TargetPath>/.claude/{agents,hooks,skills}; Claude hook wiring lives only in
+<TargetPath>/.claude/settings.json, and copies this repo's
 .hs.json to <TargetPath>/.hs.json (skipped if the target already
 has one) - exactly as before this script gained other runtimes.
 
@@ -176,6 +177,9 @@ try {
             New-Item -ItemType Directory -Force -Path $dst | Out-Null
             foreach ($file in Get-ChildItem -Path $src -Recurse -File) {
                 $relativePath = $file.FullName.Substring($src.Length).TrimStart('\', '/')
+                if ($folder -eq 'hooks' -and $file.Extension -notin @('.mjs', '.js', '.cjs', '.ps1', '.sh')) {
+                    continue
+                }
                 $destPath = Join-Path $dst $relativePath
                 if (Test-Path $destPath) {
                     if (-not (Test-Path $destPath -PathType Leaf) -or (Get-FileHash -LiteralPath $file.FullName -Algorithm SHA256).Hash -ne (Get-FileHash -LiteralPath $destPath -Algorithm SHA256).Hash) {
@@ -264,8 +268,8 @@ try {
         $skippedExisting | ForEach-Object { Write-Host "  - $_" }
     }
     Write-Host "Note: non-Claude hook wiring files (hooks.json) are references only - merge"
-    Write-Host "them into that runtime's own settings surface where required. Claude hook"
-    Write-Host "settings are created only when the target has no existing .claude/settings.json."
+    Write-Host "them into that runtime's own settings surface where required. Claude keeps"
+    Write-Host "hook wiring only in .claude/settings.json; .claude/hooks contains scripts."
 } finally {
     Remove-TempDirs
 }

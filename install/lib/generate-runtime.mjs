@@ -29,6 +29,22 @@ function frontmatterField(frontmatterText, field) {
     return m ? m[1].trim() : undefined;
 }
 
+function metadataField(frontmatterText, field) {
+    let inMetadata = false;
+    for (const line of frontmatterText.split('\n')) {
+        if (/^metadata:\s*$/.test(line)) {
+            inMetadata = true;
+            continue;
+        }
+        if (inMetadata && /^\S/.test(line)) inMetadata = false;
+        if (inMetadata) {
+            const match = line.match(new RegExp(`^\\s+${field}:\\s*(.+)$`));
+            if (match) return match[1].trim();
+        }
+    }
+    return undefined;
+}
+
 function readNamedMarkdownFiles(dir, { skip = [] } = {}) {
     if (!fs.existsSync(dir)) return [];
     return fs.readdirSync(dir)
@@ -96,7 +112,11 @@ function generateSharedSkills(sourceRoot, targetPath) {
     const skillsRoot = path.join(targetPath, '.agents', 'skills');
 
     for (const skill of skills) {
-        const fm = yamlFrontmatter({ name: skill.name, description: frontmatterField(skill.frontmatterText, 'description') });
+        const fm = yamlFrontmatter({
+            name: skill.name,
+            description: frontmatterField(skill.frontmatterText, 'description'),
+            metadata: { category: metadataField(skill.frontmatterText, 'category') },
+        });
         writeFile(path.join(skillsRoot, skill.name, 'SKILL.md'), fm + transformSkillBody(skill.body));
     }
     copySkillResources(sourceRoot, skillsRoot);
@@ -115,12 +135,24 @@ function copySkillResources(sourceRoot, skillsTargetDir) {
 }
 
 function yamlFrontmatter(fields) {
-    const lines = Object.entries(fields)
-        .filter(([, v]) => v !== undefined && v !== null)
-        .map(([k, v]) => {
-            if (Array.isArray(v)) return `${k}: [${v.map((x) => JSON.stringify(x)).join(', ')}]`;
-            return `${k}: ${v}`;
-        });
+    const lines = [];
+    for (const [key, value] of Object.entries(fields)) {
+        if (value === undefined || value === null) continue;
+        if (value && typeof value === 'object' && !Array.isArray(value)) {
+            const nested = Object.entries(value).filter(([, v]) => v !== undefined && v !== null);
+            if (nested.length === 0) continue;
+            lines.push(`${key}:`);
+            for (const [nestedKey, nestedValue] of nested) {
+                lines.push(`  ${nestedKey}: ${nestedValue}`);
+            }
+            continue;
+        }
+        if (Array.isArray(value)) {
+            lines.push(`${key}: [${value.map((x) => JSON.stringify(x)).join(', ')}]`);
+            continue;
+        }
+        lines.push(`${key}: ${value}`);
+    }
     return `---\n${lines.join('\n')}\n---\n\n`;
 }
 
@@ -271,15 +303,15 @@ function generateCopilot(sourceRoot, targetPath) {
                 {
                     type: 'command',
                     matcher: '.*',
-                    bash: 'node "$(git rev-parse --show-toplevel)/.github/kit-hooks/privacy-block.mjs" --platform copilot',
-                    powershell: 'node "$(git rev-parse --show-toplevel)/.github/kit-hooks/privacy-block.mjs" --platform copilot',
+                    bash: 'node ".github/kit-hooks/privacy-block.mjs" --platform copilot',
+                    powershell: 'node ".github/kit-hooks/privacy-block.mjs" --platform copilot',
                     timeoutSec: 10,
                 },
                 {
                     type: 'command',
                     matcher: '.*',
-                    bash: 'node "$(git rev-parse --show-toplevel)/.github/kit-hooks/scout-block.mjs" --platform copilot',
-                    powershell: 'node "$(git rev-parse --show-toplevel)/.github/kit-hooks/scout-block.mjs" --platform copilot',
+                    bash: 'node ".github/kit-hooks/scout-block.mjs" --platform copilot',
+                    powershell: 'node ".github/kit-hooks/scout-block.mjs" --platform copilot',
                     timeoutSec: 10,
                 },
             ],
@@ -299,7 +331,7 @@ function generateAntigravity(sourceRoot, targetPath) {
         skills, agents,
         skillsNote: '`.agents/skills/<name>/SKILL.md`',
         agentsNote: '`.agents/agents/*.md`, `subagent: true`',
-        hookNote: '**2 hooks** (`.agents/hooks.json` + `.agents/kit-hooks/*.mjs`) on `PreToolUse`: `privacy-block` blocks reading/writing sensitive files like `.env`, `.pem`, `credentials*` and protects `.hs.json` from unattended edits; `scout-block` blocks scans of generated/dependency directories and repository-wide globs. `session-init` and `descriptive-name` are **not wired** - Antigravity has no confirmed context-injection hook event.',
+        hookNote: '**2 hooks** (`.agents/hooks.json` + `.agents/kit-hooks/*.mjs`) on `PreToolUse`: `privacy-block` blocks reading/writing sensitive files like `.env`, `.pem`, `credentials*` and protects `.hs.json` from unattended edits; `scout-block` blocks scans of generated/dependency directories and repository-wide globs. `SessionStart`/`session-init` is **unsupported** and is not wired because Antigravity has no confirmed semantically equivalent context-injection event; `descriptive-name` is also not wired.',
         commandsNote: 'Commands are not ported in this pass - Antigravity\'s workflow file path under `.agents/` is not confirmed by official docs beyond UI-driven creation, so no workflow files are shipped rather than guessing a path.',
     }));
 
