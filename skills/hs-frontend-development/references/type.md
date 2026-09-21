@@ -1,4 +1,3 @@
-<!-- Ported from fk-skills reference/type.md @ ad67c46. Kit adaptations are listed in UPSTREAM.md. -->
 Typography carries most of the information on the page. Replace generic defaults (Inter, Roboto, system fallback at flat scale) with type that reflects the brand and scales with intentional contrast.
 
 ---
@@ -40,7 +39,7 @@ Analyze what's weak or generic about the current type:
    - Are font weights used consistently? (Not bold in one section, semibold in another for the same role)
    - Is letter-spacing intentional or default everywhere?
 
-**CRITICAL**: The goal isn't to make text "fancier." It's to make it clearer, more readable, and more intentional. Good typography is invisible; bad typography is distracting.
+Optimize typography for clarity, readability, and intention rather than ornament; good typography recedes while poor typography distracts.
 
 ## Plan Typography Improvements
 
@@ -91,7 +90,7 @@ Build a clear type scale:
 - Don't use more than 3-4 weights (Regular, Medium, Semibold, Bold is plenty)
 - Load only the weights you actually use (each weight adds to page load)
 
-**NEVER**:
+Use these typography checks:
 - Use more than 2-3 font families
 - Pick sizes arbitrarily; commit to a scale
 - Set body text below 16px

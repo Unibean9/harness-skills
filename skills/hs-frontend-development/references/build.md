@@ -1,4 +1,3 @@
-<!-- Ported from fk-skills reference/build.md @ ad67c46. Kit adaptations are listed in UPSTREAM.md. -->
 # Build Flow
 
 > **Kit note.** fk's Codex-only image-generation flow (`codex.md`, the `fk_asset_producer` subagent) is not part of this kit. Wherever this file routes to `codex.md`, treat the harness as lacking native image generation: state the one-line skip in Step 3 and continue from the confirmed brief. In this file, "shape" means the design brief flow and "craft" means this build flow.

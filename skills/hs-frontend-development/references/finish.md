@@ -1,4 +1,3 @@
-<!-- Ported from fk-skills reference/finish.md @ ad67c46. Kit adaptations are listed in UPSTREAM.md. -->
 > **Additional context needed**: quality bar (MVP vs flagship).
 
 Perform a meticulous final pass to catch all the small details that separate good work from great work. The difference between shipped and polished.
@@ -40,7 +39,7 @@ Understand the current state and goals before touching anything:
 
 5. **Triage cosmetic vs functional**: Classify each issue as **cosmetic** (looks off, doesn't impede the user) or **functional** (breaks, blocks, or confuses the experience). When polish time is tight, functional issues ship first; cosmetic ones can land in a follow-up. Quality should be consistent; never perfect one corner while leaving another rough.
 
-**CRITICAL**: Polish is the last step, not the first. Don't polish work that's not functionally complete.
+Polish after the work is functionally complete; otherwise visual refinement can hide unresolved behavior.
 
 ## Polish Systematically
 
@@ -200,11 +199,11 @@ Go through systematically:
 - [ ] Respects reduced motion preference
 - [ ] Code is clean (no TODOs, console.logs, commented code)
 
-**IMPORTANT**: Polish is about details. Zoom in. Squint at it. Use it yourself. The little things add up.
+Inspect polish at multiple scales: zoom in, squint at alignment, and use the interface yourself. Small inconsistencies accumulate.
 
 Sweat the details. Zoom in until the alignment is right and the spacing reads as deliberate. Then ship.
 
-**NEVER**:
+Use these polish checks:
 - Polish before it's functionally complete
 - Polish without aligning to the design system; that's decoration on drift
 - Guess at design system principles instead of asking when something is ambiguous

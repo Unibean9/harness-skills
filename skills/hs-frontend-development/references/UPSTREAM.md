@@ -1,9 +1,5 @@
 # Upstream: fk-skills
 
-The flows in this skill are ported from
-[ThinhTP204/fk-skills](https://github.com/ThinhTP204/fk-skills) at commit
-`ad67c46` (its `.claude/skills/fk/` copy).
-
 Each ported file starts with an HTML comment naming its upstream file and
 commit. The flow text is upstream's; the changes below are the only ones
 made, so a later sync only needs to re-apply this list.

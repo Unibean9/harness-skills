@@ -1,4 +1,3 @@
-<!-- Ported from fk-skills reference/color.md @ ad67c46. Kit adaptations are listed in UPSTREAM.md. -->
 > **Additional context needed**: existing brand colors.
 
 Replace timid grayscale or single-accent designs with a strategic palette: pick a color strategy, choose a hue family that fits the brand, then apply color with intent. More color ≠ better. Strategic color beats rainbow vomit.
@@ -33,7 +32,7 @@ Analyze the current state and identify opportunities:
 
 If any of these are unclear from the codebase, STOP and call the AskUserQuestion tool to clarify.
 
-**CRITICAL**: More color ≠ better. Strategic color beats rainbow vomit every time. Every color should have a purpose.
+Use color strategically: every color should have a purpose, because excess color weakens hierarchy.
 
 ## Plan Color Strategy
 
@@ -44,7 +43,7 @@ Create a purposeful color introduction plan:
 - **Accent colors**: Which colors provide contrast and highlights? (30% and 10%)
 - **Application strategy**: Where does each color appear and why?
 
-**IMPORTANT**: Color should enhance hierarchy and meaning, not create chaos. Less is more when it matters more.
+Use color to strengthen hierarchy and meaning; limit it when additional color would create noise.
 
 ## Introduce Color Strategically
 
@@ -88,7 +87,7 @@ Add color systematically across these dimensions:
 - **Focus rings**: Colored focus indicators matching brand
 - **Surface tints**: A 4-8% background wash of the accent color instead of a stripe
 
-**NEVER**: `border-left` or `border-right` greater than 1px as a colored accent stripe. This is one of the three absolute bans in the parent skill. If you want to mark a card as "active" or "warning", use a full hairline border, a background tint, a leading glyph, or a numbered prefix. Not a side stripe.
+Represent active or warning states with a full hairline border, background tint, leading glyph, or numbered prefix; side-stripe accents over 1px create a dated, low-information pattern.
 
 ### Typography Color
 - **Colored headings**: Use brand colors for section headings (maintain contrast)
@@ -121,7 +120,7 @@ Ensure color addition improves rather than overwhelms:
 - **Systematic application**: Same color meanings throughout (green always = success)
 - **Temperature consistency**: Warm palette stays warm, cool stays cool
 
-**NEVER**:
+Use these color checks:
 - Use every color in the rainbow (choose 2-4 colors beyond neutrals)
 - Apply color randomly without semantic meaning
 - Put gray text on colored backgrounds. It looks washed out; use a darker shade of the background color or transparency instead

@@ -1,4 +1,3 @@
-<!-- Ported from fk-skills reference/tokens.md @ ad67c46. Kit adaptations are listed in UPSTREAM.md. -->
 # Extract Flow
 
 Identify reusable patterns, components, and design tokens, then extract and consolidate them into the design system for systematic reuse.
@@ -7,7 +6,7 @@ Identify reusable patterns, components, and design tokens, then extract and cons
 
 Find the design system, component library, or shared UI directory. Understand its structure: component organization, naming conventions, design token structure, import/export conventions.
 
-**CRITICAL**: If no design system exists, STOP and call the AskUserQuestion tool to clarify. before creating one. Understand the preferred location and structure first.
+If no design system exists, pause and use AskUserQuestion to clarify the preferred location and structure before creating one.
 
 ## Step 2: Identify Patterns
 
@@ -32,7 +31,7 @@ Create a systematic plan:
 - **Naming conventions**: Component names, token names, prop names that match existing patterns
 - **Migration path**: How to refactor existing uses to consume the new shared versions
 
-**IMPORTANT**: Design systems grow incrementally. Extract what is clearly reusable now, not everything that might someday be reusable.
+Extract incrementally: choose patterns that are clearly reusable now, so the system reflects current needs rather than speculative reuse.
 
 ## Step 4: Extract & Enrich
 
@@ -60,11 +59,10 @@ Update design system documentation:
 - Add examples and guidelines
 - Update any Storybook or component catalog
 
-**NEVER**:
+Use these extraction checks:
 - Extract one-off, context-specific implementations without generalization
 - Create components so generic they are useless
 - Extract without considering existing design system conventions
 - Skip proper TypeScript types or prop documentation
 - Create tokens for every single value (tokens should have semantic meaning)
 - Extract things that differ in intent (two buttons that look similar but serve different purposes should stay separate)
-

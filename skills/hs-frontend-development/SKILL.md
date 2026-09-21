@@ -2,9 +2,9 @@
 name: hs-frontend-development
 description: Design and build production-grade frontend interfaces, context first - capture PRODUCT.md (strategy) and DESIGN.md (visual system), pull reusable tokens into a design system, and apply shared UX/UI rules (color, typography, layout, motion, accessibility, anti-patterns) for brand and product surfaces. Its capabilities (discover, prepare, validate, review) are routed automatically by hs-brainstorm, hs-plan, hs-build, and hs-code-review, and can also be invoked directly. Use when the user wants to design, redesign, build, review, or polish a website, landing page, dashboard, app UI, component, form, or design system, even if they only say "make this look better" or "set up design tokens". Not for backend APIs (hs-backend-development) or CI/CD and infrastructure (hs-devops).
 license: MIT
-category: domain
 keywords: [frontend, ui, ux, design-system, product-md, design-md, tokens, accessibility, responsive]
 metadata:
+  category: domain
   author: harness-skills
   version: "2.0.0"
 ---
@@ -32,10 +32,10 @@ See `../_shared/hard-gate.md` for the shared gate shape (`{scope}` = "a plan exi
 
 ## Setup
 
-You MUST do these steps before proceeding:
+Complete these setup steps before proceeding; they establish project context and the applicable workflow.
 
 1. Read the project context once per session (skip if you already did in this conversation): PRODUCT.md and DESIGN.md at the project root, or under `.agents/context/` or `docs/` (case-insensitive), with your native file tool. **If PRODUCT.md is missing, stop and follow `references/setup.md` before doing anything else.** A missing DESIGN.md does not block the task; setup and `spec` offer to create it.
-2. If the user invoked one of the capabilities below directly, or a workflow routed you here, you MUST read the matching reference next. Non-optional. The reference defines the flow; without it you will skip steps the user expects.
+2. If the user invoked one of the capabilities below directly, or a workflow routed you here, read the matching reference next. The reference defines the flow and prevents skipped work.
 3. Familiarize yourself with any existing design system, conventions, and components in the code. Read at least one project file (CSS / tokens / theme / a representative component or page). **Required even when you've loaded a flow reference in step 2.** Don't reinvent the wheel; use what's there when it works, branch out when the UX wins.
 4. Read the matching register reference. **This is non-optional; skipping it produces generic output.** If the project is marketing, a landing page, a campaign, long-form content, or a portfolio (design IS the product), read `references/brand.md`. If it is app UI, admin, a dashboard, or a tool (design SERVES the product), read `references/product.md`. Pick by first match: (1) task cue ("landing page" vs "dashboard"); (2) surface in focus (the page, file, or route being worked on); (3) `register` field in PRODUCT.md.
 5. **If the project is brand-new (no existing CSS tokens / theme / committed brand colors found in step 3)**, choose the brand seed color deliberately before composing anything: one OKLCH anchor for the primary brand color, then compose the rest of the palette (bg, surface, ink, accent, muted) around it using the Color & Theme rules below. Do not default to the first color the category suggests. **Skip this step if step 3 found committed brand colors in existing tokens; in that case identity-preservation wins.**

@@ -1,4 +1,3 @@
-<!-- Ported from fk-skills reference/motion.md @ ad67c46. Kit adaptations are listed in UPSTREAM.md. -->
 > **Additional context needed**: performance constraints.
 
 Add motion that conveys state, gives feedback, and clarifies hierarchy. Cut motion that exists only for decoration. Animation fatigue is a real cost; spend the budget on the moments that need it.
@@ -32,7 +31,7 @@ Analyze where motion would improve the experience:
 
 If any of these are unclear from the codebase, STOP and call the AskUserQuestion tool to clarify.
 
-**CRITICAL**: Respect `prefers-reduced-motion`. Always provide non-animated alternatives for users who need them.
+Respect `prefers-reduced-motion` by providing non-animated alternatives for users who need them.
 
 ## Plan Animation Strategy
 
@@ -43,7 +42,7 @@ Create a purposeful animation plan:
 - **Transition layer**: Which state changes need smoothing?
 - **Delight layer**: Where can we surprise and delight?
 
-**IMPORTANT**: One well-orchestrated experience beats scattered animations everywhere. Focus on high-impact moments.
+Concentrate motion on a small number of high-impact moments; a coordinated experience is clearer than scattered animation.
 
 ## Implement Animations
 
@@ -179,7 +178,7 @@ Nobody cares how fast your site *is*, only how fast it feels. The 80ms threshold
 }
 ```
 
-**NEVER**:
+Use these motion checks:
 - Use bounce or elastic easing curves; they feel dated and draw attention to the animation itself
 - Animate layout properties casually (`width`, `height`, `top`, `left`, margins) when transform, FLIP, or grid-based techniques would work
 - Use durations over 500ms for feedback (it feels laggy)

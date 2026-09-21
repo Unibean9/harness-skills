@@ -1,4 +1,3 @@
-<!-- Ported from fk-skills reference/copy.md @ ad67c46. Kit adaptations are listed in UPSTREAM.md. -->
 > **Additional context needed**: audience technical level and users' mental state in context.
 
 Find the unclear, confusing, or poorly written interface text and rewrite it. Vague copy creates support tickets and abandonment; specific copy gets users through the task.
@@ -25,7 +24,7 @@ Identify what makes the text unclear or ineffective:
    - What's the action? (What do we want users to do?)
    - What's the constraint? (Character limits? Space limitations?)
 
-**CRITICAL**: Clear copy helps users succeed. Unclear copy creates frustration, errors, and support tickets.
+Write for clarity: clear copy helps users succeed and reduces frustration, errors, and support tickets.
 
 ## Plan Copy Improvements
 
@@ -36,7 +35,7 @@ Create a strategy for clearer communication:
 - **Tone**: How should this feel? (Helpful? Apologetic? Encouraging?)
 - **Constraints**: Length limits, brand voice, localization considerations
 
-**IMPORTANT**: Good UX writing is invisible. Users should understand immediately without noticing the words.
+Make the wording easy to understand at once, so users can focus on the task rather than the interface.
 
 ## Improve Copy Systematically
 
@@ -150,7 +149,7 @@ Every piece of copy should follow these rules:
 5. **Tell users what to do**, not just what happened
 6. **Be consistent**: Use same terms throughout (don't vary for variety)
 
-**NEVER**:
+Use these copy checks:
 - Use jargon without explanation
 - Blame users ("You made an error" → "This field is required")
 - Be vague ("Something went wrong" without explanation)

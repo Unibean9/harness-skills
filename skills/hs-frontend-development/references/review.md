@@ -1,4 +1,3 @@
-<!-- Ported from fk-skills reference/review.md @ ad67c46. Kit adaptations are listed in UPSTREAM.md. -->
 > **Kit note.** This kit ships none of fk's scripts (`detect.mjs`, `live-server.mjs`, `critique-storage.mjs`). Treat the bundled detector as missing (the invariant below allows that): report "deterministic scan unavailable", run Assessment B as browser evidence (Playwright MCP, as in `hs-test` black-box mode) plus a manual scan for the anti-patterns in `SKILL.md`, and skip snapshot persistence and trend.
 
 ### Purpose
@@ -54,7 +53,7 @@ Return: manual scan findings with file locations, browser observations per viewp
 
 Synthesize both assessments into a single report. Do NOT simply concatenate. Weave the findings together, noting where the design review and the browser/manual evidence agree, where the evidence caught issues the design review missed, and where evidence findings are false positives.
 
-The chat response is the primary user-facing deliverable. Present the full structured critique below in chat; do not replace it with a summary and a link. 
+The chat response is the primary user-facing deliverable. Present the full structured critique below in chat; do not replace it with a summary and a link.
 
 Structure your feedback as a design director would:
 

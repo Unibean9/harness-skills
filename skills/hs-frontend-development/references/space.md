@@ -1,4 +1,3 @@
-<!-- Ported from fk-skills reference/space.md @ ad67c46. Kit adaptations are listed in UPSTREAM.md. -->
 Space is the most underused design tool. Find the layout's actual problem (monotone spacing, weak hierarchy, identical card grids) and fix the structure, not the surface.
 
 ---
@@ -39,7 +38,7 @@ Analyze what's weak about the current spatial design:
    - Is the layout too sparse? (Excessive whitespace without purpose)
    - Does density match the content type? (Data-dense UIs need tighter spacing; marketing pages need more air)
 
-**CRITICAL**: Layout problems are often the root cause of interfaces feeling "off" even when colors and fonts are fine. Space is a design material; use it with intention.
+Treat space as a design material: layout problems often cause an interface to feel off even when its colors and fonts are sound.
 
 ## Plan Layout Improvements
 
@@ -122,7 +121,7 @@ Create a systematic plan:
 }
 ```
 
-**NEVER**:
+Use these layout checks:
 - Use arbitrary spacing values outside your scale
 - Make all spacing equal (variety creates hierarchy)
 - Wrap everything in cards (not everything needs a container)

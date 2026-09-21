@@ -1,4 +1,3 @@
-<!-- Ported from fk-skills reference/spec.md @ ad67c46. Kit adaptations are listed in UPSTREAM.md. -->
 Generate a `DESIGN.md` file at the project root that captures the current visual design system, so AI agents generating new screens stay on-brand.
 
 DESIGN.md follows the [official Google Stitch DESIGN.md format](https://stitch.withgoogle.com/docs/design-md/format/): YAML frontmatter carrying machine-readable design tokens, followed by a markdown body with exactly six sections in a fixed order. **Tokens are normative; prose provides context for how to apply them.** Sections may be omitted when not relevant, but **do not reorder them and do not rename them**. Section headers must match the spec character-for-character so the file stays parseable by other DESIGN.md-aware tools (Stitch itself, awesome-design-md, skill-rest, etc.).
@@ -264,7 +263,7 @@ Group into one `AskUserQuestion` interaction. Options must be concrete.
    - Committed: one saturated color carries 30–60% of the surface
    - Full palette: 3–4 named color roles, each deliberate
    - Drenched: the surface IS the color
-   
+
    Then: one hue family or anchor reference ("deep teal", "mustard", "Klim #ff4500 orange").
 
 2. **Typography direction.** Pick one (specific fonts come later):
@@ -327,12 +326,12 @@ Your own write is the freshest source; no reload needed.
 
 ## Pitfalls
 
-- Don't paste raw CSS class names. Translate to descriptive language.
-- Don't extract every token. Stop at what's actually reused; one-offs pollute the system.
-- Don't invent components that don't exist. If the project only has buttons and cards, only document those.
-- Don't overwrite an existing DESIGN.md without asking.
-- Don't duplicate content from PRODUCT.md. DESIGN.md is strictly visual.
-- Don't add a "Layout Principles" or "Motion" or "Responsive Behavior" top-level section. The spec has six, not nine. Fold that content where it belongs.
-- Don't rename sections even slightly. "Colors" not "Color Palette & Roles". "Typography" not "Typography Rules". Tooling parsing depends on exact headers.
-- Don't duplicate token values between frontmatter and prose. If a color is in `colors.primary` as hex, the prose can name it and describe its role but should not reassert a different hex. The frontmatter is normative.
-- Don't invent frontmatter token groups outside Stitch's schema (no `motion:`, `breakpoints:`, `shadows:` at the top level). Stitch's Zod schema only accepts `colors`, `typography`, `rounded`, `spacing`, `components`. Anything else belongs in the prose sections (Overview, Elevation, Components).
+- Translate raw CSS class names into descriptive language.
+- Stop extraction at values that are actually reused; one-offs pollute the system.
+- Document only components that exist. If the project has buttons and cards, document those components.
+- Ask before overwriting an existing DESIGN.md.
+- Keep DESIGN.md visual rather than duplicating content from PRODUCT.md.
+- Fold Layout Principles, Motion, and Responsive Behavior into the six allowed top-level sections; the spec has six sections, not nine.
+- Preserve the exact section names, such as "Colors" and "Typography", because tooling depends on them.
+- Keep token values single-sourced: if a color is in `colors.primary` as hex, the prose can name and describe its role without reasserting a different value. The frontmatter is normative.
+- Keep frontmatter groups within Stitch's schema: `colors`, `typography`, `rounded`, `spacing`, and `components`. Put other material in the prose sections (Overview, Elevation, Components).

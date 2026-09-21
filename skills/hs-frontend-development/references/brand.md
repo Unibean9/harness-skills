@@ -1,4 +1,3 @@
-<!-- Ported from fk-skills reference/brand.md @ ad67c46. Kit adaptations are listed in UPSTREAM.md. -->
 # Brand register
 
 When design IS the product: brand sites, landing pages, marketing surfaces, campaign pages, portfolios, long-form content, about pages. The deliverable is the design itself; a visitor's impression is the thing being made.
@@ -19,7 +18,7 @@ Then the inverse test: in one sentence, describe what you're about to build the 
 
 ### Font selection procedure
 
-Every project. Never skip.
+Apply this procedure to every project so font choices are grounded in the brief rather than default aesthetics.
 
 1. Read the brief. Write three concrete brand-voice words. Not "modern" or "elegant," but "warm and mechanical and opinionated" or "calm and clinical and careful." Physical-object words.
 2. List the three fonts you'd reach for by reflex. If any appear in the reflex-reject list below, reject them; they are training-data defaults and they create monoculture.

@@ -1,4 +1,3 @@
-<!-- Ported from fk-skills reference/plan.md @ ad67c46. Kit adaptations are listed in UPSTREAM.md. -->
 Shape the UX and UI for a feature before any code is written. This command produces a **design brief**: a structured artifact that guides implementation through discovery, not guesswork.
 
 **Scope**: Design planning only. This command does NOT write code. It produces the thinking that makes code good.

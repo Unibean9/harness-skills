@@ -1,4 +1,3 @@
-<!-- Ported from fk-skills reference/check.md @ ad67c46. Kit adaptations are listed in UPSTREAM.md. -->
 Run systematic **technical** quality checks and generate a comprehensive report. Don't fix issues; document them for other commands to address.
 
 This is a code-level audit, not a design critique. Check what's measurable and verifiable in the implementation.
@@ -51,7 +50,7 @@ Run comprehensive checks across 5 dimensions. Score each dimension 0-4 using the
 
 **Score 0-4**: 0=Desktop-only (breaks on mobile), 1=Major issues (some breakpoints, many failures), 2=Partial (works on mobile, rough edges), 3=Good (responsive, minor touch target or overflow issues), 4=Excellent (fluid, all viewports, proper touch targets)
 
-### 5. Anti-Patterns (CRITICAL)
+### 5. Anti-Patterns
 
 Check against ALL the **DON'T** guidelines from `SKILL.md` (already loaded in this context). Look for AI slop tells (AI color palette, gradient text, glassmorphism, hero metrics, card grids, generic fonts) and general design anti-patterns (gray on color, nested cards, bounce easing, redundant copy).
 
@@ -123,12 +122,11 @@ After presenting the summary, tell the user:
 >
 > Re-run `hs-frontend-development check` after fixes to see your score improve.
 
-**IMPORTANT**: Be thorough but actionable. Too many P3 issues creates noise. Focus on what actually matters.
+Keep the report thorough and actionable by prioritizing material issues and limiting P3 noise.
 
-**NEVER**:
+Make each report actionable:
 - Report issues without explaining impact (why does this matter?)
 - Provide generic recommendations (be specific and actionable)
 - Skip positive findings (celebrate what works)
 - Forget to prioritize (everything can't be P0)
 - Report false positives without verification
-

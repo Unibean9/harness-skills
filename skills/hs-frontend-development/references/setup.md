@@ -1,4 +1,3 @@
-<!-- Ported from fk-skills reference/setup.md @ ad67c46. Kit adaptations are listed in UPSTREAM.md. -->
 # Init Flow
 
 The setup command for a project. One codebase crawl feeds everything it writes:

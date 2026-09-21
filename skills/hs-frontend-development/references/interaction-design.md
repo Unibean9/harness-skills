@@ -1,4 +1,3 @@
-<!-- Ported from fk-skills reference/interaction-design.md @ ad67c46. Kit adaptations are listed in UPSTREAM.md. -->
 # Interaction Design
 
 ## The Eight Interactive States
