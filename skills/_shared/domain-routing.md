@@ -6,7 +6,7 @@ the workflow and never has to say which domain it involves.
 **Workflow owns sequencing. Domain skills own expertise. Routing is just
 applicability.** `hs-brainstorm`, `hs-plan`, `hs-build`, `hs-code-review`,
 and `hs-ship` decide the order of work and where the gates are. A domain skill
-(`hs-frontend-development`, `hs-backend-development`, ...) answers one
+(`hs-frontend-development`, `hs-backend-development`, `hs-devops`, ...) answers one
 question: when a workflow needs this domain, what should be done?
 
 Routing is prose the agent follows, not code. Everything here is a default the
@@ -56,6 +56,7 @@ Use the first signal that settles it:
 |---|---|---|
 | frontend | `*.tsx` `*.jsx` `*.vue` `*.svelte` `*.astro` `*.html` `*.css` `*.scss`, theme or token files, `components/`, `pages/`, `routes/` views | page, screen, component, form, dashboard, layout, style, responsive, UI, UX |
 | backend | routes, controllers, services, repositories, migrations, `*.sql`, API schemas | endpoint, API, auth, database, query, schema, service |
+| devops | Terraform/Bicep, `.github/workflows/`, Dockerfiles, Compose, Kubernetes/Helm manifests, deployment or observability configuration | infrastructure, Terraform, cloud, pipeline, GitHub Actions, Docker, container, deploy, health check, metrics, tracing, secrets |
 
 A change can touch more than one domain; route each. When a signal is
 ambiguous, say what you inferred and take the cheaper path. Ask once only
