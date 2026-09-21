@@ -1,67 +1,59 @@
-# Self-Review Checklist
+# Plan Readiness Checklist
 
-Run this on the draft before showing it to the user, and again after each
-revision, so what they review is already consistent. Nothing is written yet,
-so the checks apply to the draft in the conversation. The point is to check
-the plan against the codebase, not just against itself.
+Run this before materializing a local plan and again after a substantive
+revision. The goal is to establish that `hs-build` can execute the plan
+without inventing a material decision.
 
-## Scope questions
+## Scope and direction
 
-- How many files does this actually touch?
-- Does this change affect any other feature or user besides the one asked about?
-- Is there a smaller version of this that still solves the real problem?
-- What's the one thing that, if wrong, would be expensive to redo later?
+- The plan names the agreed direction or Decision Brief it derives from.
+- Scope in and explicit non-goals match that direction.
+- No task reopens a product, UX, API, architecture, data, security, or
+  permission choice that belongs in `hs-brainstorm`.
+- The solution is complete for the requested outcome without unrelated work.
 
-If answering these reopens the choice of approach, stop and take it back to
-`hs-brainstorm` rather than comparing approaches inside the plan.
+## Grounding
 
-## Core invariants
+Verify every plan-critical claim with repository evidence:
 
-Check each of the Core planning rules in `SKILL.md`, plus:
+- target files, modules, and interfaces exist or are explicitly new;
+- analogous implementation and project conventions were inspected;
+- commands, test entry points, and build assumptions are valid;
+- API, data, permission, dependency, and domain-context claims support the
+  proposed decomposition;
+- blockers and dependencies are real, not merely phase order.
 
-- **Disjoint ownership** (only if multiple people/agents will work the plan
-  in parallel) - each phase/issue names files no other phase touches.
-- **Issue mapping** (`--gh`) - every task is covered by exactly one issue,
-  each issue is one logical PR, and no issue exists just because a phase does.
-- **Blockers** (`--gh`) - each `blocked-by` has a written reason the
-  downstream work can't start or finish without the prerequisite. Remove any
-  that only reflect phase order.
+Describe incidental context proportionally rather than checking every
+descriptive sentence with the same effort.
 
-## Verification pass
+## Acceptance and verification
 
-For each claim the plan makes about the current codebase (a file exists, a
-function is called from X, an endpoint accepts Y), spot-check a handful with
-a real grep/glob/read rather than trusting it was right when written. Scale
-the effort to the plan's size - a 3-step plan needs a couple of checks, a
-7-phase plan needs more. Flag anything that doesn't hold up; don't silently
-"fix" the plan - surface it back to the user (or correct it with the user's
-explicit go-ahead).
+- Every Decision Brief acceptance criterion maps to one or more tasks.
+- Every task has a meaningful outcome and a verification check.
+- Verification proves the relevant risk at the cheapest reliable level.
+- Frontend states, interactions, responsive behavior, and accessibility
+  constraints are carried into the relevant checks.
+- Backend success, error, permission, migration, retry, and compatibility
+  concerns are covered when applicable.
+- Full-stack contracts are explicit enough for both sides to implement
+  without incompatible assumptions.
 
-## Interview only what matters
+## Organization
 
-Don't interview for interview's sake. Ask the user 2-4 concrete questions
-only where:
+- One `plan.md` is used unless separately verifiable phases add real value.
+- A phase is not treated as an issue or dependency without a reason.
+- If multiple people or agents will work in parallel, file ownership is
+  disjoint or the shared edits are explicitly coordinated.
+- In `--gh` mode, each issue maps to independently reviewable work and the
+  manifest lists the publication side effects.
 
-- a genuine decision point remains unresolved, or
-- an assumption, if wrong, would change the implementation significantly.
+## Safety and unresolved decisions
 
-Skip the interview entirely for a simple, low-risk plan - forcing questions
-onto an obvious change just adds ceremony.
-
-## Whole-plan sweep
-
-After any late change (a validation answer that alters scope, a task moved
-during feedback), re-read the whole draft (every phase, and every proposed
-issue in the batch) once more and check for staleness: renamed things not
-updated everywhere, a decision recorded in one place but contradicted in
-another. Resolve or flag every contradiction before asking for approval -
-don't present something that disagrees with itself.
-
-## Before asking for approval
-
-- Every claim in the draft that could be checked has been checked.
-- No unresolved contradiction remains inside the draft.
-- The manifest lists everything approval will cause.
-
-Approval itself is never implied: the user has to approve explicitly, even
-for a small plan (`plan-lifecycle.md`, Approval).
+- No plan step silently performs a migration, destructive action, production
+  write, deploy, or external write.
+- Such actions identify the owning workflow confirmation required at execution
+  time.
+- If a missing fact is discoverable, inspect it rather than asking the user.
+- Ask the user only when a genuine unresolved decision remains or a wrong
+  assumption would materially change implementation.
+- List unresolved questions last when any remain.

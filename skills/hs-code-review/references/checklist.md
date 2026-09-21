@@ -1,48 +1,47 @@
-# Starter Checklist
+# High-Signal Review Checklist
 
-A concrete starting point for the "clear quality or security problems?"
-question in `SKILL.md` - categories that are easy to miss when reading code
-top-to-bottom instead of hunting for them. Cite `file:line` for anything you
-flag; skip anything that's fine.
+Use the categories that match the changed path. Cite a precise location and
+skip categories that do not apply.
 
-## Injection & data safety
+## Trust boundaries and data
 
-- String interpolation in SQL/database queries (even with type casting -
-  use parameterized queries).
-- Unsanitized user input written to a database or rendered in HTML.
-- Raw HTML output from user-controlled data (`innerHTML`,
-  `dangerouslySetInnerHTML`, `html_safe`, `raw()`, `| safe`).
-- Command injection via string concatenation in shell commands (use
-  argument arrays).
-- Path traversal via user input in file operations.
+- SQL, shell, template, HTML, path, or serialization input is safely handled.
+- Authentication and object/function/property authorization cover every
+  sensitive path.
+- Secrets, tokens, personal data, and internal errors stay out of logs and
+  client responses.
+- Destructive writes, migrations, and external calls have safe failure and
+  rollback behavior.
 
-## Race conditions & concurrency
+## Correctness and concurrency
 
-- Read-check-write without an atomic operation (check-then-set should be
-  one atomic `WHERE` + `UPDATE`).
-- Find-or-create without a unique database constraint (concurrent calls
-  create duplicates).
-- Shared mutable state accessed without synchronization.
+- State transitions update all related data on success and failure paths.
+- Retry, duplicate delivery, idempotency, and stale writes behave as intended.
+- Read-check-write sequences are atomic where concurrent calls can race.
+- Queries and work queues are bounded and do not introduce N+1 behavior.
+- Public contracts remain compatible or the breaking change is intentional.
 
-## Auth & access control
+## Tests and verification
 
-- Missing authentication check on a new endpoint/route.
-- Missing authorization check (authenticated but not authorized) -
-  privilege escalation or IDOR (one user reaching another user's data).
-- Secrets in logs, error responses, or client-side code.
-- Token/JWT comparison using `==` instead of constant-time comparison.
+- Changed tests assert behavior that would fail if the protected behavior
+  regressed.
+- Fixtures and dependencies reflect the risk under test.
+- Negative paths and relevant boundaries are covered.
+- A material behavior has a regression probe, or the gap is reported as
+  `Verification Gap` rather than a production defect.
+- Claims that require runtime or rendered evidence are backed by `hs-test` or
+  marked `Needs verification`.
 
-## Correctness gaps easy to miss
+## Complexity and scope
 
-- A branch handles one condition but forgets the side effect on another
-  (e.g. sets status but not the associated data).
-- Missing negative-path tests (error cases, validation failures).
-- N+1 queries or unbounded queries with no `LIMIT`/pagination on a list
-  endpoint.
+- New abstractions, configuration, utilities, or public API surface solve a
+  demonstrated current problem.
+- The diff does not duplicate an existing repository mechanism or expand
+  beyond the accepted scope.
 
-## Don't flag
+## Do not flag
 
-- Style/formatting - that's a linter's job, not a review finding.
-- "Consider X instead of Y" when Y already works fine.
-- Anything the diff already addresses - read the full diff before
-  commenting.
+- Formatting or lint issues that deterministic tooling already owns.
+- Alternate architecture or style preferences without concrete impact.
+- Concerns already handled elsewhere in the current system.
+- Speculation stated as a confirmed defect.

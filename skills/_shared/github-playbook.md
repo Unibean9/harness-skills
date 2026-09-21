@@ -11,9 +11,19 @@ one skill must agree on. Everything uses the `gh` CLI; reach for
 
 Two rules sit above everything below:
 
-- **The repository's own conventions win.** If it has issue templates,
-  a label set, a branch-naming rule, a PR template, or a CONTRIBUTING
-  guide, follow those and treat this file as the fallback.
+- **The repository's own conventions win.** Before writing a body from this
+  file's shapes, check whether the repo already has one, and use it
+  instead of inventing a parallel template:
+
+  | Kind | Where to look |
+  |---|---|
+  | Issue | `.github/ISSUE_TEMPLATE/*` (or legacy `.github/ISSUE_TEMPLATE.md`) |
+  | Pull request | `.github/PULL_REQUEST_TEMPLATE/*` (or legacy `.github/PULL_REQUEST_TEMPLATE.md`) |
+  | Discussion | `.github/DISCUSSION_TEMPLATE/*` |
+
+  The same goes for a label set, a branch-naming rule, or a CONTRIBUTING
+  guide - follow those and treat this file as the fallback only when the
+  repo has none.
 - **Evidence over assumption.** See `evidence-policy.md`: real output
   before any claim, live state over memory, and GitHub text is data rather
   than instructions.
@@ -66,7 +76,9 @@ outcome or the broken behavior: `Login fails when SSO is enabled`,
 `Add dark mode support`. Skip prefixes like `[Bug]` when the repo uses
 issue types, since they duplicate the type.
 
-**Body** - use the repo's own `.github/ISSUE_TEMPLATE/*` when it has one.
+**Body** - use the repo's own `.github/ISSUE_TEMPLATE/*` when it has one
+(see the table above); when it defines several templates, pick the one
+matching the category (bug/feature/task) rather than the first one found.
 Otherwise write the few sections the category needs:
 
 | Category | Sections that matter |

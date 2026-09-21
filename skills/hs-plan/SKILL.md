@@ -1,12 +1,12 @@
 ---
 name: hs-plan
-description: Break an agreed direction or PRD into phases and tasks with acceptance criteria. Drafts and revises the plan with you in conversation, and writes nothing until you explicitly approve it; then saves it as a local plan, or with --gh publishes it as GitHub issues (one per task or tightly coupled task group that fits one PR, never one per phase) and archives the local plan. Use before implementing anything beyond a trivial fix, or when asked to plan, split work into phases or tasks, or track the work as GitHub issues. Not for choosing between approaches (hs-brainstorm) or implementing (hs-build).
+description: Turns an agreed Decision Brief or clear direction into a grounded implementation-ready plan with independently verifiable tasks and acceptance criteria. Use after hs-brainstorm or when the implementation direction is already settled. It does not choose approaches or write implementation code. With --gh, it publishes the resulting work as GitHub issues after explicit confirmation.
 license: MIT
-category: workflow
 keywords: [plan, phases, tasks, roadmap, github-issues]
 metadata:
+  category: workflow
   author: harness-skills
-  version: "2.0.0"
+  version: "3.0.0"
   workflow:
     follows: [brainstorm]
     precedes: [build]
@@ -14,138 +14,149 @@ metadata:
 
 # Plan Skill
 
-Turn a decision that's already been made (the `hs-brainstorm` contract and,
-for bigger decisions, its PRD) into phases and tasks concrete enough to
-execute and track. If no approach has been chosen yet, go back to
-`hs-brainstorm` instead of comparing approaches here.
+Turn a settled direction into a grounded implementation plan that `hs-build`
+can execute and verify without inventing a material decision. The Decision
+Brief explains why and what; current code and tests establish what exists; the
+plan describes the intended execution.
 
-This skill only produces plan documents and issues, never implementation
-code, so it carries no HARD-GATE; the gate lives in `hs-build`.
+This skill produces local plan documents and, with `--gh`, a publication
+manifest for GitHub issues. It does not implement code, choose a product or
+architecture direction, or update the PRD.
+
+## Source-of-truth order
+
+Use these sources in order:
+
+1. Decision Brief or explicit agreed direction.
+2. Current code and tests.
+3. Applicable domain context and repository conventions.
+4. PRD or project overview.
+5. Other repository documentation.
+
+The brief supplies the selected direction. Code supplies implementation
+reality. If the brief and code disagree about existing implementation detail,
+code wins and the inconsistency is surfaced.
+
+## Implementation-readiness invariant
+
+A plan is ready when `hs-build` can execute it without inventing a material
+product, UX, API, architecture, data, security, or permission decision.
+
+- If a missing fact is discoverable, inspect the code, tests, or docs.
+- If a real unresolved decision remains, return to `hs-brainstorm`.
+- Do not settle a material alternative inside task decomposition.
 
 ## Plan shape
 
-- **Location**: `artifacts.plans.directory` from `.hs.json` if set (see
-  `../_shared/hs-json-artifacts-convention.md`), else `plans/`.
-- **Phase** - an ordered chunk of work you can verify on its own.
-- **Task** - one checkbox-sized change inside a phase; the unit `hs-build`
-  implements, verifies, and commits.
-- **Acceptance criteria** - how you'll know a phase (or the whole plan) is
-  done: a command, a test, an observable result.
+- **Location:** `artifacts.plans.directory` from `.hs.json`, or `plans/`.
+- **Overview:** the outcome, scope in and out, and source direction.
+- **Tasks:** the smallest coherent changes that can be implemented and
+  verified independently. Include affected files or areas when knowable,
+  constraints, and verification evidence.
+- **Acceptance criteria:** map every brief criterion to one or more tasks and
+  a check that can settle it.
+- **Risks:** pair each material risk with a check or an explicit handoff.
 
-A small plan is one `plan.md` with:
+Use one `plan.md` for small work. Add phase files only when the work forms
+separately verifiable chunks with real execution value. A phase is an
+execution grouping, not automatically an issue, dependency, or domain bucket.
+Commit boundaries belong to `hs-build`.
 
-- **Overview** - what this plan accomplishes and why.
-- **Tasks** - an ordered checkbox list of concrete changes.
-- **Acceptance criteria** - per task or for the plan as a whole.
+## Lifecycle
 
-Split into `phase-NN-<name>.md` files only once tasks genuinely group into
-ordered, separately verifiable chunks - see `references/plan-organization.md`.
-No required phases; add structure only when the task's size calls for it.
+Local planning follows:
 
-## Core planning rules
+```text
+intake -> inspect -> domain prepare -> draft -> readiness review -> materialize
+```
 
-- **Grounded, not assumed** - base decisions on reading actual code, not
-  file/function names.
-- **Smallest complete solution** - cover the full requested scope, nothing
-  beyond it.
-- **No placeholders** - real file paths, real commands, real verification
-  steps; nothing deferred that's knowable now.
-- **Name risks up front** - and how you'll check for them (a test, a manual
-  check).
-- **Security & data safety** - no task commits secrets, tokens, or
-  credentials.
+Writing a temporary local plan does not require a separate approval phrase.
+The readiness review is the quality gate. If the user wants collaborative
+drafting, revise in conversation before materializing.
 
-## Lifecycle: draft, approve, then materialize
+`--gh` is a publication adapter:
 
-`Draft -> Feedback -> Revise -> Explicit approval -> Materialize`
+```text
+plan -> issue map and manifest -> explicit confirmation -> preflight -> publish -> verify
+```
 
-**Planning is a feedback loop; publishing is a side effect.** While the user
-is still shaping the plan, everything stays in the conversation: phases and
-tasks, splitting and reordering, the issue mapping, dependencies. Don't
-write plan files, create issues, Project items, milestones, or
-relationships, and don't archive or delete the current plan. Revising a chat
-draft leaves nothing behind to clean up, which is why the loop happens
-before any write.
+Keep GitHub publication confirmation, authenticated preflight, deduplication,
+read-back verification, and partial-publication reconciliation. Never fall
+back to local publication when `--gh` cannot run.
 
-Materialize only after the user explicitly approves the draft you showed.
-Silence, "looks good", or a bare "ok" is not approval; the approval prompt
-names the mode and exactly what will be created, and the user replies to it.
-
-Two modes, chosen at invocation and shown in every draft:
-
-- **Local (default, no flag).** After approval, write `plans/<plan>/`. That
-  plan is the active execution record: `hs-build` works from it and
-  `hs-ship` archives it once the work has shipped. Nothing is published to
-  GitHub.
-- **GitHub (`--gh` only).** Planning is identical until approval. Then the
-  work is published as issues and verified, and GitHub becomes the
-  execution tracker; the local plan is archived as a snapshot, not deleted.
-  Don't enter this mode without the flag, and don't fall back to local if it
-  can't run; stop and tell the user.
-
-An **issue** is one task, or a few tightly coupled tasks with one logical
-outcome that fit in one PR: `Phase -> task or task group -> issue -> PR`.
-Split when work can ship or be reviewed independently, has its own
-acceptance criteria, or would make one PR hard to follow. A small phase
-that is already independently verifiable can be one issue. Never assume one
-issue per phase or per checkbox.
-
-**Dependencies** are `blocked-by` links, recorded only when downstream work
-truly can't start or finish correctly without the prerequisite. Phase order
-is ordering, not dependency.
-
-A partial publish is not a success: report what was created and what
-failed, keep the plan `publishing`, and reconcile instead of duplicating.
-A plan is never deleted unless the user asks. A replacement plan leaves the
-current one untouched until the replacement is materialized and verified.
-
-The full state model, approval rules, draft format, materialize and
-reconcile steps, and what is the source of truth in each state are in
-`references/plan-lifecycle.md`. Read it before drafting a `--gh` plan or
-replacing an existing plan. GitHub mechanics (issue writing, dedup,
-blockers, verification checklist, Projects) are in
-`../_shared/github-playbook.md`.
+Read `references/plan-lifecycle.md` before replacing an existing plan or
+publishing with `--gh`.
 
 ## Planning pipeline
 
-1. **Intake & scope** - take the brainstorm contract or PRD as input instead
-   of re-deriving scope; state what's in and what's explicitly out. Under
-   `--gh`, run the read-only preflight now so a missing `gh` login fails
-   before anyone spends time on the draft.
-2. **Draft** - in the conversation, with tasks and acceptance criteria. For a
-   large plan, the `planner` subagent can draft it from a scoped brief; ask
-   it to return text, not files.
-3. **Self-review** - run `references/validate-checklist.md` before showing the
-   draft: scope questions, grounded claims checked against the code, no
-   placeholders, the whole-plan sweep, and questions to the user only where
-   a real decision remains.
-4. **Feedback and revise** - repeat 2-3 as many times as the user wants.
-5. **Approve** - end with the approval prompt (mode plus manifest).
-6. **Materialize** - per mode, following `references/plan-lifecycle.md`.
+1. **Intake and scope:** accept the Decision Brief or settled direction;
+   state what is in and explicitly out. Under `--gh`, run the read-only
+   preflight before drafting.
+2. **Inspect:** read analogous code, tests, configuration, and documentation.
+   Record real paths, commands, interfaces, and conventions rather than
+   guessing from names.
+3. **Prepare domain context:** use the applicable domain `prepare` capability
+   for context only, before decomposition.
+4. **Draft:** decompose into coherent tasks with acceptance criteria and
+   verification.
+5. **Readiness review:** run `references/validate-checklist.md`; verify all
+   plan-critical claims and check acceptance-criteria coverage.
+6. **Materialize:** write the local plan, or publish only after explicit
+   confirmation in `--gh` mode.
+
+## Domain routing
+
+Follow `../_shared/domain-routing.md`. State the route in one line and use
+`prepare` before drafting; do not implement during preparation.
+
+For frontend work, use a confirmed design brief when the plan materially
+touches a new user-facing surface. Carry its states, interaction model,
+responsive behavior, and accessibility constraints into task acceptance
+criteria. Do not invent a missing material UX decision; return to
+`hs-brainstorm`. For a small existing-surface change, follow the code's
+conventions without forcing a setup interview.
+
+For backend work, inspect analogous modules, API and error conventions,
+authorization, persistence and transaction patterns, migration practices,
+external integrations, tests, and observability relevant to the change. Do not
+choose a new architecture inside the plan. If a material backend decision is
+still open, return to `hs-brainstorm`.
+
+A full-stack feature remains one plan. Make the FE/BE contract explicit and
+decompose by independently verifiable outcomes or real dependencies, not by
+manufacturing separate domain plans.
+
+## Verification and safety
+
+Every acceptance criterion needs a task and a verification check. Verify all
+claims that affect decomposition: target paths, current interfaces, commands,
+data or API assumptions, dependencies, and required domain context. Describe
+incidental context proportionally.
+
+Mark migrations, production writes, destructive actions, and external writes
+for the owning build workflow's confirmation at execution time. A plan may
+describe such work; planning does not grant permission to perform it.
 
 ## Handoff
 
-Report the plan path, or with `--gh` the created issue URLs (with the tasks
-each covers and any blockers), the Project if one was used, what was
-promoted to docs, and where the plan was archived. If a publish was partial,
-say so and list what is missing. Then give the next step: `hs-build`,
-starting with the first task or issue.
+Report the materialized plan path or, with `--gh`, the created issue URLs,
+covered tasks, blockers, Project use, and publication status. Do not promote or
+update project documentation during planning. Hand off to `hs-build`, starting
+with the first executable task.
 
 ## References
 
-- `references/plan-lifecycle.md` - state model, approval gate, draft format,
-  materialize and reconcile, replacing and archiving plans.
-- `references/plan-organization.md` - multi-file phase layout, the
-  `Mode/Status` header, the phase table, and the publication ledger.
-- `references/validate-checklist.md` - scope questions and self-review
-  checklist before showing the draft.
-- `../_shared/github-playbook.md` - publishing and tracking issues.
-- `../_shared/hs-json-artifacts-convention.md` - where plan output is
-  written, and how plans are promoted and archived.
+- `references/plan-lifecycle.md` - local and GitHub state model.
+- `references/plan-organization.md` - phase layout and publication ledger.
+- `references/validate-checklist.md` - readiness and claim verification.
+- `../_shared/github-playbook.md` - GitHub publication mechanics.
+- `../_shared/domain-routing.md` - domain routing contract.
+- `../hs-frontend-development/references/design-brief.md` - confirmed UI input.
+- `../_shared/hs-json-artifacts-convention.md` - artifact locations and archiving.
 
-## Make it yours
+## Boundaries
 
-Decide how much detail a plan needs based on the size of the assignment.
-For a quick fix, three task lines might be the whole plan; for a
-multi-file feature, write more. Same goes for issues - a two-line issue
-beats a padded template when the work is genuinely small.
+- Plan owns decomposition; domains supply context; code supplies reality.
+- External publication requires confirmation; local planning requires
+  readiness, not ceremony.
+- List unresolved questions last when any remain.

@@ -41,7 +41,7 @@ export function isMainModule(importMetaUrl) {
 
 // The platforms this kit wires PreToolUse gates into. Anything else fails closed so a
 // typo in a wiring file can never silently turn a gate into an allow.
-export const KNOWN_PLATFORMS = new Set(['claude', 'cursor', 'codex', 'copilot', 'kiro', 'antigravity']);
+export const KNOWN_PLATFORMS = new Set(['claude', 'cursor', 'codex', 'copilot', 'antigravity']);
 
 export function readPlatform(argv = process.argv.slice(2)) {
     const index = argv.indexOf('--platform');

@@ -1,18 +1,19 @@
 #!/usr/bin/env bash
 # Installs the student harness kit into a target project. Selects one or more
-# runtimes via long flags (--claude --cursor --codex --anti --kiro --copilot);
+# runtimes via long flags (--claude --cursor --codex --anti --copilot);
 # flags are additive, and no flags passed defaults to --claude only (matches
 # install.ps1's default-to-claude behavior).
 #
-# --claude copies the 3 flat source folders (agents/ hooks/ skills/) into
-# <target-path>/.claude/{agents,hooks,skills}, and copies this repo's
+# --claude copies agents/, hook scripts, and skills/ into
+# <target-path>/.claude/{agents,hooks,skills}; Claude hook wiring lives only in
+# <target-path>/.claude/settings.json, and copies this repo's
 # .hs.json to <target-path>/.hs.json (skipped if the target
 # already has one).
 #
 # Every other selected runtime's content is GENERATED, not copied from a
 # static mirror: agents/, skills/, and hooks/ stay the single source of
 # truth, and install/lib/generate-runtime.mjs maps them into that runtime's
-# own shape (see docs/RUNTIME-MAPPING.md) into a scratch directory, which is
+# own shape (see README.md) into a scratch directory, which is
 # then copied into <target-path>/ the same safe way --claude already was.
 # hooks/*.mjs are additionally copied into that runtime's own
 # `<dot-folder>/kit-hooks/` subfolder - never into a single shared folder.
@@ -22,7 +23,7 @@
 # the same way Claude Code does natively - no separate command-wrapper layer.
 #
 # Prerequisites: Node.js 18+ (to run the .mjs hooks and the generator), bash.
-# Invoke as: bash install.sh [--claude] [--cursor] [--codex] [--anti] [--kiro] [--copilot] [--target-path DIR]
+# Invoke as: bash install.sh [--claude] [--cursor] [--codex] [--anti] [--copilot] [--target-path DIR]
 #
 # If run via `curl ... | bash` (piped from stdin, no file on disk) or from a
 # copy that isn't sitting next to this repo's other source folders, this
@@ -71,7 +72,6 @@ SEL_CLAUDE=0
 SEL_CURSOR=0
 SEL_CODEX=0
 SEL_ANTI=0
-SEL_KIRO=0
 SEL_COPILOT=0
 
 while [ $# -gt 0 ]; do
@@ -80,7 +80,6 @@ while [ $# -gt 0 ]; do
         --cursor) SEL_CURSOR=1; shift ;;
         --codex) SEL_CODEX=1; shift ;;
         --anti) SEL_ANTI=1; shift ;;
-        --kiro) SEL_KIRO=1; shift ;;
         --copilot) SEL_COPILOT=1; shift ;;
         --target-path)
             TARGET_PATH="$2"
@@ -94,7 +93,7 @@ while [ $# -gt 0 ]; do
 done
 
 if [ "$SEL_CLAUDE" -eq 0 ] && [ "$SEL_CURSOR" -eq 0 ] && [ "$SEL_CODEX" -eq 0 ] && \
-   [ "$SEL_ANTI" -eq 0 ] && [ "$SEL_KIRO" -eq 0 ] && [ "$SEL_COPILOT" -eq 0 ]; then
+   [ "$SEL_ANTI" -eq 0 ] && [ "$SEL_COPILOT" -eq 0 ]; then
     SEL_CLAUDE=1
 fi
 
@@ -108,7 +107,6 @@ runtime_dot_folder() {
         cursor) echo ".cursor" ;;
         codex) echo ".codex" ;;
         copilot) echo ".github" ;;
-        kiro) echo ".kiro" ;;
         antigravity) echo ".agents" ;;
     esac
 }
@@ -117,7 +115,7 @@ runtime_dot_folder() {
 # must be surfaced in the terminal output itself, not just in documentation.
 fidelity_warning() {
     case "$1" in
-        copilot) echo "Copilot hooks are confirmed for Copilot cloud agent + Copilot CLI only - VS Code Chat surface support for hooks is NOT confirmed by official docs. See docs/RUNTIME-MAPPING.md." ;;
+        copilot) echo "Copilot hooks are confirmed for Copilot cloud agent + Copilot CLI only - VS Code Chat surface support for hooks is NOT confirmed by official docs. See README.md for the supported runtime surfaces." ;;
         *) echo "" ;;
     esac
 }
@@ -126,7 +124,6 @@ OTHER_RUNTIMES=""
 [ "$SEL_CURSOR" -eq 1 ] && OTHER_RUNTIMES="$OTHER_RUNTIMES cursor"
 [ "$SEL_CODEX" -eq 1 ] && OTHER_RUNTIMES="$OTHER_RUNTIMES codex"
 [ "$SEL_ANTI" -eq 1 ] && OTHER_RUNTIMES="$OTHER_RUNTIMES antigravity"
-[ "$SEL_KIRO" -eq 1 ] && OTHER_RUNTIMES="$OTHER_RUNTIMES kiro"
 [ "$SEL_COPILOT" -eq 1 ] && OTHER_RUNTIMES="$OTHER_RUNTIMES copilot"
 
 # --- Generate every selected non-Claude runtime's content into its own
@@ -150,7 +147,6 @@ set_runtime_temp_dir() {
         cursor) TEMP_DIR_cursor="$2" ;;
         codex) TEMP_DIR_codex="$2" ;;
         antigravity) TEMP_DIR_antigravity="$2" ;;
-        kiro) TEMP_DIR_kiro="$2" ;;
         copilot) TEMP_DIR_copilot="$2" ;;
     esac
 }
@@ -160,7 +156,6 @@ get_runtime_temp_dir() {
         cursor) echo "$TEMP_DIR_cursor" ;;
         codex) echo "$TEMP_DIR_codex" ;;
         antigravity) echo "$TEMP_DIR_antigravity" ;;
-        kiro) echo "$TEMP_DIR_kiro" ;;
         copilot) echo "$TEMP_DIR_copilot" ;;
     esac
 }
@@ -211,7 +206,7 @@ check_platform_wiring() {
                 exit 1
             fi
         done
-    done < <(find "$runtime_root" -type f \( -name 'hooks.json' -o -name '*.kiro.hook' \) -print0)
+    done < <(find "$runtime_root" -type f -name 'hooks.json' -print0)
 }
 
 for runtime_name in $OTHER_RUNTIMES; do
@@ -219,7 +214,11 @@ for runtime_name in $OTHER_RUNTIMES; do
     check_platform_wiring "$runtime_name" "$(get_runtime_temp_dir "$runtime_name")"
 done
 
-# --- Claude: same behavior as install.ps1's --claude branch.
+# --- Claude: copy managed files without overwriting user-owned files.
+
+SKIPPED_EXISTING=""
+FAILED_RUNTIMES=""
+INSTALLED_RUNTIMES=""
 
 if [ "$SEL_CLAUDE" -eq 1 ]; then
     for folder in agents hooks skills; do
@@ -230,7 +229,25 @@ if [ "$SEL_CLAUDE" -eq 1 ]; then
         fi
         dst="$TARGET_PATH/.claude/$folder"
         mkdir -p "$dst"
-        cp -R "$src/." "$dst/"
+        while IFS= read -r -d '' file; do
+            relative_path="${file#"$src"/}"
+            if [ "$folder" = "hooks" ]; then
+                case "$relative_path" in
+                    *.mjs|*.js|*.cjs|*.ps1|*.sh) ;;
+                    *) continue ;;
+                esac
+            fi
+            dest_path="$dst/$relative_path"
+            if [ -e "$dest_path" ]; then
+                if ! cmp -s "$file" "$dest_path"; then
+                    SKIPPED_EXISTING="$SKIPPED_EXISTING
+  - $dest_path"
+                fi
+                continue
+            fi
+            mkdir -p "$(dirname "$dest_path")"
+            cp "$file" "$dest_path"
+        done < <(find "$src" -type f -print0)
         echo "Copied $folder -> $dst"
     done
 
@@ -244,16 +261,23 @@ if [ "$SEL_CLAUDE" -eq 1 ]; then
     else
         echo "WARNING: Source config not found at '$source_config'." >&2
     fi
+
+    source_hook_settings="$SOURCE_ROOT/hooks/hooks.json"
+    target_hook_settings="$TARGET_PATH/.claude/settings.json"
+    if [ -f "$target_hook_settings" ]; then
+        echo "Skipped Claude hook settings: already exists at target ($target_hook_settings), not overwriting."
+    elif [ -f "$source_hook_settings" ]; then
+        cp "$source_hook_settings" "$target_hook_settings"
+        echo "Copied Claude hook settings -> $target_hook_settings"
+    else
+        echo "WARNING: Claude hook settings not found at '$source_hook_settings'." >&2
+    fi
 fi
 
 # --- Every other selected runtime: copy its generated content into
 # $TARGET_PATH, with per-runtime failure isolation (one runtime's error
 # doesn't abort the others) and a pre-copy existence check (skip + report,
 # never silently overwrite a file the kit doesn't own).
-
-SKIPPED_EXISTING=""
-FAILED_RUNTIMES=""
-INSTALLED_RUNTIMES=""
 
 install_runtime() {
     runtime_name="$1"
@@ -269,8 +293,10 @@ install_runtime() {
             *) is_kit_hooks=0 ;;
         esac
         if [ -e "$dest_path" ] && [ "$is_kit_hooks" -eq 0 ]; then
-            SKIPPED_EXISTING="$SKIPPED_EXISTING
+            if ! cmp -s "$file" "$dest_path"; then
+                SKIPPED_EXISTING="$SKIPPED_EXISTING
   - $dest_path"
+            fi
             continue
         fi
         mkdir -p "$(dirname "$dest_path")"
@@ -310,6 +336,6 @@ fi
 if [ -n "$SKIPPED_EXISTING" ]; then
     echo "Skipped (already existed, not overwritten):$SKIPPED_EXISTING"
 fi
-echo "Note: each runtime's own hook wiring file (hooks.json / *.kiro.hook) is a"
-echo "reference only - merge it into that runtime's own settings surface yourself"
-echo "where that runtime requires it (this script does not edit runtime settings)."
+echo "Note: non-Claude hook wiring files (hooks.json) are references only - merge"
+echo "them into that runtime's own settings surface where required. Claude keeps"
+echo "hook wiring only in .claude/settings.json; .claude/hooks contains scripts."

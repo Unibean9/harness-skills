@@ -1,56 +1,44 @@
 # Coverage and Test-Quality Checklist
 
-Use this when you need to decide whether the tests you ran are *enough*,
-not just whether they passed.
+Use this to decide whether evidence is sufficient, not to turn coverage into
+a correctness score.
 
 ## Coverage
 
-Coverage tells you which lines never ran under test. It can't tell you
-whether the assertions were meaningful: a test with no `expect` still
-counts as covering the lines it touched. Read it as a map of untested
-code, not as a grade.
+Coverage reveals executed lines and branches. It cannot show whether an
+assertion was meaningful or whether the behavior is desired. Prefer changed
+path and material-branch coverage over repository-wide percentage, and use
+the project's configured threshold only when it represents an explicit policy.
 
-```bash
-npx vitest run --coverage     # Vitest
-npx jest --coverage           # Jest
-pytest --cov=src              # pytest-cov
-go test -cover ./...          # Go
-```
+Critical paths should have evidence for every material branch and invariant;
+the percentage is not proof by itself. A test that executes code without
+asserting the protected behavior does not establish verification.
 
-- **Look at coverage of the diff, not only the total.** New code with no
-  tests is the actionable signal. A dip in the overall percentage often
-  isn't.
-- **Critical paths deserve full branch coverage**: authentication and
-  authorization, payments, and anything that writes or deletes user data.
-- **No threshold is assumed.** If the project wants one, pick it
-  deliberately and enforce it in CI (numbers like "80% overall, higher on
-  new code" are a common starting point, not a rule). Never game a
-  threshold with tests that execute code without asserting on it.
+## Trustworthy tests
 
-## What makes a test trustworthy
+- Name the behavior, not an arbitrary test number.
+- Arrange, act, and assert observable behavior.
+- Control time, randomness, and external state instead of sleeping.
+- Isolate data so tests pass independently and in parallel when expected.
+- Cover relevant empty, boundary, missing, duplicate, failure, and concurrency
+  cases.
+- Use a real dependency when its semantics are under test; use a focused fake
+  when the dependency is not the subject.
+- Keep mocks at meaningful boundaries and do not mock away the behavior being
+  claimed.
+- Treat a flaky test as ambiguous feedback: classify and track it rather than
+  retrying it into a false pass.
 
-- **Arrange-Act-Assert**, with a name that states the behavior:
-  `rejects a duplicate email`, not `test2`.
-- **Deterministic**: no `sleep()`; wait for the actual condition. Control
-  time and randomness (fake clocks, seeded data).
-- **Independent**: each test sets up and cleans its own state, and passes
-  in any order and in parallel.
-- **Fast enough to run on every change**: slow tests stop getting run.
-- **Edge cases included**: empty inputs, boundaries (0, 1, max), null or
-  missing fields, unicode, duplicates, concurrent requests where they
-  matter.
-- **A flaky test is a bug.** Fix it or quarantine it with an issue.
-  Retrying until it passes hides a real race as often as a test problem.
+## Verification review
 
-## Checklist before calling a change verified
-
-- [ ] Every changed behavior has a test that would fail without the change.
-- [ ] Failure and boundary cases are covered, not only the happy path.
-- [ ] Integration tests cover the endpoints the change touches, against
-      the real database engine.
-- [ ] Critical paths in the diff are fully covered.
-- [ ] No test was skipped, loosened, or deleted to make the suite pass.
-- [ ] The suite is green, and the command plus its output are recorded as
-      evidence.
-- [ ] Tests run in CI on every pull request (setting that up belongs to
-      `hs-devops`).
+- Each material changed behavior has executable evidence or an explicit reason
+  a one-off probe is sufficient.
+- Negative paths and boundaries match the risk.
+- Tests trace their expectations to intent, policy, a public contract, or an
+  implementation invariant.
+- Changed tests would fail if the protected behavior regressed.
+- No test was skipped, weakened, deleted, or snapshot-updated solely to make a
+  command pass.
+- Commands, result state, output, and evidence paths are recorded.
+- Missing regression protection is reported as a verification gap, not as a
+  production defect.

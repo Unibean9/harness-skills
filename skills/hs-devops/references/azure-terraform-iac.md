@@ -1,152 +1,63 @@
-# Azure Terraform Architect (IaC)
+# Azure and Terraform Decisions
 
-Act as an Azure Terraform architect. The goal is never to produce code fast —
-it's to force explicit, informed infrastructure decisions before a single
-line of Terraform is written. Terraform is hard to reverse (public IP
-exposure, PE-only DNS, replaced resources) so the value of this workflow is
-entirely in the front-loaded interview and the confirmation checkpoint.
+Use this reference for Azure or Terraform work after reading the repository's
+modules, provider constraints, variables, state configuration, environment
+conventions, and deployment workflow.
 
-<HARD-GATE>
-Do NOT output any Terraform code in the first response, and do NOT generate
-code (Phase 5) until the Phase 4 Architecture Lock summary table has been
-explicitly confirmed by the user. This applies regardless of how simple or
-familiar the request seems — a user who says "just give me a storage account"
-still goes through Env Selection and the confirmation checkpoint, because SKU
-and networking defaults have real cost and lockout consequences.
-A user may explicitly override this ordering ("skip the questions, just
-generate DEV defaults"), but the Phase 4 confirmation step itself still has
-to happen: it's the one checkpoint that confirms SKU and networking
-defaults before they're applied.
-</HARD-GATE>
+## Decision order
 
-## When to Use
+1. Reuse a suitable repository or organization module and follow its naming,
+   tagging, identity, networking, state, and environment policy.
+2. If no suitable module exists, consider a current Azure Verified Module
+   before hand-rolling a generic abstraction.
+3. Use direct provider resources when they are clearer or better fit the
+   repository, and record the reason for a material choice.
+4. Check current HashiCorp and Microsoft documentation for provider/resource
+   capability, regional availability, quota, SKU, subnet, private endpoint,
+   import, and pricing questions.
 
-- Designing or scaffolding Azure infrastructure with Terraform
-- Adding a new Azure service (App Service, ACR, Postgres Flex, Key Vault, etc.) to an existing stack
-- Deciding network topology (public vs VNet/Private Endpoint) for an environment
-- Reviewing SKU choices for cost vs feature tradeoffs (e.g. Private Endpoint support)
-- Producing a `terraform plan`-style validation summary before apply
+Do not treat example Cloud Adoption Framework names or tags as universal
+organization policy. Follow existing policy; when none exists, choose names
+and tags that make ownership, environment, workload, cost attribution, and
+governance clear within current resource limits.
 
-## The 6-Phase State Machine
+## Network and environment reasoning
 
-Work through these phases in order. Do not skip ahead to code generation.
+Choose public endpoints, private endpoints, VNet integration, subnets, and
+DNS from the workload threat model, data sensitivity, connectivity needs,
+landing-zone policy, service capabilities, cost, and operability. A production
+label alone does not prove that a VNet or private endpoint is required.
 
-### Phase 1 — Env Selection
-Ask the user to choose one: `DEV`, `STAGING/UAT`, or `PROD`. This choice
-drives every default in the phases that follow — get it first.
+Check current service documentation for SKU features, subnet delegation,
+regional support, quotas, provider behavior, and resource naming limits. Avoid
+static subnet sizes, SKU assumptions, and hardcoded numeric defaults in generic
+guidance.
 
-### Phase 2 — Service Selection
-Present this numbered list and ask the user to pick one or more:
+## Terraform safety
 
-1. App Service
-2. Azure Container Apps (ACA)
-3. Azure Container Registry (ACR)
-4. Service Bus
-5. Storage
-6. Postgres Flexible Server
-7. Azure SQL
-8. Key Vault
-9. Redis
-10. IoT Hub
-11. Event Hubs
-12. Front Door
-13. App Gateway
-14. Monitor / Log Analytics
-15. Other
+Use the repository's Terraform and provider versions. Validate and inspect:
 
-### Phase 3 — Dynamic Q&A
-Ask targeted questions scoped only to the services selected in Phase 2,
-most consequential first, and few enough per turn that the user can
-answer them all in one reply. For each open decision, recommend an option first with
-a brief FinOps or architecture rationale — don't just ask open-ended
-questions, give the user something to react to.
+```text
+format -> initialize with the repository's policy -> validate -> plan -> review
+```
 
-### Phase 4 — Architecture Lock
-Output a summary table (see Output Templates below) and require explicit
-user confirmation before proceeding. This is the hard gate — do not generate
-code from an assumed or implied "yes."
+Treat a plan as time-bound feedback. Drift, changed variables, provider/API
+behavior, credentials, and state can make it stale. Before a high-impact apply,
+confirm the target account/subscription/workspace, inspect create/change/
+replace/destroy operations, understand recovery, and recompute close to the
+operation. Prefer applying the reviewed saved plan where supported.
 
-### Phase 5 — Code Generation
-Only after Phase 4 confirmation: output modular or flat Terraform files —
-`main.tf`, `variables.tf`, `outputs.tf`, `terraform.tfvars` — following the
-Mandatory Standards below.
+Do not add `-auto-approve` to a production mutation without explicit project
+policy and user authorization. `apply`, `destroy`, state mutation, and cloud
+resource changes are external operations; local Terraform code and validation
+are not.
 
-### Phase 6 — Validation & Report
-Provide a static review / plan summary table and the execution steps the
-user needs to run (`terraform init/plan/apply`), per the Final Deliverable
-template.
+## Review questions
 
-## Environment Policies
-
-- **DEV** — Cost-first, simple design. Public endpoints protected by
-  TLS / IP restriction / RBAC by default. Only add a VNet or Private
-  Endpoint if explicitly requested or strictly required. Ask whether an
-  auto-delete lifecycle policy is wanted for Storage.
-- **STAGING/UAT** — Ask the user to pick a strategy first: (1) PROD-like
-  networking, (2) DEV-like simplicity, or (3) Hybrid (private data/backend
-  only, public frontend).
-- **PROD** — VNet is mandatory. Dedicated subnets for Private Endpoints
-  (`private_endpoint_network_policies = "Disabled"`) and delegated services
-  (App Service ≥ `/26`, Postgres ≥ `/28`, AKS ≥ `/22`). Determine the
-  Private DNS model explicitly: Local VNet vs. Centralized Hub/Landing Zone
-  Link.
-
-## Architecture & FinOps Guardrails
-
-- **Cost-first SKU.** Start with the lowest viable SKU. Do not silently
-  upgrade a SKU just to unlock Private Endpoint support (e.g. ACR/Service
-  Bus Premium) — surface the SKU limit, the cost delta, and offer a
-  public+IP-restricted/RBAC fallback instead.
-- **TF lockout prevention.** When locking down public access on Key Vault,
-  Storage, or a database, explicitly configure `network_rules` to whitelist
-  the CI/CD runner / execution host IP during bootstrap, or the next
-  `terraform apply` can lock out the pipeline that runs it.
-- **Storage policy.** Blob access is strictly `private`. Treat Soft Delete
-  and Lifecycle Auto-Delete as distinct settings — do not conflate them.
-  Apply auto-delete lifecycle rules only to DEV, and only if confirmed.
-- **Existing infrastructure.** Use Terraform ≥1.5 declarative `import {}`
-  blocks instead of walking the user through manual `terraform import` CLI
-  commands.
-
-## Mandatory Standards (enforce automatically, don't ask)
-
-- **CAF naming:** `rg-<proj>-<env>-<region>`, `kv-<proj>-<env>-<region>-<inc>`,
-  `st<proj><env><inc>`, and the equivalent CAF pattern for every other
-  resource type.
-- **Tags:** every resource gets `Environment`, `Project`,
-  `ManagedBy = "Terraform"`, `CostCenter`.
-- **Security:** TLS 1.2+, System- or User-Assigned Managed Identity, Azure
-  RBAC over keys/passwords wherever the service supports it, `sensitive =
-  true` on every secret-bearing variable/output. Never expose `0.0.0.0/0`.
-  Never hardcode credentials.
-
-## Output Templates
-
-### Phase 4 checkpoint (before code generation)
-
-Output a table:
-
-| Category | Selected Configuration |
-| --- | --- |
-| Env | ... |
-| SKUs | ... |
-| Network / PE / DNS | ... |
-| Storage Lifecycle | ... |
-| CI/CD Runner Rules | ... |
-| Security / RBAC | ... |
-
-End the message asking the user to confirm this configuration before
-Terraform generation proceeds.
-
-### Phase 6 final deliverable
-
-1. Complete Terraform code files.
-2. **Service Matrix:** `| Service | SKU | Public/Private | PE Subresource | Private DNS Model | Rationale |`
-3. **Storage & Runner Access Rules:** soft delete, retention, and CI/CD
-   whitelist policies.
-4. **Public vs Private Path List:** entrypoints vs. internal-only services.
-5. **Architectural & FinOps Warnings:** downtime, resource replacement,
-   breaking changes, cost impacts.
-6. **Validation Summary:** `| Project/Env | Validate | Add | Change | Destroy | Replacement | Notes |`
-7. **Final Confirmation:** explicitly state that `terraform apply` was
-   **not** run, and that no code was auto-pushed or committed.
+- Is state stored and locked according to repository policy?
+- Does the change preserve backward compatibility and safe replacement order?
+- Are identity, network, secret, and data boundaries explicit?
+- Is rollback or recovery possible, especially for schema or state changes?
+- Are cost, quota, capacity, and deletion risks visible?
+- Are organization policy and current official documentation the sources for
+  volatile decisions?

@@ -1,19 +1,20 @@
 #!/usr/bin/env pwsh
 <#
 Installs the student harness kit into a target project. Selects one or more
-runtimes via switch flags (-Claude -Cursor -Codex -Anti -Kiro -Copilot);
+runtimes via switch flags (-Claude -Cursor -Codex -Anti -Copilot);
 flags are additive, and no flags passed defaults to -Claude only (unchanged
 prior behavior).
 
--Claude copies the 3 flat source folders (agents/ hooks/ skills/) into
-<TargetPath>/.claude/{agents,hooks,skills}, and copies this repo's
+-Claude copies agents/, hook scripts, and skills/ into
+<TargetPath>/.claude/{agents,hooks,skills}; Claude hook wiring lives only in
+<TargetPath>/.claude/settings.json, and copies this repo's
 .hs.json to <TargetPath>/.hs.json (skipped if the target already
 has one) - exactly as before this script gained other runtimes.
 
 Every other selected runtime's content is GENERATED, not copied from a
 static mirror: agents/, skills/, and hooks/ stay the single source of
 truth, and install/lib/generate-runtime.mjs maps them into that runtime's
-own shape (see docs/RUNTIME-MAPPING.md) into a scratch directory, which is
+own shape (see README.md) into a scratch directory, which is
 then copied into <TargetPath>/ the same safe way -Claude already was.
 hooks/*.mjs are additionally copied into that runtime's own
 `<dot-folder>/kit-hooks/` subfolder - never into a single shared folder.
@@ -32,12 +33,12 @@ bound parameter. This is necessary because the installer's own sibling
 folders (agents/, hooks/, skills/, install/lib/) are not carried along by a
 bare `irm | iex` pipe - only the scriptblock text is.
 #>
+[CmdletBinding()]
 param(
     [switch]$Claude,
     [switch]$Cursor,
     [switch]$Codex,
     [switch]$Anti,
-    [switch]$Kiro,
     [switch]$Copilot,
     [string]$TargetPath = (Get-Location).Path
 )
@@ -77,14 +78,13 @@ $RuntimeDotFolders = @{
     cursor      = '.cursor'
     codex       = '.codex'
     copilot     = '.github'
-    kiro        = '.kiro'
     antigravity = '.agents'
 }
 
 # Runtimes with a known fidelity gap (plan.md Architecture Decision A4) that
 # must be surfaced in the terminal output itself, not just in documentation.
 $FidelityWarnings = @{
-    copilot = "Copilot hooks are confirmed for Copilot cloud agent + Copilot CLI only - VS Code Chat surface support for hooks is NOT confirmed by official docs. See docs/RUNTIME-MAPPING.md."
+    copilot = "Copilot hooks are confirmed for Copilot cloud agent + Copilot CLI only - VS Code Chat surface support for hooks is NOT confirmed by official docs. See README.md for the supported runtime surfaces."
 }
 
 $selected = @()
@@ -92,7 +92,6 @@ if ($Claude) { $selected += 'claude' }
 if ($Cursor) { $selected += 'cursor' }
 if ($Codex) { $selected += 'codex' }
 if ($Anti) { $selected += 'antigravity' }
-if ($Kiro) { $selected += 'kiro' }
 if ($Copilot) { $selected += 'copilot' }
 if ($selected.Count -eq 0) { $selected = @('claude') }
 
@@ -142,7 +141,7 @@ try {
     function Test-RuntimePlatformWiring {
         param([string]$RuntimeName, [string]$RuntimeRoot)
         $wiringFiles = Get-ChildItem -Path $RuntimeRoot -Recurse -File | Where-Object {
-            $_.Name -eq 'hooks.json' -or $_.Name -like '*.kiro.hook'
+            $_.Name -eq 'hooks.json'
         }
         foreach ($file in $wiringFiles) {
             $content = Get-Content -Raw -LiteralPath $file.FullName
@@ -160,7 +159,11 @@ try {
         Test-RuntimePlatformWiring -RuntimeName $runtimeName -RuntimeRoot $tempDirs[$runtimeName]
     }
 
-    # --- Claude: unchanged from before this script gained other runtimes.
+    $skippedExisting = @()
+    $failedRuntimes = @()
+    $installedRuntimes = @()
+
+    # --- Claude: copy managed files without overwriting user-owned files.
 
     if ($selected -contains 'claude') {
         $folders = @('agents', 'hooks', 'skills')
@@ -172,7 +175,21 @@ try {
             }
             $dst = Join-Path $targetClaude $folder
             New-Item -ItemType Directory -Force -Path $dst | Out-Null
-            Copy-Item -Path (Join-Path $src '*') -Destination $dst -Recurse -Force
+            foreach ($file in Get-ChildItem -Path $src -Recurse -File) {
+                $relativePath = $file.FullName.Substring($src.Length).TrimStart('\', '/')
+                if ($folder -eq 'hooks' -and $file.Extension -notin @('.mjs', '.js', '.cjs', '.ps1', '.sh')) {
+                    continue
+                }
+                $destPath = Join-Path $dst $relativePath
+                if (Test-Path $destPath) {
+                    if (-not (Test-Path $destPath -PathType Leaf) -or (Get-FileHash -LiteralPath $file.FullName -Algorithm SHA256).Hash -ne (Get-FileHash -LiteralPath $destPath -Algorithm SHA256).Hash) {
+                        $skippedExisting += $destPath
+                    }
+                    continue
+                }
+                New-Item -ItemType Directory -Force -Path (Split-Path -Parent $destPath) | Out-Null
+                Copy-Item -Path $file.FullName -Destination $destPath
+            }
             Write-Host "Copied $folder -> $dst"
         }
 
@@ -186,16 +203,23 @@ try {
         } else {
             Write-Warning "Source config not found at '$sourceConfig'."
         }
+
+        $sourceHookSettings = Join-Path $sourceRoot 'hooks/hooks.json'
+        $targetHookSettings = Join-Path $targetClaude 'settings.json'
+        if (Test-Path $targetHookSettings) {
+            Write-Host "Skipped Claude hook settings: already exists at target ($targetHookSettings), not overwriting."
+        } elseif (Test-Path $sourceHookSettings) {
+            Copy-Item -Path $sourceHookSettings -Destination $targetHookSettings -Force
+            Write-Host "Copied Claude hook settings -> $targetHookSettings"
+        } else {
+            Write-Warning "Claude hook settings not found at '$sourceHookSettings'."
+        }
     }
 
     # --- Every other selected runtime: copy its generated content into
     # $TargetPath, with per-runtime failure isolation (one runtime's error
     # doesn't abort the others) and a pre-copy existence check (skip +
     # report, never silently overwrite a file the kit doesn't own).
-
-    $skippedExisting = @()
-    $failedRuntimes = @()
-    $installedRuntimes = @()
 
     foreach ($runtimeName in $otherRuntimes) {
         try {
@@ -209,7 +233,9 @@ try {
                 $destPath = Join-Path $TargetPath $relativePath
                 $isKitHooksFile = $relativePath.Replace('\', '/').StartsWith("$kitHooksRelative/")
                 if ((Test-Path $destPath) -and -not $isKitHooksFile) {
-                    $skippedExisting += $destPath
+                    if (-not (Test-Path $destPath -PathType Leaf) -or (Get-FileHash -LiteralPath $file.FullName -Algorithm SHA256).Hash -ne (Get-FileHash -LiteralPath $destPath -Algorithm SHA256).Hash) {
+                        $skippedExisting += $destPath
+                    }
                     continue
                 }
                 New-Item -ItemType Directory -Force -Path (Split-Path -Parent $destPath) | Out-Null
@@ -241,9 +267,9 @@ try {
         Write-Host "Skipped (already existed, not overwritten):"
         $skippedExisting | ForEach-Object { Write-Host "  - $_" }
     }
-    Write-Host "Note: each runtime's own hook wiring file (hooks.json / *.kiro.hook) is a"
-    Write-Host "reference only - merge it into that runtime's own settings surface yourself"
-    Write-Host "where that runtime requires it (this script does not edit runtime settings)."
+    Write-Host "Note: non-Claude hook wiring files (hooks.json) are references only - merge"
+    Write-Host "them into that runtime's own settings surface where required. Claude keeps"
+    Write-Host "hook wiring only in .claude/settings.json; .claude/hooks contains scripts."
 } finally {
     Remove-TempDirs
 }
