@@ -21,7 +21,7 @@ test('all non-Claude runtimes receive the shared native Agent Skills layout', ()
         for (const skill of skills) {
             const canonical = readFileSync(join(source, 'skills', skill, 'SKILL.md'), 'utf8');
             assert.doesNotMatch(canonical, /^category:/m, `${skill}: category must not be top-level`);
-            assert.match(canonical, /^metadata:\n  category: (?:domain|workflow)$/m, `${skill}: missing metadata.category`);
+            assert.match(canonical, /^metadata:\r?\n  category: (?:domain|workflow)\r?$/m, `${skill}: missing metadata.category`);
         }
 
         for (const runtime of runtimes) {
@@ -42,7 +42,7 @@ test('all non-Claude runtimes receive the shared native Agent Skills layout', ()
 
         const sharedPlan = readFileSync(join(root, 'codex', '.agents', 'skills', 'hs-plan', 'SKILL.md'), 'utf8');
         assert.doesNotMatch(sharedPlan, /^category:/m);
-        assert.match(sharedPlan, /^metadata:\n  category: workflow$/m);
+        assert.match(sharedPlan, /^metadata:\r?\n  category: workflow\r?$/m);
 
         const copilotHooks = JSON.parse(readFileSync(join(root, 'copilot', '.github', 'hooks', 'hooks.json'), 'utf8'));
         assert.equal(copilotHooks.version, 1);
