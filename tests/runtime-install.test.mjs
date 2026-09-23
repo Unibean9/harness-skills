@@ -36,7 +36,7 @@ test('all non-Claude runtimes receive the shared native Agent Skills layout', ()
             }
         }
 
-        assert.ok(!existsSync(join(root, 'cursor', '.cursor', 'rules')));
+        assert.ok(existsSync(join(root, 'cursor', '.cursor', 'rules', 'language-preferences.mdc')));
         assert.ok(!existsSync(join(root, 'copilot', '.github', 'instructions')));
         assert.ok(!existsSync(join(root, 'antigravity', '.agents', 'hs-skills')));
 
@@ -56,9 +56,10 @@ test('all non-Claude runtimes receive the shared native Agent Skills layout', ()
         }
 
         const antigravityOverview = readFileSync(join(root, 'antigravity', '.agents', 'rules', 'kit-overview.md'), 'utf8');
-        assert.match(antigravityOverview, /SessionStart.*session-init.*unsupported/i);
+        assert.match(antigravityOverview, /language-prompt.*PreInvocation/i);
         const antigravityHooks = JSON.parse(readFileSync(join(root, 'antigravity', '.agents', 'hooks.json'), 'utf8'));
         assert.equal(antigravityHooks.SessionStart, undefined);
+        assert.equal(typeof antigravityHooks['language-prompt'].PreInvocation[0].command, 'string');
     } finally {
         rmSync(root, { recursive: true, force: true });
     }

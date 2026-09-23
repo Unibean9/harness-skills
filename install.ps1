@@ -7,9 +7,9 @@ prior behavior).
 
 -Claude copies agents/, hook scripts, and skills/ into
 <TargetPath>/.claude/{agents,hooks,skills}; Claude hook wiring lives only in
-<TargetPath>/.claude/settings.json, and copies this repo's
-.hs.json to <TargetPath>/.hs.json (skipped if the target already
-has one) - exactly as before this script gained other runtimes.
+<TargetPath>/.claude/settings.json. The shared .hs.json is copied to
+<TargetPath>/.hs.json for every selected runtime (skipped if the target
+already has one).
 
 Every other selected runtime's content is GENERATED, not copied from a
 static mirror: agents/, skills/, and hooks/ stay the single source of
@@ -71,6 +71,7 @@ if (-not $sourceRoot -or -not (Test-Path $generatorAtSource)) {
 
 $targetClaude = Join-Path $TargetPath '.claude'
 $generatorScript = $generatorAtSource
+$hookMergerScript = Join-Path $sourceRoot 'install/lib/merge-hooks.mjs'
 
 # Maps each non-Claude runtime name to its target dot-folder, used both to
 # place its own kit-hooks/ copy and to report where it landed.
@@ -159,6 +160,19 @@ try {
         Test-RuntimePlatformWiring -RuntimeName $runtimeName -RuntimeRoot $tempDirs[$runtimeName]
     }
 
+    # .hs.json is shared kit configuration, independent of the selected runtime.
+    New-Item -ItemType Directory -Force -Path $TargetPath | Out-Null
+    $sourceConfig = Join-Path $sourceRoot '.hs.json'
+    $targetConfig = Join-Path $TargetPath '.hs.json'
+    if (Test-Path $targetConfig) {
+        Write-Host "Skipped .hs.json: already exists at target ($targetConfig), not overwriting."
+    } elseif (Test-Path $sourceConfig) {
+        Copy-Item -Path $sourceConfig -Destination $targetConfig -Force
+        Write-Host "Copied .hs.json -> $targetConfig"
+    } else {
+        Write-Warning "Source config not found at '$sourceConfig'."
+    }
+
     $skippedExisting = @()
     $failedRuntimes = @()
     $installedRuntimes = @()
@@ -181,6 +195,11 @@ try {
                     continue
                 }
                 $destPath = Join-Path $dst $relativePath
+                $isManagedHook = $folder -eq 'hooks' -and $file.Extension -in @('.mjs', '.js', '.cjs', '.ps1', '.sh')
+                if ($isManagedHook -and (Test-Path $destPath)) {
+                    Copy-Item -Path $file.FullName -Destination $destPath -Force
+                    continue
+                }
                 if (Test-Path $destPath) {
                     if (-not (Test-Path $destPath -PathType Leaf) -or (Get-FileHash -LiteralPath $file.FullName -Algorithm SHA256).Hash -ne (Get-FileHash -LiteralPath $destPath -Algorithm SHA256).Hash) {
                         $skippedExisting += $destPath
@@ -193,24 +212,13 @@ try {
             Write-Host "Copied $folder -> $dst"
         }
 
-        $sourceConfig = Join-Path $sourceRoot '.hs.json'
-        $targetConfig = Join-Path $TargetPath '.hs.json'
-        if (Test-Path $targetConfig) {
-            Write-Host "Skipped .hs.json: already exists at target ($targetConfig), not overwriting."
-        } elseif (Test-Path $sourceConfig) {
-            Copy-Item -Path $sourceConfig -Destination $targetConfig -Force
-            Write-Host "Copied .hs.json -> $targetConfig"
-        } else {
-            Write-Warning "Source config not found at '$sourceConfig'."
-        }
-
         $sourceHookSettings = Join-Path $sourceRoot 'hooks/hooks.json'
         $targetHookSettings = Join-Path $targetClaude 'settings.json'
-        if (Test-Path $targetHookSettings) {
-            Write-Host "Skipped Claude hook settings: already exists at target ($targetHookSettings), not overwriting."
-        } elseif (Test-Path $sourceHookSettings) {
-            Copy-Item -Path $sourceHookSettings -Destination $targetHookSettings -Force
-            Write-Host "Copied Claude hook settings -> $targetHookSettings"
+        if (Test-Path $sourceHookSettings) {
+            & node $hookMergerScript --runtime claude --source $sourceHookSettings --target $targetHookSettings
+            if ($LASTEXITCODE -ne 0) {
+                Write-Warning "Could not safely merge Claude hook settings at '$targetHookSettings'; existing settings were preserved."
+            }
         } else {
             Write-Warning "Claude hook settings not found at '$sourceHookSettings'."
         }
@@ -232,6 +240,13 @@ try {
                 $relativePath = $file.FullName.Substring($runtimeRoot.Length).TrimStart('\', '/')
                 $destPath = Join-Path $TargetPath $relativePath
                 $isKitHooksFile = $relativePath.Replace('\', '/').StartsWith("$kitHooksRelative/")
+                if ([System.IO.Path]::GetFileName($relativePath) -eq 'hooks.json') {
+                    & node $hookMergerScript --runtime $runtimeName --source $file.FullName --target $destPath
+                    if ($LASTEXITCODE -ne 0) {
+                        throw "Could not safely merge $runtimeName hook settings at '$destPath'."
+                    }
+                    continue
+                }
                 if ((Test-Path $destPath) -and -not $isKitHooksFile) {
                     if (-not (Test-Path $destPath -PathType Leaf) -or (Get-FileHash -LiteralPath $file.FullName -Algorithm SHA256).Hash -ne (Get-FileHash -LiteralPath $destPath -Algorithm SHA256).Hash) {
                         $skippedExisting += $destPath
@@ -267,9 +282,8 @@ try {
         Write-Host "Skipped (already existed, not overwritten):"
         $skippedExisting | ForEach-Object { Write-Host "  - $_" }
     }
-    Write-Host "Note: non-Claude hook wiring files (hooks.json) are references only - merge"
-    Write-Host "them into that runtime's own settings surface where required. Claude keeps"
-    Write-Host "hook wiring only in .claude/settings.json; .claude/hooks contains scripts."
+    Write-Host "Runtime hook wiring was merged into existing configuration while preserving unrelated hooks."
+    Write-Host "Claude keeps hook wiring only in .claude/settings.json; .claude/hooks contains scripts."
 } finally {
     Remove-TempDirs
 }
