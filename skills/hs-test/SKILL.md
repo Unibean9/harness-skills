@@ -6,7 +6,7 @@ keywords: [test, unit, integration, e2e, playwright, coverage, evidence]
 metadata:
   category: workflow
   author: harness-skills
-  version: "2.0.0"
+  version: "2.0.1"
   workflow:
     follows: [build]
     precedes: [code-review, ship]
@@ -98,8 +98,21 @@ When behavior is only observable through a rendered page, network response, or
 multi-step user flow, use the real interface and capture meaningful state,
 requests/responses, and console errors. Read
 `references/evidence-capture-playwright.md` when Playwright MCP is available.
-If it is unavailable, use another real project tool or classify the required
-claim as `UNVERIFIED`; do not silently skip it.
+Before choosing the browser path, check Playwright MCP availability in the
+current session and inspect the project's package manifest, lockfile, test
+scripts, and Playwright config for a local Playwright setup. These are separate
+capabilities: MCP can provide a browser without a local Playwright package,
+and a local package does not prove its required browser binaries are present.
+When the project already declares Playwright but its locked dependencies are
+missing, install from the existing lockfile with the repository's package
+manager. When a Playwright browser is needed, use that project's installed
+Playwright CLI to inspect installed browsers and install only the browser the
+project's config or task requires. This downloads browser binaries into the
+user cache. Do not add a new Playwright dependency or install browsers for an
+unrelated task without the user's authorization. If neither MCP nor a
+project-supported browser runner is available, use another real project tool
+or classify the required claim as `UNVERIFIED`; do not silently skip
+black-box verification.
 
 ## Handoff
 
