@@ -1,5 +1,18 @@
 {
     "hooks": {
+        "UserPromptSubmit": [
+            {
+                "matcher": ".*",
+                "hooks": [
+                    {
+                        "type": "command",
+                        "command": "node \"$CLAUDE_PROJECT_DIR/.claude/hooks/language-prompt.mjs\" --platform claude",
+                        "timeout": 10,
+                        "statusMessage": "Loading language preferences"
+                    }
+                ]
+            }
+        ],
         "SessionStart": [
             {
                 "matcher": "startup|resume|clear|compact",

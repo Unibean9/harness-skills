@@ -42,8 +42,10 @@ current project, and removes the temporary files. A pre-existing file at
 the destination is skipped and reported, never overwritten - except each
 runtime's managed hook scripts (`.claude/hooks/*.mjs` for Claude and
 `<dot-folder>/kit-hooks/*.mjs` for the other runtimes), which are always
-refreshed. No existing `.hs.json` or `.claude/settings.json` is ever
-overwritten either.
+refreshed. The shared `.hs.json` configuration is copied for every runtime
+installation when the target does not already have one. Existing runtime hook
+configuration is merged: harness-owned entries are refreshed and unrelated
+entries are preserved. Existing `.hs.json` files are never overwritten.
 
 > Security note: this executes code fetched from GitHub. Review
 > [`install.ps1`](install.ps1)/[`install.sh`](install.sh) and
@@ -121,6 +123,9 @@ dependencies:
 - **`descriptive-name.mjs`** (`PreToolUse` on `Write`) - adds file-naming
   guidance (kebab-case for JS/TS/Python/shell, language conventions
   elsewhere) as context. It never blocks.
+- **`language-prompt.mjs`** (`UserPromptSubmit`) - injects the configured
+  conversation and thinking languages on every message. It caches the assembled
+  guidance for five minutes while still injecting it on each message.
 - **`session-init.mjs`** (`SessionStart`) - injects a short orientation:
   project root, branch and uncommitted count, detected stack, and the most
   recent plan. After a context compaction it also tells the agent to
@@ -132,19 +137,32 @@ but a crash while judging a specific tool call fails closed. On Claude Code a
 gate decision is an interactive permission prompt; every other platform gets
 a hard block, and an unrecognized `--platform` value fails closed.
 
-Only Claude Code and Codex wire all four hooks. Cursor, Copilot, and
-Antigravity wire the two deterministic gates; Antigravity's
-`SessionStart`/`session-init` hook is unsupported because no semantically
-equivalent context-injection event is confirmed.
+Claude Code and Codex add language guidance through their per-message hooks.
+Antigravity uses `PreInvocation` to inject an ephemeral system message before
+each model invocation. Copilot rewrites the model-facing user content through
+`userPromptTransformed`; Copilot persists that replacement in session history,
+so it is not a separate system message. Cursor uses an always-applied project
+rule that directs the agent to read `.hs.json` at the start of each interaction.
 
 `.hs.json` at the repo root turns each hook on/off per project
 (`guardrails.hooks.privacy`, `guardrails.hooks.scout`,
-`guardrails.hooks.descriptiveName`, `guardrails.hooks.sessionInit`, each
+`guardrails.hooks.descriptiveName`, `guardrails.hooks.sessionInit`,
+`guardrails.hooks.languagePrompt`, each
 `{ "enabled": bool }` and defaulting to on when absent; the `.hs.json`
 guard is always on). `guardrails.hooks.scout.allowlist` clears specific
 directories for the scout guard, and `artifacts.plans.archiveDirectory`
 tells it which folder holds archived plans. The installer copies it to
-`.hs.json` in the target project (skipped if one already exists).
+`.hs.json` in the target project for every selected runtime (skipped if one
+already exists).
+
+Set `language.conversation` and `language.thinking` in `.hs.json` to language
+names or codes; hook-backed runtimes cache the assembled guidance for five
+minutes and inject it on each invocation. Cursor's static rule reads the config
+directly and is a best-effort fallback. Both settings default to Vietnamese
+(`vi`). `hs-brainstorm` and `hs-plan`
+also enforce a requirement hard gate: they inspect available evidence, surface
+uncertainties, and keep asking focused questions until material requirements
+and decisions are clear.
 
 ## Why
 

@@ -176,7 +176,23 @@ function writeJson(targetPath, value) {
     writeFile(targetPath, `${JSON.stringify(value, null, 4)}\n`);
 }
 
-const KIT_HOOK_SCRIPTS = ['privacy-block.mjs', 'scout-block.mjs', 'descriptive-name.mjs', 'session-init.mjs', 'util.mjs'];
+const KIT_HOOK_SCRIPTS = ['privacy-block.mjs', 'scout-block.mjs', 'descriptive-name.mjs', 'session-init.mjs', 'language-prompt.mjs', 'util.mjs'];
+
+function renderLanguageRule() {
+    return [
+        '# Language Preferences',
+        '',
+        'At the start of every interaction, read the root .hs.json and follow its language settings:',
+        '',
+        '- Use language.conversation for responses to the user.',
+        '- Use language.thinking for private reasoning. Never reveal private chain-of-thought; provide concise conclusions and rationale.',
+        '- If either setting is missing or empty, use Vietnamese (vi).',
+        '- If guardrails.hooks.languagePrompt.enabled is false, do not apply these language settings.',
+        '',
+        'The .hs.json settings are the source of truth and may be customized per project. Re-read them when the project configuration changes.',
+        '',
+    ].join('\n');
+}
 
 function copyKitHooks(sourceRoot, kitHooksDir) {
     fs.mkdirSync(kitHooksDir, { recursive: true });
@@ -226,6 +242,7 @@ function generateCursor(sourceRoot, targetPath) {
     const cursorRoot = path.join(targetPath, '.cursor');
 
     generateSharedSkills(sourceRoot, targetPath);
+    writeFile(path.join(cursorRoot, 'rules', 'language-preferences.mdc'), yamlFrontmatter({ description: 'Apply the project language settings from .hs.json', alwaysApply: true }) + renderLanguageRule());
     for (const agent of agents) {
         const fm = yamlFrontmatter({ name: agent.name, description: frontmatterField(agent.frontmatterText, 'description'), model: 'inherit' });
         writeFile(path.join(cursorRoot, 'agents', `${agent.name}.md`), fm + agent.body);
@@ -262,6 +279,9 @@ function generateCodex(sourceRoot, targetPath) {
             SessionStart: [{ matcher: 'startup|resume|clear|compact', hooks: [
                 { type: 'command', command: 'node "$(git rev-parse --show-toplevel)/.codex/kit-hooks/session-init.mjs"', timeout: 10 },
             ] }],
+            UserPromptSubmit: [{ hooks: [
+                { type: 'command', command: 'node "$(git rev-parse --show-toplevel)/.codex/kit-hooks/language-prompt.mjs" --platform codex', timeout: 10 },
+            ] }],
             PreToolUse: [
                 { matcher: '.*', hooks: [
                     { type: 'command', command: 'node "$(git rev-parse --show-toplevel)/.codex/kit-hooks/privacy-block.mjs" --platform codex', timeout: 10 },
@@ -287,7 +307,7 @@ function generateCopilot(sourceRoot, targetPath) {
         skills, agents,
         skillsNote: '`.agents/skills/<name>/SKILL.md`',
         agentsNote: '`.github/agents/*.agent.md`',
-        hookNote: '**2 hooks** (`.github/hooks/*.json` + `.github/kit-hooks/*.mjs`, confirmed for Copilot cloud agent + Copilot CLI - VS Code Chat hook support is NOT confirmed by official docs): `privacy-block` and `scout-block` on `preToolUse`. `session-init` and `descriptive-name` are not wired - Copilot hooks are not confirmed to inject context.',
+        hookNote: '**3 hooks** (`.github/hooks/*.json` + `.github/kit-hooks/*.mjs`, confirmed for Copilot cloud agent + Copilot CLI - VS Code Chat hook support is NOT confirmed by official docs): `privacy-block` and `scout-block` on `preToolUse`, plus `language-prompt` on `userPromptTransformed`. Copilot rewrites the model-facing user content and persists the replacement in session history; this is not a separate system message. `session-init` and `descriptive-name` are not wired.',
         commandsNote: 'No prompt files are shipped - this kit has no slash-command layer for any runtime. Copilot loads the shared Agent Skills bundle from `.agents/skills/<name>/SKILL.md` when relevant.',
     }));
 
@@ -315,6 +335,14 @@ function generateCopilot(sourceRoot, targetPath) {
                     timeoutSec: 10,
                 },
             ],
+            userPromptTransformed: [
+                {
+                    type: 'command',
+                    bash: 'node ".github/kit-hooks/language-prompt.mjs" --platform copilot',
+                    powershell: 'node ".github/kit-hooks/language-prompt.mjs" --platform copilot',
+                    timeoutSec: 10,
+                },
+            ],
         },
     });
     copyKitHooks(sourceRoot, path.join(githubRoot, 'kit-hooks'));
@@ -331,10 +359,9 @@ function generateAntigravity(sourceRoot, targetPath) {
         skills, agents,
         skillsNote: '`.agents/skills/<name>/SKILL.md`',
         agentsNote: '`.agents/agents/*.md`, `subagent: true`',
-        hookNote: '**2 hooks** (`.agents/hooks.json` + `.agents/kit-hooks/*.mjs`) on `PreToolUse`: `privacy-block` blocks reading/writing sensitive files like `.env`, `.pem`, `credentials*` and protects `.hs.json` from unattended edits; `scout-block` blocks scans of generated/dependency directories and repository-wide globs. `SessionStart`/`session-init` is **unsupported** and is not wired because Antigravity has no confirmed semantically equivalent context-injection event; `descriptive-name` is also not wired.',
+        hookNote: '**3 hooks** (`.agents/hooks.json` + `.agents/kit-hooks/*.mjs`): `privacy-block` and `scout-block` on `PreToolUse`, plus `language-prompt` on `PreInvocation` to inject language guidance as an ephemeral system message before each model invocation. `SessionStart`/`session-init` and `descriptive-name` are not wired.',
         commandsNote: 'Commands are not ported in this pass - Antigravity\'s workflow file path under `.agents/` is not confirmed by official docs beyond UI-driven creation, so no workflow files are shipped rather than guessing a path.',
     }));
-
     generateSharedSkills(sourceRoot, targetPath);
     for (const agent of agents) {
         const fm = yamlFrontmatter({ name: agent.name, description: frontmatterField(agent.frontmatterText, 'description'), subagent: true });
@@ -348,6 +375,10 @@ function generateAntigravity(sourceRoot, targetPath) {
         'scout-block': {
             enabled: true,
             PreToolUse: [{ matcher: '.*', hooks: [{ type: 'command', command: 'node "$(git rev-parse --show-toplevel)/.agents/kit-hooks/scout-block.mjs" --platform antigravity', timeout: 10 }] }],
+        },
+        'language-prompt': {
+            enabled: true,
+            PreInvocation: [{ type: 'command', command: 'node "$(git rev-parse --show-toplevel)/.agents/kit-hooks/language-prompt.mjs" --platform antigravity', timeout: 10 }],
         },
     });
     copyKitHooks(sourceRoot, path.join(agentsRoot, 'kit-hooks'));

@@ -38,6 +38,19 @@ Ask only when a missing answer would materially change the direction and
 cannot be discovered in the repository. Treat code, tests, docs, and existing
 decisions as evidence before treating something as unknown.
 
+## Requirement hard gate
+
+Before settling a direction or handing work to planning, check that the outcome,
+user/context, scope, constraints, non-goals, acceptance criteria, and material
+risks or dependencies are clear. Inspect the repository first for facts the
+user should not have to provide. Then act as a partner: surface relevant
+implications, offer an evidence-based recommendation, and ask concise,
+specific questions about the remaining material uncertainty. Wait for the
+answers, incorporate them, and repeat the check until no material requirement
+or decision is unresolved. Do not guess, imply approval, or hand off a decision
+brief while that gate is open. Infer only minor, reversible implementation
+details that cannot change the agreed outcome.
+
 ## Bug routing
 
 For a bug, route to diagnosis before choosing a remedy:

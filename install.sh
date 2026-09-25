@@ -6,8 +6,8 @@
 #
 # --claude copies agents/, hook scripts, and skills/ into
 # <target-path>/.claude/{agents,hooks,skills}; Claude hook wiring lives only in
-# <target-path>/.claude/settings.json, and copies this repo's
-# .hs.json to <target-path>/.hs.json (skipped if the target
+# <target-path>/.claude/settings.json. The shared .hs.json is copied to
+# <target-path>/.hs.json for every selected runtime (skipped if the target
 # already has one).
 #
 # Every other selected runtime's content is GENERATED, not copied from a
@@ -67,6 +67,7 @@ fi
 
 TARGET_PATH="$(pwd)"
 GENERATOR_SCRIPT="$SOURCE_ROOT/$GENERATOR_MARKER"
+HOOK_MERGER_SCRIPT="$SOURCE_ROOT/install/lib/merge-hooks.mjs"
 
 SEL_CLAUDE=0
 SEL_CURSOR=0
@@ -214,6 +215,18 @@ for runtime_name in $OTHER_RUNTIMES; do
     check_platform_wiring "$runtime_name" "$(get_runtime_temp_dir "$runtime_name")"
 done
 
+# .hs.json is shared kit configuration, independent of the selected runtime.
+source_config="$SOURCE_ROOT/.hs.json"
+target_config="$TARGET_PATH/.hs.json"
+if [ -f "$target_config" ]; then
+    echo "Skipped .hs.json: already exists at target ($target_config), not overwriting."
+elif [ -f "$source_config" ]; then
+    cp "$source_config" "$target_config"
+    echo "Copied .hs.json -> $target_config"
+else
+    echo "WARNING: Source config not found at '$source_config'." >&2
+fi
+
 # --- Claude: copy managed files without overwriting user-owned files.
 
 SKIPPED_EXISTING=""
@@ -231,13 +244,17 @@ if [ "$SEL_CLAUDE" -eq 1 ]; then
         mkdir -p "$dst"
         while IFS= read -r -d '' file; do
             relative_path="${file#"$src"/}"
+            dest_path="$dst/$relative_path"
             if [ "$folder" = "hooks" ]; then
                 case "$relative_path" in
                     *.mjs|*.js|*.cjs|*.ps1|*.sh) ;;
                     *) continue ;;
                 esac
+                if [ -e "$dest_path" ]; then
+                    cp "$file" "$dest_path"
+                    continue
+                fi
             fi
-            dest_path="$dst/$relative_path"
             if [ -e "$dest_path" ]; then
                 if ! cmp -s "$file" "$dest_path"; then
                     SKIPPED_EXISTING="$SKIPPED_EXISTING
@@ -251,24 +268,14 @@ if [ "$SEL_CLAUDE" -eq 1 ]; then
         echo "Copied $folder -> $dst"
     done
 
-    source_config="$SOURCE_ROOT/.hs.json"
-    target_config="$TARGET_PATH/.hs.json"
-    if [ -f "$target_config" ]; then
-        echo "Skipped .hs.json: already exists at target ($target_config), not overwriting."
-    elif [ -f "$source_config" ]; then
-        cp "$source_config" "$target_config"
-        echo "Copied .hs.json -> $target_config"
-    else
-        echo "WARNING: Source config not found at '$source_config'." >&2
-    fi
-
     source_hook_settings="$SOURCE_ROOT/hooks/hooks.json"
     target_hook_settings="$TARGET_PATH/.claude/settings.json"
-    if [ -f "$target_hook_settings" ]; then
-        echo "Skipped Claude hook settings: already exists at target ($target_hook_settings), not overwriting."
-    elif [ -f "$source_hook_settings" ]; then
-        cp "$source_hook_settings" "$target_hook_settings"
-        echo "Copied Claude hook settings -> $target_hook_settings"
+    if [ -f "$source_hook_settings" ]; then
+        if node "$HOOK_MERGER_SCRIPT" --runtime claude --source "$source_hook_settings" --target "$target_hook_settings"; then
+            :
+        else
+            echo "WARNING: Could not safely merge Claude hook settings at '$target_hook_settings'; existing settings were preserved." >&2
+        fi
     else
         echo "WARNING: Claude hook settings not found at '$source_hook_settings'." >&2
     fi
@@ -288,6 +295,13 @@ install_runtime() {
     while IFS= read -r -d '' file; do
         relative_path="${file#"$runtime_root"/}"
         dest_path="$TARGET_PATH/$relative_path"
+        if [ "$(basename "$relative_path")" = "hooks.json" ]; then
+            if ! node "$HOOK_MERGER_SCRIPT" --runtime "$runtime_name" --source "$file" --target "$dest_path"; then
+                echo "Could not safely merge $runtime_name hook settings at '$dest_path'." >&2
+                return 1
+            fi
+            continue
+        fi
         case "$relative_path" in
             "$kit_hooks_relative"/*) is_kit_hooks=1 ;;
             *) is_kit_hooks=0 ;;
@@ -336,6 +350,5 @@ fi
 if [ -n "$SKIPPED_EXISTING" ]; then
     echo "Skipped (already existed, not overwritten):$SKIPPED_EXISTING"
 fi
-echo "Note: non-Claude hook wiring files (hooks.json) are references only - merge"
-echo "them into that runtime's own settings surface where required. Claude keeps"
-echo "hook wiring only in .claude/settings.json; .claude/hooks contains scripts."
+echo "Runtime hook wiring was merged into existing configuration while preserving unrelated hooks."
+echo "Claude keeps hook wiring only in .claude/settings.json; .claude/hooks contains scripts."

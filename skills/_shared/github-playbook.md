@@ -55,6 +55,20 @@ None is needed to run the core flow.
 - The plan has work worth tracking on its own, not a single-file fix.
 - Skip it for solo or untracked work; a local plan is enough.
 
+Before a GitHub workflow, check that the `gh` executable is available, then
+check authentication and the repository remote separately. In PowerShell,
+use `Get-Command gh -ErrorAction SilentlyContinue`; in a POSIX shell, use
+`command -v gh`. If the executable is missing and the current request calls
+for GitHub work, install it through an available official package-manager
+route when that can run without elevation. On Windows, prefer WinGet's
+`GitHub.cli` package. If setup requires administrator access or no supported
+package manager is available, report the exact blocker and the official
+[installation instructions](https://github.com/cli/cli#installation) instead
+of trying an untrusted script or silently falling back. Recheck availability
+after installation; a new terminal may be needed for PATH changes.
+
+Authentication is a separate state. Run `gh auth status` only after `gh` is
+available. Do not initiate `gh auth login` unless the user asks to authenticate.
 Publishing needs an authenticated `gh` and a GitHub remote:
 
 ```bash
