@@ -46,6 +46,18 @@ product, UX, API, architecture, data, security, or permission decision.
 - If a real unresolved decision remains, return to `hs-brainstorm`.
 - Do not settle a material alternative inside task decomposition.
 
+## Requirement hard gate
+
+Before drafting or materializing a plan, audit the agreed direction and
+repository evidence for missing requirements, constraints, scope boundaries,
+acceptance evidence, dependencies, and material risks. Resolve facts that are
+discoverable by inspecting the repository. If a material user decision remains,
+stop decomposition, state what is still unclear and why it matters, and return
+to `hs-brainstorm` for a focused partner-style question and recommendation.
+Wait for the answer, update the direction, then repeat the readiness check.
+Never mark a plan ready or fill a gap with an invented assumption while this
+gate is open.
+
 ## Plan shape
 
 - **Location:** `artifacts.plans.directory` from `.hs.json`, or `plans/`.

@@ -41,6 +41,31 @@ instructions.
 | GitHub issue | Read the entire issue, comments, blockers, assignees, and covering PR state. | Verify referenced paths and contracts against the repository before editing. |
 | Explicit small change | Implement the settled request directly. | Ask only when a missing decision materially changes the outcome. |
 
+## Debug and fix
+
+Use this path for a reported bug, unexpected behavior, failing test or CI
+check, or a defect uncovered during implementation. Normal feature work stays
+on the build loop below.
+
+Before changing implementation code:
+
+1. Capture the exact failure and the smallest reliable reproduction. Record
+   expected versus actual behavior. For failures that cannot be reproduced,
+   preserve the available logs and state what remains uncertain.
+2. Scout the affected files, direct callers, related tests, recent changes, and
+   working examples. Use repository evidence to narrow the failure surface.
+3. State the suspected root cause with evidence and identify its likely blast
+   radius. Test competing explanations with the smallest useful probe; do not
+   treat a symptom or a failing assertion alone as proof of cause.
+4. Choose the smallest repair that addresses the supported cause. If diagnosis
+   exposes an unresolved product, architecture, security, or permission
+   decision, route it to `hs-brainstorm` before editing.
+5. Verify the fix by rerunning the original reproduction, adding or updating
+   regression coverage, and checking affected callers for side effects. Route
+   test execution through `hs-test`. If a check remains red, classify the
+   failure and return to diagnosis; do not change correct behavior to satisfy
+   a stale test or repeat a fix without new evidence.
+
 ## Branch and worktree
 
 Work on the current branch by default. Create a branch or worktree only when
@@ -57,7 +82,8 @@ merge and user agreement; never remove a worktree containing user changes.
 For each coherent task or change:
 
 1. Read the acceptance criteria and inspect analogous implementation, tests,
-   configuration, and current interfaces.
+   configuration, and current interfaces. For a concrete defect or failure,
+   complete `Debug and fix` before choosing the implementation change.
 2. Route applicable domain `prepare` for context, then implement the smallest
    complete change.
 3. Run the cheapest relevant probe through `hs-test`.
